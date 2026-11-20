@@ -1,0 +1,1662 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AzForces — Alqoritmik Məsələ Platforması</title>
+
+  <!-- CodeMirror 5 (Syntax Highlighting) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css" />
+
+  <!-- KaTeX (Riyazi Formullar) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" />
+
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface-2: #1f2630;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --purple: #a855f7;
+      --radius: 10px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    /* Header / Navbar */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 1.25rem;
+      letter-spacing: -0.5px;
+      cursor: pointer;
+    }
+    .brand-badge {
+      background: linear-gradient(135deg, #3b82f6, #06b6d4);
+      color: #fff;
+      padding: 3px 9px;
+      border-radius: 7px;
+      font-size: 0.85rem;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .nav-btn {
+      background: transparent;
+      color: var(--muted);
+      border: 1px solid transparent;
+      padding: 7px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: 0.15s;
+    }
+    .nav-btn:hover { color: var(--text); background: var(--surface-2); }
+    .nav-btn.active {
+      color: #fff;
+      background: var(--primary);
+    }
+
+    .user-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .user-box input {
+      width: 145px;
+      padding: 6px 10px;
+      font-size: 0.85rem;
+    }
+    .admin-pill {
+      font-size: 0.78rem;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .admin-pill.unlocked {
+      border-color: var(--success);
+      color: var(--success);
+      background: rgba(34, 197, 94, 0.1);
+    }
+
+    main {
+      max-width: 1360px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* Cards & Controls */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    h2, h3 { margin-top: 0; }
+    .muted { color: var(--muted); }
+
+    input, select, textarea {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.92rem;
+      font-family: inherit;
+      width: 100%;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    input:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .btn {
+      background: var(--surface-2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn:hover { border-color: var(--muted); }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-success { background: #16a34a; border-color: #16a34a; color: #fff; }
+    .btn-success:hover { background: #15803d; }
+    .btn-danger { background: rgba(239, 68, 68, 0.15); border-color: var(--danger); color: var(--danger); }
+    .btn-danger:hover { background: var(--danger); color: #fff; }
+    .btn-sm { padding: 4px 10px; font-size: 0.8rem; }
+
+    /* Tables */
+    .table-wrap { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
+    th, td {
+      text-align: left;
+      padding: 11px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    th { color: var(--muted); font-weight: 600; font-size: 0.82rem; text-transform: uppercase; }
+    tr.clickable:hover { background: var(--surface-2); cursor: pointer; }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border: 1px solid var(--border);
+    }
+    .rating-zero { color: var(--muted); border-color: var(--border); background: rgba(139,148,158,0.08); }
+    .rating-easy { color: #22c55e; border-color: rgba(34,197,94,0.4); background: rgba(34,197,94,0.1); }
+    .rating-med { color: #38bdf8; border-color: rgba(56,189,248,0.4); background: rgba(56,189,248,0.1); }
+    .rating-hard { color: #a855f7; border-color: rgba(168,85,247,0.4); background: rgba(168,85,247,0.1); }
+
+    .verdict-Accepted { color: var(--success); font-weight: 700; }
+    .verdict-Wrong { color: var(--danger); font-weight: 700; }
+    .verdict-Time { color: var(--warning); font-weight: 700; }
+    .verdict-Other { color: #fb923c; font-weight: 700; }
+
+    /* Split Workspace */
+    .workspace {
+      display: grid;
+      grid-template-columns: 1fr 1.15fr;
+      gap: 16px;
+      align-items: start;
+    }
+    @media (max-width: 960px) {
+      .workspace { grid-template-columns: 1fr; }
+    }
+
+    .statement-body {
+      white-space: pre-wrap;
+      font-size: 0.96rem;
+      line-height: 1.65;
+    }
+    .statement-body code {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 1px 6px;
+      border-radius: 5px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.88em;
+    }
+
+    .sample-box {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+    .sample-head {
+      background: var(--surface-2);
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .sample-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+    .sample-grid pre {
+      margin: 0;
+      padding: 10px;
+      font-family: ui-monospace, monospace;
+      font-size: 0.85rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .sample-grid pre:first-child { border-right: 1px solid var(--border); }
+
+    /* CodeMirror Overrides */
+    .CodeMirror {
+      height: 360px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    textarea.code-fallback {
+      height: 360px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 14px;
+      resize: vertical;
+    }
+
+    .console-out {
+      background: #090c10;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: ui-monospace, monospace;
+      font-size: 0.86rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      max-height: 240px;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
+
+    .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 700px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    .creative-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+      gap: 14px;
+    }
+    .creative-code-pre {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      font-family: ui-monospace, monospace;
+      font-size: 0.8rem;
+      max-height: 150px;
+      overflow: auto;
+      white-space: pre;
+    }
+
+    /* Info Box & 2FA Panel */
+    .notice-box {
+      background: rgba(59, 130, 246, 0.08);
+      border: 1px solid rgba(59, 130, 246, 0.35);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.88rem;
+      margin-top: 10px;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.72);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 300;
+      padding: 16px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      max-width: 720px;
+      width: 100%;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.55);
+    }
+    .modal-head {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-body {
+      padding: 16px 18px;
+      overflow-y: auto;
+    }
+    .modal-pre {
+      background: #090c10;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      font-family: ui-monospace, monospace;
+      font-size: 0.86rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin: 10px 0 0;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: var(--surface-2);
+      border: 1px solid var(--primary);
+      color: var(--text);
+      padding: 10px 16px;
+      border-radius: 8px;
+      z-index: 400;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      display: none;
+      max-width: 360px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="brand" onclick="switchTab('problems')">
+    <span class="brand-badge">AZ</span>
+    <span>AzForces</span>
+  </div>
+
+  <nav>
+    <button class="nav-btn active" data-tab="problems" onclick="switchTab('problems')">Məsələlər</button>
+    <button class="nav-btn" data-tab="submissions" onclick="switchTab('submissions')">Göndərişlər</button>
+    <button class="nav-btn" data-tab="leaderboard" onclick="switchTab('leaderboard')">Lider Lövhəsi</button>
+    <button class="nav-btn" data-tab="creative" onclick="switchTab('creative')">Yaradıcı Kodlar</button>
+    <button class="nav-btn" data-tab="playground" onclick="switchTab('playground')">Playground</button>
+    <button class="nav-btn" data-tab="settings" onclick="switchTab('settings')">Admin & Ayarlar</button>
+  </nav>
+
+  <div class="user-box">
+    <input id="usernameInput" type="text" placeholder="İstifadəçi adı" title="İstifadəçi adınız" />
+    <span id="adminStatusPill" class="admin-pill">Admin: Kilidli</span>
+  </div>
+</header>
+
+<main>
+  <!-- 1. MƏSƏLƏLƏR -->
+  <section id="tab-problems" class="section active">
+    <div id="problemListView" class="card">
+      <div class="row" style="justify-content: space-between; margin-bottom: 14px;">
+        <div>
+          <h2 style="margin:0;">Məsələlər Arxivi</h2>
+          <span class="muted" style="font-size:0.84rem;">Həll statusu aktiv istifadəçi adına görə göstərilir.</span>
+        </div>
+        <div class="row">
+          <input id="problemSearch" type="text" placeholder="Başlıq və ya teq axtar..." style="width:220px;" oninput="renderProblemsTable()" />
+          <button class="btn btn-sm" onclick="loadProblems()">Yenilə</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Məsələ</th>
+              <th>Teqlər</th>
+              <th>Reytinq</th>
+              <th>Limit</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="problemsTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Məsələ Həll Etmə Sahəsi -->
+    <div id="problemSolveView" style="display:none;">
+      <div class="row" style="justify-content: space-between; margin-bottom: 12px;">
+        <button class="btn" onclick="backToProblemList()">← Məsələlərə qayıt</button>
+        <button id="deleteProblemBtn" class="btn btn-danger btn-sm" style="display:none;" onclick="deleteCurrentProblem()">Məsələni Sil (Admin)</button>
+      </div>
+
+      <div class="workspace">
+        <!-- Sol: Məsələ şərti -->
+        <div class="card">
+          <div class="row" style="justify-content: space-between;">
+            <h2 id="probTitle" style="margin-bottom:6px;"></h2>
+            <span id="probRatingBadge" class="badge"></span>
+          </div>
+          <div id="probMeta" class="muted" style="font-size:0.85rem; margin-bottom:14px;"></div>
+
+          <div id="probStatement" class="statement-body"></div>
+
+          <div id="probInputWrap" style="margin-top:16px;">
+            <h4 style="margin:0 0 6px;">Giriş Verilənləri</h4>
+            <div id="probInputSpec" class="statement-body muted"></div>
+          </div>
+
+          <div id="probOutputWrap" style="margin-top:14px;">
+            <h4 style="margin:0 0 6px;">Çıxış Verilənləri</h4>
+            <div id="probOutputSpec" class="statement-body muted"></div>
+          </div>
+
+          <div style="margin-top:16px;">
+            <h4 style="margin:0 0 6px;">Nümunə Testlər</h4>
+            <div id="probSamples"></div>
+          </div>
+        </div>
+
+        <!-- Sağ: Kod Editoru -->
+        <div class="card">
+          <div class="row" style="justify-content: space-between; margin-bottom:10px;">
+            <div class="row">
+              <select id="solveLang" style="width:165px;" onchange="onSolveLangChange()">
+                <option value="python">Python 3</option>
+                <option value="cpp">C++ (GCC)</option>
+                <option value="c">C</option>
+                <option value="java">Java</option>
+                <option value="javascript">JavaScript (Node)</option>
+              </select>
+              <button class="btn btn-sm" onclick="resetStarterCode()">Şablonu Yüklə</button>
+            </div>
+            <div class="row">
+              <button id="runSolveBtn" class="btn" onclick="runSolveCode()">▶ Test Et</button>
+              <button id="submitSolveBtn" class="btn btn-success" onclick="submitSolution()">✔ Göndər</button>
+            </div>
+          </div>
+
+          <textarea id="solveEditorTextarea" class="code-fallback"></textarea>
+
+          <div style="margin-top:12px;">
+            <label class="muted" style="font-size:0.82rem; display:block; margin-bottom:4px;">Xüsusi Giriş (Stdin):</label>
+            <textarea id="solveStdin" rows="3" placeholder="Test etmək üçün giriş verilənləri..."></textarea>
+          </div>
+
+          <div id="solveResultBox" class="console-out" style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. GÖNDƏRİŞLƏR -->
+  <section id="tab-submissions" class="section">
+    <div class="card">
+      <div class="row" style="justify-content: space-between; margin-bottom:12px;">
+        <div>
+          <h2 style="margin:0;">Son Göndərişlər</h2>
+          <span class="muted" style="font-size:0.84rem;">Detalları və xəta məlumatlarını oxumaq üçün sətrə klikləyin.</span>
+        </div>
+        <div class="row">
+          <select id="submissionFilterSelect" style="width:170px;" onchange="loadSubmissions()">
+            <option value="all">Bütün istifadəçilər</option>
+            <option value="mine">Yalnız mənimkilər</option>
+          </select>
+          <button class="btn btn-sm" onclick="loadSubmissions()">Yenilə</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>İstifadəçi</th>
+              <th>Məsələ</th>
+              <th>Dil</th>
+              <th>Nəticə</th>
+              <th>Testlər</th>
+              <th>Vaxt</th>
+              <th>Tarix</th>
+            </tr>
+          </thead>
+          <tbody id="submissionsTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. LİDER LÖVHƏSİ -->
+  <section id="tab-leaderboard" class="section">
+    <div class="card">
+      <div class="row" style="justify-content: space-between; margin-bottom:12px;">
+        <h2 style="margin:0;">Lider Lövhəsi</h2>
+        <button class="btn btn-sm" onclick="loadLeaderboard()">Yenilə</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Sıra</th>
+              <th>İstifadəçi</th>
+              <th>Həll Edilən Məsələ</th>
+              <th>Reytinq Xalı</th>
+              <th>Ümumi Göndəriş</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboardBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. YARADICI KODLAR -->
+  <section id="tab-creative" class="section">
+    <div class="card">
+      <div class="row" style="justify-content: space-between; margin-bottom:12px;">
+        <div>
+          <h2 style="margin:0;">Yaradıcı Kod Qalereyası</h2>
+          <span class="muted" style="font-size:0.86rem;">Maraqlı alqoritmləri, ASCII sənətləri və fraktalları paylaşın.</span>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="toggleCreativeForm()">+ Yeni Kod Paylaş</button>
+      </div>
+
+      <div id="creativeFormBox" style="display:none; border-top:1px solid var(--border); padding-top:14px; margin-top:12px;">
+        <div class="grid-2">
+          <div>
+            <label class="muted" style="font-size:0.82rem;">Başlıq *</label>
+            <input id="crTitle" type="text" placeholder="Məs: Spiral Matris" />
+          </div>
+          <div>
+            <label class="muted" style="font-size:0.82rem;">Dil</label>
+            <select id="crLang">
+              <option value="python">Python</option>
+              <option value="cpp">C++</option>
+              <option value="javascript">JavaScript</option>
+              <option value="c">C</option>
+              <option value="java">Java</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:10px;">
+          <label class="muted" style="font-size:0.82rem;">Qısa İzah</label>
+          <input id="crDesc" type="text" placeholder="Kodun nə etdiyini yazın..." />
+        </div>
+        <div style="margin-top:10px;">
+          <label class="muted" style="font-size:0.82rem;">Kod *</label>
+          <textarea id="crCode" rows="6" style="font-family:monospace;"></textarea>
+        </div>
+        <div style="margin-top:10px;">
+          <label class="muted" style="font-size:0.82rem;">Nümunə Giriş (Stdin)</label>
+          <input id="crStdin" type="text" placeholder="İstəyə bağlı giriş" />
+        </div>
+        <div class="row" style="margin-top:12px;">
+          <button class="btn btn-success" onclick="createCreative()">Paylaş</button>
+          <button class="btn" onclick="toggleCreativeForm()">Ləğv et</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="creativeGrid" class="creative-grid"></div>
+  </section>
+
+  <!-- 5. PLAYGROUND -->
+  <section id="tab-playground" class="section">
+    <div class="card">
+      <div class="row" style="justify-content: space-between; margin-bottom:12px;">
+        <h2 style="margin:0;">Sərbəst Playground</h2>
+        <div class="row">
+          <select id="pgLang" style="width:165px;" onchange="onPgLangChange()">
+            <option value="python">Python 3</option>
+            <option value="cpp">C++</option>
+            <option value="c">C</option>
+            <option value="java">Java</option>
+            <option value="javascript">JavaScript</option>
+          </select>
+          <button id="pgRunBtn" class="btn btn-primary" onclick="runPlayground()">▶ Kodu İşlət</button>
+        </div>
+      </div>
+
+      <textarea id="pgEditorTextarea" class="code-fallback"></textarea>
+
+      <div class="grid-2" style="margin-top:12px;">
+        <div>
+          <label class="muted" style="font-size:0.82rem;">Giriş (Stdin):</label>
+          <textarea id="pgStdin" rows="5" placeholder="Standart giriş..."></textarea>
+        </div>
+        <div>
+          <label class="muted" style="font-size:0.82rem;">Çıxış (Stdout / Stderr):</label>
+          <div id="pgOutput" class="console-out" style="margin-top:0; min-height:112px;">Nəticə burada görünəcək...</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. ADMİN & AYARLAR -->
+  <section id="tab-settings" class="section">
+    <div class="card">
+      <h3>Admin Girişi (2-li Kod Təsdiqi / 2FA)</h3>
+      <p class="muted" style="font-size:0.88rem;">
+        Admin rejimi iki mərhələli yoxlama (Parol + 6 rəqəmli 2FA kodu) ilə qorunur.
+      </p>
+
+      <!-- Addım 1: Parol -->
+      <div id="adminStep1" class="row">
+        <input id="adminPassInput" type="password" placeholder="Admin parolu" style="max-width:280px;" onkeydown="if(event.key==='Enter') adminLoginStep1()" />
+        <button id="adminLoginBtn" class="btn btn-primary" onclick="adminLoginStep1()">1. Parolu Yoxla</button>
+      </div>
+
+      <!-- Addım 2: 6 rəqəmli kod -->
+      <div id="adminStep2" style="display:none; margin-top:12px;">
+        <div id="admin2faHint" class="notice-box"></div>
+        <div class="row" style="margin-top:10px;">
+          <input id="admin2faCodeInput" type="text" inputmode="numeric" maxlength="6" placeholder="6 rəqəmli 2FA kodu" style="max-width:220px; letter-spacing:3px; font-weight:700;" onkeydown="if(event.key==='Enter') adminLoginStep2()" />
+          <button id="adminVerify2faBtn" class="btn btn-success" onclick="adminLoginStep2()">2. Kodu Təsdiqlə</button>
+          <button class="btn" onclick="cancel2faStep()">Geri</button>
+        </div>
+      </div>
+
+      <!-- Aktiv Admin Paneli -->
+      <div id="adminUnlockedBox" style="display:none; margin-top:12px;">
+        <div class="row" style="justify-content: space-between;">
+          <span style="color:var(--success); font-weight:700;">✔ Admin sessiyası aktivdir</span>
+          <button class="btn btn-danger btn-sm" onclick="logoutAdmin()">Sessiyanı Bağla (Kilidlə)</button>
+        </div>
+
+        <div style="border-top:1px solid var(--border); margin-top:14px; padding-top:14px;">
+          <h4 style="margin:0 0 8px;">2FA Tənzimləməsi (Authenticator / TOTP)</h4>
+          <div class="row">
+            <span id="totpStateLabel" class="muted" style="font-size:0.86rem;">Rejim yoxlanılır...</span>
+            <button class="btn btn-sm btn-primary" onclick="setupTotp(false)">Authenticator (TOTP) Aktiv Et / Yenilə</button>
+            <button class="btn btn-sm" onclick="setupTotp(true)">Birdəfəlik OTP Rejiminə Qayıt</button>
+          </div>
+          <div id="totpSetupOutput" class="notice-box" style="display:none; word-break:break-all;"></div>
+        </div>
+
+        <div style="border-top:1px solid var(--border); margin-top:14px; padding-top:14px;">
+          <h4 style="margin:0 0 8px;">Admin Parolunu Dəyiş (İstəyə bağlı)</h4>
+          <div class="row">
+            <input id="newAdminPassInput" type="password" placeholder="Yeni parol (min. 8 simvol)" style="max-width:260px;" />
+            <button class="btn btn-sm" onclick="changeAdminPassword()">Parolu Yenilə</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Sandbox API Ayarları (Piston / Judge0 / Local)</h3>
+      <div class="grid-2">
+        <div>
+          <label class="muted" style="font-size:0.82rem;">Provayder</label>
+          <select id="cfgProvider" onchange="onProviderSelectChange()">
+            <option value="piston">Piston (Onlayn API)</option>
+            <option value="judge0">Judge0 (Onlayn API)</option>
+            <option value="local">Local (Çevrimdışı / Yerli İcra)</option>
+          </select>
+        </div>
+        <div>
+          <label class="muted" style="font-size:0.82rem;">Base URL</label>
+          <input id="cfgBaseUrl" type="text" placeholder="https://api.onlinecompiler.io/api/v2/piston" />
+        </div>
+      </div>
+      <div style="margin-top:12px;">
+        <label class="muted" style="font-size:0.82rem;">API Key <span id="cfgKeyHint"></span></label>
+        <input id="cfgApiKey" type="password" placeholder="Yeni API açarı (dəyişmirsinizsə boş saxlayın)" />
+      </div>
+      <div id="localProviderHint" class="notice-box" style="display:none;">
+        <strong>Local rejimi:</strong> İnternet və ya xarici API açarı olmadan yerli mühitdə Python, C, C++ və Node.js kodlarını test etmək üçündür.
+      </div>
+      <div class="row" style="margin-top:14px;">
+        <button class="btn btn-success" onclick="saveSettings()">Ayarları Yadda Saxla</button>
+        <button class="btn" onclick="testConnection()">API / İcra Bağlantısını Yoxla</button>
+      </div>
+      <div id="testConnOut" class="console-out" style="display:none;"></div>
+    </div>
+
+    <div class="card">
+      <h3>Yeni Məsələ Yarat (Admin)</h3>
+      <div class="grid-2">
+        <div>
+          <label class="muted" style="font-size:0.82rem;">Məsələ Başlığı *</label>
+          <input id="npTitle" type="text" placeholder="Məs: Ən Böyük Element" />
+        </div>
+        <div>
+          <label class="muted" style="font-size:0.82rem;">Teqlər (vergüllə)</label>
+          <input id="npTags" type="text" value="implementation, math" />
+        </div>
+      </div>
+      <div class="grid-2" style="margin-top:10px;">
+        <div>
+          <label class="muted" style="font-size:0.82rem;">Reytinq (100 - 4000)</label>
+          <input id="npRating" type="number" value="800" />
+        </div>
+        <div class="grid-2">
+          <div>
+            <label class="muted" style="font-size:0.82rem;">Vaxt Limiti (san)</label>
+            <input id="npTime" type="number" step="0.5" value="2.0" />
+          </div>
+          <div>
+            <label class="muted" style="font-size:0.82rem;">Yaddaş (MB)</label>
+            <input id="npMem" type="number" value="256" />
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:10px;">
+        <label class="muted" style="font-size:0.82rem;">Şərt (LaTeX üçün $...$ istifadə edə bilərsiniz) *</label>
+        <textarea id="npStatement" rows="4" placeholder="Məsələnin şərtini yazın..."></textarea>
+      </div>
+      <div class="grid-2" style="margin-top:10px;">
+        <div>
+          <label class="muted" style="font-size:0.82rem;">Giriş Təsviri</label>
+          <textarea id="npInputSpec" rows="2"></textarea>
+        </div>
+        <div>
+          <label class="muted" style="font-size:0.82rem;">Çıxış Təsviri</label>
+          <textarea id="npOutputSpec" rows="2"></textarea>
+        </div>
+      </div>
+      <div style="margin-top:10px;">
+        <label class="muted" style="font-size:0.82rem;">Başlanğıc Kod (Python)</label>
+        <textarea id="npStarter" rows="3" style="font-family:monospace;"></textarea>
+      </div>
+
+      <div style="margin-top:14px;">
+        <div class="row" style="justify-content: space-between;">
+          <h4 style="margin:0;">Test Case-lər *</h4>
+          <button class="btn btn-sm" onclick="addTestRow()">+ Test Əlavə Et</button>
+        </div>
+        <div id="npTestsContainer" style="margin-top:8px;"></div>
+      </div>
+
+      <button class="btn btn-primary" style="margin-top:14px;" onclick="createProblem()">Məsələni Yarat</button>
+    </div>
+  </section>
+</main>
+
+<!-- Göndəriş Detalları Modalı -->
+<div id="detailModal" class="modal-backdrop" onclick="if(event.target === this) closeModal()">
+  <div class="modal-card">
+    <div class="modal-head">
+      <strong id="modalTitle">Göndəriş Detalları</strong>
+      <button class="btn btn-sm" onclick="closeModal()">✕ Bağla</button>
+    </div>
+    <div class="modal-body">
+      <div id="modalMeta" class="muted" style="font-size:0.88rem;"></div>
+      <pre id="modalPre" class="modal-pre"></pre>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<!-- Scripts: CodeMirror + KaTeX -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/clike/clike.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+
+<script>
+  // --- Global State ---
+  let allProblems = [];
+  let currentProblem = null;
+  let solveEditorCM = null;
+  let pgEditorCM = null;
+  let adminToken = sessionStorage.getItem("az_admin_token") || "";
+  let pendingChallengeId = "";
+  let submissionsCache = [];
+
+  const LANG_TEMPLATES = {
+    python: "# Kodunuzu bura yazın\n",
+    cpp: "#include <iostream>\nusing namespace std;\n\nint main() {\n    ios::sync_with_stdio(false);\n    cin.tie(nullptr);\n    \n    return 0;\n}\n",
+    c: "#include <stdio.h>\n\nint main() {\n    \n    return 0;\n}\n",
+    java: "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        \n    }\n}\n",
+    javascript: "const fs = require('fs');\nconst input = fs.readFileSync(0, 'utf8').trim();\nconsole.log(input);\n"
+  };
+
+  function cmModeFor(lang) {
+    if (lang === "python") return "python";
+    if (lang === "javascript") return "javascript";
+    if (lang === "cpp") return "text/x-c++src";
+    if (lang === "c") return "text/x-csrc";
+    if (lang === "java") return "text/x-java";
+    return "python";
+  }
+
+  // --- Helpers ---
+  function escapeHtml(str) {
+    return String(str ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function formatStatement(text) {
+    let safe = escapeHtml(text);
+    safe = safe.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    safe = safe.replace(/`([^`]+)`/g, "<code>$1</code>");
+    return safe;
+  }
+
+  function renderMath(el) {
+    if (typeof renderMathInElement === "function") {
+      renderMathInElement(el, {
+        delimiters: [
+          { left: "$$", right: "$$", display: true },
+          { left: "$", right: "$", display: false }
+        ],
+        throwOnError: false
+      });
+    }
+  }
+
+  function showToast(msg, isError = false) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.style.borderColor = isError ? "var(--danger)" : "var(--primary)";
+    t.style.display = "block";
+    clearTimeout(window._toastTimer);
+    window._toastTimer = setTimeout(() => { t.style.display = "none"; }, 3500);
+  }
+
+  function getUsername() {
+    return document.getElementById("usernameInput").value.trim() || "coder_az";
+  }
+
+  function adminHeaders(extra = {}) {
+    const h = { "Content-Type": "application/json", ...extra };
+    if (adminToken) h["X-Admin-Token"] = adminToken;
+    return h;
+  }
+
+  function clearAdminSession() {
+    adminToken = "";
+    pendingChallengeId = "";
+    sessionStorage.removeItem("az_admin_token");
+    updateAdminUI();
+  }
+
+  function updateAdminUI(totpEnabled = null) {
+    const pill = document.getElementById("adminStatusPill");
+    const delBtn = document.getElementById("deleteProblemBtn");
+    const step1 = document.getElementById("adminStep1");
+    const step2 = document.getElementById("adminStep2");
+    const unlockedBox = document.getElementById("adminUnlockedBox");
+
+    if (adminToken) {
+      pill.textContent = "Admin: Açıq (2FA)";
+      pill.classList.add("unlocked");
+      if (delBtn) delBtn.style.display = "inline-flex";
+      if (step1) step1.style.display = "none";
+      if (step2) step2.style.display = "none";
+      if (unlockedBox) unlockedBox.style.display = "block";
+    } else {
+      pill.textContent = "Admin: Kilidli";
+      pill.classList.remove("unlocked");
+      if (delBtn) delBtn.style.display = "none";
+      if (unlockedBox) unlockedBox.style.display = "none";
+      if (step1) step1.style.display = pendingChallengeId ? "none" : "flex";
+      if (step2) step2.style.display = pendingChallengeId ? "block" : "none";
+    }
+
+    if (totpEnabled !== null) {
+      const lbl = document.getElementById("totpStateLabel");
+      if (lbl) {
+        lbl.textContent = totpEnabled
+          ? "Aktiv rejim: Authenticator (TOTP)"
+          : "Aktiv rejim: Birdəfəlik 6 rəqəmli OTP (Konsol / Telegram)";
+      }
+    }
+  }
+
+  async function syncAdminStatus() {
+    try {
+      const res = await fetch("/api/admin/status", {
+        headers: adminToken ? { "X-Admin-Token": adminToken } : {}
+      });
+      const data = await res.json();
+      if (!data.authenticated && adminToken) {
+        adminToken = "";
+        sessionStorage.removeItem("az_admin_token");
+      }
+      updateAdminUI(Boolean(data.totp_enabled));
+    } catch {
+      updateAdminUI();
+    }
+  }
+
+  // --- Modal ---
+  function openSubmissionModal(idx) {
+    const r = submissionsCache[idx];
+    if (!r) return;
+    document.getElementById("modalTitle").textContent = `Göndəriş #${r.id} — ${r.problem_title}`;
+    document.getElementById("modalMeta").textContent =
+      `İstifadəçi: ${r.username} | Dil: ${r.language} | Nəticə: ${r.verdict} (${r.passed_tests}/${r.total_tests}) | Vaxt: ${r.exec_time}`;
+    document.getElementById("modalPre").textContent = r.details || "Əlavə xəta və ya test məlumatı yoxdur.";
+    document.getElementById("detailModal").classList.add("open");
+  }
+
+  function closeModal() {
+    document.getElementById("detailModal").classList.remove("open");
+  }
+
+  // --- Editor Wrappers ---
+  function initEditors() {
+    if (typeof CodeMirror !== "undefined") {
+      solveEditorCM = CodeMirror.fromTextArea(document.getElementById("solveEditorTextarea"), {
+        mode: "python",
+        theme: "material-darker",
+        lineNumbers: true,
+        indentUnit: 4,
+        tabSize: 4
+      });
+      pgEditorCM = CodeMirror.fromTextArea(document.getElementById("pgEditorTextarea"), {
+        mode: "python",
+        theme: "material-darker",
+        lineNumbers: true,
+        indentUnit: 4,
+        tabSize: 4
+      });
+      setPgCode("print('Salam AzForces!')\n");
+    } else {
+      document.getElementById("pgEditorTextarea").value = "print('Salam AzForces!')\n";
+    }
+  }
+
+  function getSolveCode() {
+    return solveEditorCM ? solveEditorCM.getValue() : document.getElementById("solveEditorTextarea").value;
+  }
+  function setSolveCode(val) {
+    if (solveEditorCM) {
+      solveEditorCM.setValue(val);
+      setTimeout(() => solveEditorCM.refresh(), 50);
+    } else {
+      document.getElementById("solveEditorTextarea").value = val;
+    }
+  }
+
+  function getPgCode() {
+    return pgEditorCM ? pgEditorCM.getValue() : document.getElementById("pgEditorTextarea").value;
+  }
+  function setPgCode(val) {
+    if (pgEditorCM) {
+      pgEditorCM.setValue(val);
+      setTimeout(() => pgEditorCM.refresh(), 50);
+    } else {
+      document.getElementById("pgEditorTextarea").value = val;
+    }
+  }
+
+  // --- Tabs ---
+  function switchTab(tab) {
+    document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+    document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+    document.getElementById("tab-" + tab).classList.add("active");
+    document.querySelector(`.nav-btn[data-tab="${tab}"]`).classList.add("active");
+
+    if (tab === "problems") loadProblems();
+    if (tab === "submissions") loadSubmissions();
+    if (tab === "leaderboard") loadLeaderboard();
+    if (tab === "creative") loadCreative();
+    if (tab === "playground" && pgEditorCM) setTimeout(() => pgEditorCM.refresh(), 50);
+    if (tab === "settings") {
+      syncAdminStatus();
+      loadSettings();
+    }
+  }
+
+  // --- Problems ---
+  async function loadProblems() {
+    try {
+      const uname = encodeURIComponent(getUsername());
+      const res = await fetch(`/api/problems?username=${uname}`);
+      allProblems = await res.json();
+      renderProblemsTable();
+    } catch {
+      showToast("Məsələlər yüklənmədi", true);
+    }
+  }
+
+  function ratingClass(r) {
+    if (r <= 0) return "rating-zero";
+    if (r < 1000) return "rating-easy";
+    if (r < 1400) return "rating-med";
+    return "rating-hard";
+  }
+
+  function renderProblemsTable() {
+    const q = (document.getElementById("problemSearch").value || "").toLowerCase();
+    const tbody = document.getElementById("problemsTableBody");
+    const filtered = allProblems.filter(p =>
+      p.title.toLowerCase().includes(q) || (p.tags || "").toLowerCase().includes(q)
+    );
+
+    if (!filtered.length) {
+      tbody.innerHTML = `<tr><td colspan="6" class="muted">Məsələ tapılmadı.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = filtered.map(p => `
+      <tr class="clickable" onclick="openProblem(${p.id})">
+        <td>${p.id}</td>
+        <td><strong>${escapeHtml(p.title)}</strong></td>
+        <td class="muted">${escapeHtml(p.tags)}</td>
+        <td><span class="badge ${ratingClass(p.rating)}">${p.rating}</span></td>
+        <td class="muted">${p.time_limit}s / ${p.memory_limit}MB</td>
+        <td>${p.solved ? '<span style="color:var(--success);font-weight:700;">✔ Həll edilib</span>' : '<span class="muted">—</span>'}</td>
+      </tr>
+    `).join("");
+  }
+
+  async function openProblem(pid) {
+    try {
+      const res = await fetch(`/api/problems/${pid}`);
+      if (!res.ok) return showToast("Məsələ tapılmadı", true);
+      const p = await res.json();
+      currentProblem = p;
+
+      document.getElementById("problemListView").style.display = "none";
+      document.getElementById("problemSolveView").style.display = "block";
+      document.getElementById("solveResultBox").style.display = "none";
+
+      document.getElementById("probTitle").textContent = `${p.id}. ${p.title}`;
+      const badge = document.getElementById("probRatingBadge");
+      badge.textContent = p.rating;
+      badge.className = `badge ${ratingClass(p.rating)}`;
+
+      document.getElementById("probMeta").textContent =
+        `Vaxt: ${p.time_limit}s | Yaddaş: ${p.memory_limit}MB | Teqlər: ${p.tags}`;
+
+      const stEl = document.getElementById("probStatement");
+      stEl.innerHTML = formatStatement(p.statement);
+      renderMath(stEl);
+
+      const inEl = document.getElementById("probInputSpec");
+      inEl.innerHTML = formatStatement(p.input_spec || "—");
+      renderMath(inEl);
+
+      const outEl = document.getElementById("probOutputSpec");
+      outEl.innerHTML = formatStatement(p.output_spec || "—");
+      renderMath(outEl);
+
+      const samplesDiv = document.getElementById("probSamples");
+      samplesDiv.innerHTML = (p.samples || []).map((s, idx) => `
+        <div class="sample-box">
+          <div class="sample-head">
+            <span>Nümunə #${idx + 1}</span>
+            <button class="btn btn-sm" onclick="useSampleInput(${idx})">Testə Yüklə</button>
+          </div>
+          <div class="sample-grid">
+            <pre>${escapeHtml(s.input_data)}</pre>
+            <pre>${escapeHtml(s.expected_output)}</pre>
+          </div>
+        </div>
+      `).join("");
+
+      document.getElementById("solveLang").value = "python";
+      if (solveEditorCM) solveEditorCM.setOption("mode", "python");
+      setSolveCode(p.starter_code || LANG_TEMPLATES.python);
+      document.getElementById("solveStdin").value = (p.samples && p.samples[0]) ? p.samples[0].input_data : "";
+      updateAdminUI();
+    } catch {
+      showToast("Məsələ açılarkən xəta baş verdi", true);
+    }
+  }
+
+  function useSampleInput(idx) {
+    if (currentProblem && currentProblem.samples && currentProblem.samples[idx]) {
+      document.getElementById("solveStdin").value = currentProblem.samples[idx].input_data;
+      showToast("Nümunə giriş Stdin sahəsinə yükləndi");
+    }
+  }
+
+  function backToProblemList() {
+    document.getElementById("problemSolveView").style.display = "none";
+    document.getElementById("problemListView").style.display = "block";
+    loadProblems();
+  }
+
+  function onSolveLangChange() {
+    const lang = document.getElementById("solveLang").value;
+    if (solveEditorCM) solveEditorCM.setOption("mode", cmModeFor(lang));
+  }
+
+  function resetStarterCode() {
+    const lang = document.getElementById("solveLang").value;
+    if (lang === "python" && currentProblem && currentProblem.starter_code) {
+      setSolveCode(currentProblem.starter_code);
+    } else {
+      setSolveCode(LANG_TEMPLATES[lang] || "");
+    }
+  }
+
+  async function runSolveCode() {
+    const btn = document.getElementById("runSolveBtn");
+    const box = document.getElementById("solveResultBox");
+    btn.disabled = true;
+    box.style.display = "block";
+    box.textContent = "Kod işə salınır...";
+
+    try {
+      const res = await fetch("/api/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          language: document.getElementById("solveLang").value,
+          code: getSolveCode(),
+          stdin: document.getElementById("solveStdin").value,
+          time_limit: currentProblem ? currentProblem.time_limit : 3.0
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || data.ok === false) {
+        box.innerHTML = `<span style="color:var(--danger);">${escapeHtml(data.error || data.stderr || "Xəta")}</span>`;
+      } else {
+        const color = data.status === "OK" ? "var(--success)" : "var(--danger)";
+        box.innerHTML = `Status: <strong style="color:${color}">${escapeHtml(data.status)}</strong> (${escapeHtml(data.time || "-")})\n\n` +
+          (data.stdout ? `--- Çıxış ---\n${escapeHtml(data.stdout)}\n` : "") +
+          (data.stderr ? `--- Xəta ---\n${escapeHtml(data.stderr)}` : "");
+      }
+    } catch {
+      box.textContent = "Şəbəkə xətası baş verdi.";
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function submitSolution() {
+    if (!currentProblem) return;
+    const btn = document.getElementById("submitSolveBtn");
+    const box = document.getElementById("solveResultBox");
+    btn.disabled = true;
+    box.style.display = "block";
+    box.textContent = "Testlər üzərində yoxlanılır...";
+
+    try {
+      const res = await fetch("/api/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          problem_id: currentProblem.id,
+          language: document.getElementById("solveLang").value,
+          code: getSolveCode(),
+          username: getUsername()
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        box.innerHTML = `<span style="color:var(--danger);">${escapeHtml(data.error || "Göndəriş xətası")}</span>`;
+      } else {
+        const ok = data.verdict === "Accepted";
+        box.innerHTML = `Nəticə: <strong style="color:${ok ? "var(--success)" : "var(--danger)"}">${escapeHtml(data.verdict)}</strong>\n` +
+          `Keçən testlər: ${data.passed} / ${data.total} | Vaxt: ${escapeHtml(data.time || "-")}\n` +
+          (data.details ? `\n${escapeHtml(data.details)}` : "");
+        showToast(ok ? "Təbriklər! Accepted!" : data.verdict, !ok);
+      }
+    } catch {
+      box.textContent = "Şəbəkə xətası baş verdi.";
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function deleteCurrentProblem() {
+    if (!currentProblem || !confirm("Bu məsələni silmək istədiyinizə əminsiniz?")) return;
+    const res = await fetch(`/api/problems/${currentProblem.id}`, {
+      method: "DELETE",
+      headers: adminHeaders()
+    });
+    const data = await res.json();
+    if (res.status === 401) clearAdminSession();
+    if (!res.ok) return showToast(data.error || "Xəta", true);
+    showToast("Məsələ silindi");
+    backToProblemList();
+  }
+
+  // --- Submissions ---
+  function verdictClass(v) {
+    if (v === "Accepted") return "verdict-Accepted";
+    if (v.includes("Wrong")) return "verdict-Wrong";
+    if (v.includes("Time")) return "verdict-Time";
+    return "verdict-Other";
+  }
+
+  async function loadSubmissions() {
+    const mode = document.getElementById("submissionFilterSelect").value;
+    const url = mode === "mine"
+      ? `/api/submissions?username=${encodeURIComponent(getUsername())}`
+      : "/api/submissions";
+
+    const res = await fetch(url);
+    const rows = await res.json();
+    submissionsCache = rows;
+    const tbody = document.getElementById("submissionsTableBody");
+    if (!rows.length) {
+      tbody.innerHTML = `<tr><td colspan="8" class="muted">Hələ göndəriş yoxdur.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = rows.map((r, idx) => `
+      <tr class="clickable" onclick="openSubmissionModal(${idx})">
+        <td>#${r.id}</td>
+        <td><strong>${escapeHtml(r.username)}</strong></td>
+        <td>${escapeHtml(r.problem_title)}</td>
+        <td>${escapeHtml(r.language)}</td>
+        <td class="${verdictClass(r.verdict)}">${escapeHtml(r.verdict)}</td>
+        <td>${r.passed_tests}/${r.total_tests}</td>
+        <td class="muted">${escapeHtml(r.exec_time)}</td>
+        <td class="muted">${escapeHtml(r.created_at)}</td>
+      </tr>
+    `).join("");
+  }
+
+  // --- Leaderboard ---
+  async function loadLeaderboard() {
+    const res = await fetch("/api/leaderboard");
+    const rows = await res.json();
+    const tbody = document.getElementById("leaderboardBody");
+    if (!rows.length) {
+      tbody.innerHTML = `<tr><td colspan="5" class="muted">Hələ məlumat yoxdur.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = rows.map((r, i) => `
+      <tr>
+        <td><strong>#${i + 1}</strong></td>
+        <td><strong>${escapeHtml(r.username)}</strong></td>
+        <td>${r.solved_count}</td>
+        <td>
+          ${r.solved_count > 0
+            ? `<span class="badge rating-med">${r.score}</span>`
+            : `<span class="badge rating-zero">0</span>`}
+        </td>
+        <td class="muted">${r.total_submissions}</td>
+      </tr>
+    `).join("");
+  }
+
+  // --- Creative Codes ---
+  function toggleCreativeForm() {
+    const el = document.getElementById("creativeFormBox");
+    el.style.display = el.style.display === "none" ? "block" : "none";
+  }
+
+  async function loadCreative() {
+    const res = await fetch("/api/creative");
+    const items = await res.json();
+    window._creativeCache = items;
+    const grid = document.getElementById("creativeGrid");
+    grid.innerHTML = items.map((c, idx) => `
+      <div class="card" style="margin-bottom:0; display:flex; flex-direction:column; justify-content:space-between;">
+        <div>
+          <div class="row" style="justify-content: space-between; margin-bottom:6px;">
+            <strong>${escapeHtml(c.title)}</strong>
+            <span class="badge">${escapeHtml(c.language)}</span>
+          </div>
+          <p class="muted" style="font-size:0.85rem; margin:0 0 10px;">${escapeHtml(c.description || "")}</p>
+          <pre class="creative-code-pre">${escapeHtml(c.code)}</pre>
+        </div>
+        <div class="row" style="justify-content: space-between; margin-top:10px;">
+          <button class="btn btn-primary btn-sm" onclick="runCreativeInPlayground(${idx})">▶ Playground-da İşlət</button>
+          ${adminToken ? `<button class="btn btn-danger btn-sm" onclick="deleteCreative(${c.id})">Sil</button>` : ""}
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function runCreativeInPlayground(idx) {
+    const c = (window._creativeCache || [])[idx];
+    if (!c) return;
+    switchTab("playground");
+    document.getElementById("pgLang").value = c.language;
+    onPgLangChange();
+    setPgCode(c.code);
+    document.getElementById("pgStdin").value = c.sample_input || "";
+    runPlayground();
+  }
+
+  async function createCreative() {
+    const res = await fetch("/api/creative", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: document.getElementById("crTitle").value,
+        language: document.getElementById("crLang").value,
+        description: document.getElementById("crDesc").value,
+        code: document.getElementById("crCode").value,
+        sample_input: document.getElementById("crStdin").value
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) return showToast(data.error || "Xəta", true);
+    showToast(data.message);
+    toggleCreativeForm();
+    document.getElementById("crTitle").value = "";
+    document.getElementById("crDesc").value = "";
+    document.getElementById("crCode").value = "";
+    document.getElementById("crStdin").value = "";
+    loadCreative();
+  }
+
+  async function deleteCreative(id) {
+    const res = await fetch(`/api/creative/${id}`, {
+      method: "DELETE",
+      headers: adminHeaders()
+    });
+    const data = await res.json();
+    if (res.status === 401) clearAdminSession();
+    if (!res.ok) return showToast(data.error || "Xəta", true);
+    showToast("Silindi");
+    loadCreative();
+  }
+
+  // --- Playground ---
+  function onPgLangChange() {
+    const lang = document.getElementById("pgLang").value;
+    if (pgEditorCM) pgEditorCM.setOption("mode", cmModeFor(lang));
+  }
+
+  async function runPlayground() {
+    const btn = document.getElementById("pgRunBtn");
+    const out = document.getElementById("pgOutput");
+    btn.disabled = true;
+    out.textContent = "İşə salınır...";
+
+    try {
+      const res = await fetch("/api/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          language: document.getElementById("pgLang").value,
+          code: getPgCode(),
+          stdin: document.getElementById("pgStdin").value
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || data.ok === false) {
+        out.innerHTML = `<span style="color:var(--danger);">${escapeHtml(data.error || data.stderr || "Xəta")}</span>`;
+      } else {
+        out.textContent = `[${data.status} | ${data.time || "-"}]\n` +
+          (data.stdout || "") + (data.stderr ? `\n--- Xəta ---\n${data.stderr}` : "");
+      }
+    } catch {
+      out.textContent = "Şəbəkə xətası.";
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // --- Admin 2FA & Settings ---
+  async function adminLoginStep1() {
+    const password = document.getElementById("adminPassInput").value;
+    if (!password) return showToast("Parol daxil edin", true);
+
+    const btn = document.getElementById("adminLoginBtn");
+    btn.disabled = true;
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password })
+      });
+      const data = await res.json();
+      if (!res.ok) return showToast(data.error || "Parol səhvdir", true);
+
+      pendingChallengeId = data.challenge_id;
+      document.getElementById("adminPassInput").value = "";
+      document.getElementById("admin2faHint").textContent = data.message || "6 rəqəmli təsdiq kodunu daxil edin.";
+      document.getElementById("admin2faCodeInput").value = "";
+      updateAdminUI();
+      document.getElementById("admin2faCodeInput").focus();
+      showToast("1-ci mərhələ keçildi. 2FA kodunu daxil edin.");
+    } catch {
+      showToast("Bağlantı xətası", true);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  async function adminLoginStep2() {
+    const code = document.getElementById("admin2faCodeInput").value.trim();
+    if (!pendingChallengeId || !code) return showToast("6 rəqəmli kodu daxil edin", true);
+
+    const btn = document.getElementById("adminVerify2faBtn");
+    btn.disabled = true;
+    try {
+      const res = await fetch("/api/admin/verify-2fa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ challenge_id: pendingChallengeId, code })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (res.status === 401 && (data.error || "").includes("Yenidən")) {
+          pendingChallengeId = "";
+          updateAdminUI();
+        }
+        return showToast(data.error || "2FA kodu səhvdir", true);
+      }
+
+      adminToken = data.token;
+      pendingChallengeId = "";
+      sessionStorage.setItem("az_admin_token", adminToken);
+      document.getElementById("admin2faCodeInput").value = "";
+      await syncAdminStatus();
+      showToast(data.message || "Admin rejimi aktivdir!");
+    } catch {
+      showToast("Bağlantı xətası", true);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function cancel2faStep() {
+    pendingChallengeId = "";
+    document.getElementById("admin2faCodeInput").value = "";
+    updateAdminUI();
+  }
+
+  async function logoutAdmin() {
+    try {
+      await fetch("/api/admin/logout", {
+        method: "POST",
+        headers: adminHeaders()
+      });
+    } catch {}
+    clearAdminSession();
+    document.getElementById("totpSetupOutput").style.display = "none";
+    showToast("Admin sessiyası bağlandı");
+  }
+
+  async function setupTotp(disable = false) {
+    const res = await fetch("/api/admin/totp-setup", {
+      method: "POST",
+      headers: adminHeaders(),
+      body: JSON.stringify({ disable })
+    });
+    const data = await res.json();
+    if (res.status === 401) {
+      clearAdminSession();
+      return showToast(data.error || "Sessiya bitib", true);
+    }
+    if (!res.ok) return showToast(data.error || "Xəta", true);
+
+    const out = document.getElementById("totpSetupOutput");
+    if (data.totp_enabled) {
+      out.style.display = "block";
+      out.innerHTML = `<strong>Secret (Base32):</strong> <code>${escapeHtml(data.secret)}</code><br/>` +
+        `<strong>URI:</strong> <code>${escapeHtml(data.otpauth_uri)}</code><br/>` +
+        `<span class="muted">${escapeHtml(data.message)}</span>`;
+    } else {
+      out.style.display = "none";
+    }
+    updateAdminUI(Boolean(data.totp_enabled));
+    showToast(data.message);
+  }
+
+  async function changeAdminPassword() {
+    const new_password = document.getElementById("newAdminPassInput").value;
+    const res = await fetch("/api/admin/change-password", {
+      method: "POST",
+      headers: adminHeaders(),
+      body: JSON.stringify({ new_password })
+    });
+    const data = await res.json();
+    if (res.status === 401) clearAdminSession();
+    if (!res.ok) return showToast(data.error || "Xəta", true);
+    document.getElementById("newAdminPassInput").value = "";
+    showToast(data.message);
+  }
+
+  function onProviderSelectChange() {
+    const prov = document.getElementById("cfgProvider").value;
+    const isLocal = prov === "local";
+    document.getElementById("cfgBaseUrl").disabled = isLocal;
+    document.getElementById("cfgApiKey").disabled = isLocal;
+    document.getElementById("localProviderHint").style.display = isLocal ? "block" : "none";
+  }
+
+  async function loadSettings() {
+    const res = await fetch("/api/settings");
+    const cfg = await res.json();
+    document.getElementById("cfgProvider").value = cfg.provider || "piston";
+    document.getElementById("cfgBaseUrl").value = cfg.base_url || "";
+    document.getElementById("cfgKeyHint").textContent = cfg.has_api_key ? `(Mövcud: ${cfg.api_key_masked})` : "(Təyin edilməyib)";
+    onProviderSelectChange();
+  }
+
+  async function saveSettings() {
+    const res = await fetch("/api/settings", {
+      method: "POST",
+      headers: adminHeaders(),
+      body: JSON.stringify({
+        provider: document.getElementById("cfgProvider").value,
+        base_url: document.getElementById("cfgBaseUrl").value,
+        api_key: document.getElementById("cfgApiKey").value
+      })
+    });
+    const data = await res.json();
+    if (res.status === 401) clearAdminSession();
+    if (!res.ok) return showToast(data.error || "Xəta", true);
+    document.getElementById("cfgApiKey").value = "";
+    showToast(data.message);
+    loadSettings();
+  }
+
+  async function testConnection() {
+    const out = document.getElementById("testConnOut");
+    out.style.display = "block";
+    out.textContent = "Yoxlanılır...";
+    const res = await fetch("/api/test-connection", {
+      method: "POST",
+      headers: adminHeaders()
+    });
+    const data = await res.json();
+    if (res.status === 401) clearAdminSession();
+    if (!res.ok) {
+      out.textContent = data.error || "İcazə xətası";
+      return;
+    }
+    out.textContent = JSON.stringify(data, null, 2);
+  }
+
+  function addTestRow() {
+    const container = document.getElementById("npTestsContainer");
+    const row = document.createElement("div");
+    row.className = "card";
+    row.style.padding = "10px";
+    row.innerHTML = `
+      <div class="grid-2">
+        <textarea class="np-t-in" rows="2" placeholder="Giriş (stdin)"></textarea>
+        <textarea class="np-t-out" rows="2" placeholder="Gözlənilən çıxış"></textarea>
+      </div>
+      <div class="row" style="justify-content: space-between; margin-top:6px;">
+        <label style="font-size:0.84rem; display:flex; align-items:center; gap:6px; cursor:pointer;">
+          <input type="checkbox" class="np-t-sample" checked style="width:auto;" /> Nümunə test (görünən)
+        </label>
+        <button class="btn btn-danger btn-sm" onclick="this.closest('.card').remove()">Sil</button>
+      </div>
+    `;
+    container.appendChild(row);
+  }
+
+  async function createProblem() {
+    const tests = [];
+    document.querySelectorAll("#npTestsContainer > .card").forEach(card => {
+      tests.push({
+        input: card.querySelector(".np-t-in").value,
+        output: card.querySelector(".np-t-out").value,
+        is_sample: card.querySelector(".np-t-sample").checked
+      });
+    });
+
+    const res = await fetch("/api/problems", {
+      method: "POST",
+      headers: adminHeaders(),
+      body: JSON.stringify({
+        title: document.getElementById("npTitle").value,
+        tags: document.getElementById("npTags").value,
+        rating: document.getElementById("npRating").value,
+        time_limit: document.getElementById("npTime").value,
+        memory_limit: document.getElementById("npMem").value,
+        statement: document.getElementById("npStatement").value,
+        input_spec: document.getElementById("npInputSpec").value,
+        output_spec: document.getElementById("npOutputSpec").value,
+        starter_code: document.getElementById("npStarter").value,
+        tests
+      })
+    });
+    const data = await res.json();
+    if (res.status === 401) clearAdminSession();
+    if (!res.ok) return showToast(data.error || "Xəta", true);
+    showToast(data.message);
+    document.getElementById("npTitle").value = "";
+    document.getElementById("npStatement").value = "";
+  }
+
+  // --- Init ---
+  window.addEventListener("DOMContentLoaded", () => {
+    const savedUser = localStorage.getItem("az_username") || "coder_az";
+    const uInput = document.getElementById("usernameInput");
+    uInput.value = savedUser;
+
+    let userDebounce = null;
+    uInput.addEventListener("input", () => {
+      localStorage.setItem("az_username", uInput.value);
+      clearTimeout(userDebounce);
+      userDebounce = setTimeout(() => {
+        if (document.getElementById("tab-problems").classList.contains("active")) {
+          loadProblems();
+        }
+      }, 300);
+    });
+
+    syncAdminStatus();
+    initEditors();
+    addTestRow();
+    loadProblems();
+  });
+</script>
+</body>
+</html>
