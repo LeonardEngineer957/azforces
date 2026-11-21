@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AzForces — Alqoritmik Məsələ Platforması</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css" />
+  <style>
+    :root{--bg:#0d1117;--surface:#161b22;--surface2:#1f2630;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--primary:#3b82f6;--success:#22c55e;--danger:#ef4444;--warning:#f59e0b;--radius:10px}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.5}
+    header{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 16px;position:sticky;top:0;z-index:60;display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .hdr-left,.hdr-right,.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .burger-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:1.25rem;width:38px;height:38px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+    .brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:1.18rem;cursor:pointer}
+    .brand-badge{background:linear-gradient(135deg,#3b82f6,#06b6d4);color:#fff;padding:2px 8px;border-radius:7px;font-size:.82rem}
+    /* Drawer */
+    .drawer-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:90;display:none}
+    .drawer-backdrop.open{display:block}
+    .drawer{position:fixed;top:0;left:-290px;width:275px;height:100%;background:var(--surface);border-right:1px solid var(--border);z-index:100;transition:left .2s ease;display:flex;flex-direction:column;padding:14px;overflow-y:auto}
+    .drawer.open{left:0}
+    .drawer-item{background:transparent;border:1px solid transparent;color:var(--muted);padding:10px 12px;border-radius:8px;text-align:left;font-size:.94rem;font-weight:600;cursor:pointer;width:100%;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between}
+    .drawer-item:hover{background:var(--surface2);color:var(--text)}
+    .drawer-item.active{background:var(--primary);color:#fff}
+    main{max-width:1320px;margin:0 auto;padding:16px}
+    .section{display:none}
+    .section.active{display:block}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px}
+    h2,h3,h4{margin-top:0}
+    .muted{color:var(--muted)}
+    input,select,textarea{background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:.9rem;font-family:inherit;width:100%}
+    input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primary)}
+    .btn{background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:7px 12px;border-radius:8px;cursor:pointer;font-weight:600;font-size:.86rem;display:inline-flex;align-items:center;gap:5px}
+    .btn:hover{border-color:var(--muted)}
+    .btn:disabled{opacity:.55;cursor:not-allowed}
+    .btn-primary{background:var(--primary);border-color:var(--primary);color:#fff}
+    .btn-success{background:#16a34a;border-color:#16a34a;color:#fff}
+    .btn-danger{background:rgba(239,68,68,.15);border-color:var(--danger);color:var(--danger)}
+    .btn-sm{padding:4px 9px;font-size:.78rem}
+    /* Codeforces compact table */
+    .table-wrap{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;font-size:.88rem}
+    th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--border)}
+    th{color:var(--muted);font-size:.76rem;text-transform:uppercase;background:var(--surface2)}
+    tr.clickable:hover{background:var(--surface2);cursor:pointer}
+    tr.solved-row{background:rgba(34,197,94,.08)}
+    .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.75rem;font-weight:600;border:1px solid var(--border)}
+    .tag-pill{background:var(--bg);border:1px solid var(--border);color:var(--muted);padding:1px 6px;border-radius:5px;font-size:.74rem;margin-right:4px;display:inline-block}
+    .cf-header{text-align:center;border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:14px}
+    .cf-header h2{margin:0 0 4px}
+    .cf-limits{font-size:.84rem;color:var(--muted)}
+    .workspace{display:grid;grid-template-columns:1fr 1.12fr;gap:14px;align-items:start}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media(max-width:900px){.workspace,.grid-2{grid-template-columns:1fr}}
+    .statement-body{white-space:pre-wrap;font-size:.94rem;line-height:1.6}
+    .statement-body code{background:var(--bg);border:1px solid var(--border);padding:1px 5px;border-radius:4px;font-family:monospace}
+    .sample-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;margin-top:8px;overflow:hidden}
+    .sample-head{background:var(--surface2);padding:5px 10px;font-size:.78rem;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+    .sample-grid{display:grid;grid-template-columns:1fr 1fr}
+    .sample-grid pre{margin:0;padding:8px 10px;font-family:ui-monospace,monospace;font-size:.83rem;white-space:pre-wrap;word-break:break-word}
+    .sample-grid pre:first-child{border-right:1px solid var(--border)}
+    .CodeMirror{height:330px;border:1px solid var(--border);border-radius:8px;font-size:13.5px}
+    textarea.code-fallback{height:330px;font-family:monospace;font-size:13.5px}
+    .console-out{background:#090c10;border:1px solid var(--border);border-radius:8px;padding:10px;font-family:monospace;font-size:.84rem;white-space:pre-wrap;word-break:break-word;max-height:220px;overflow-y:auto;margin-top:10px}
+    /* Chat & Community */
+    .chat-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;height:300px;overflow-y:auto;padding:10px;margin-bottom:8px}
+    .chat-msg{margin-bottom:8px;font-size:.88rem}
+    .poll-opt{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin-top:6px;cursor:pointer;position:relative;overflow:hidden}
+    .poll-opt.voted{border-color:var(--primary)}
+    .poll-bar{position:absolute;left:0;top:0;bottom:0;background:rgba(59,130,246,.18);z-index:0}
+    .poll-txt{position:relative;z-index:1;display:flex;justify-content:space-between;font-size:.88rem}
+    .react-btn{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:3px 9px;border-radius:999px;cursor:pointer;font-size:.82rem}
+    .react-btn.mine{border-color:var(--primary);background:rgba(59,130,246,.15)}
+    .comment-item{border-left:2px solid var(--border);padding-left:10px;margin-top:8px;font-size:.88rem}
+    .comment-reply{margin-left:20px;border-left-color:var(--primary)}
+    .creative-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:12px}
+    /* Modal & Toast */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;z-index:250;padding:14px}
+    .modal-backdrop.open{display:flex}
+    .modal-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);max-width:560px;width:100%;max-height:86vh;display:flex;flex-direction:column}
+    .modal-head{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+    .modal-body{padding:14px 16px;overflow-y:auto}
+    .toast{position:fixed;bottom:18px;right:18px;background:var(--surface2);border:1px solid var(--primary);color:var(--text);padding:10px 14px;border-radius:8px;z-index:400;display:none;max-width:340px}
+    .notice-box{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.35);border-radius:8px;padding:9px 12px;font-size:.86rem;margin-top:8px}
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="hdr-left">
+    <button class="burger-btn" onclick="toggleDrawer()" aria-label="Menyu">☰</button>
+    <div class="brand" onclick="switchTab('problems')">
+      <span class="brand-badge">AZ</span><span>AzForces</span>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <span id="hdrUserBadge" class="badge" style="display:none;"></span>
+    <span id="hdrAdminPill" class="badge" style="display:none;border-color:var(--success);color:var(--success);">Admin</span>
+    <button id="hdrAuthBtn" class="btn btn-primary btn-sm" onclick="openAuthModal()">Giriş / Qeydiyyat</button>
+    <button id="hdrLogoutBtn" class="btn btn-sm" style="display:none;" onclick="logoutAll()">Çıxış</button>
+  </div>
+</header>
+
+<div id="drawerBackdrop" class="drawer-backdrop" onclick="toggleDrawer(false)"></div>
+<aside id="sideDrawer" class="drawer">
+  <div class="row" style="justify-content:space-between;margin-bottom:12px;">
+    <strong>Naviqasiya</strong>
+    <button class="btn btn-sm" onclick="toggleDrawer(false)">✕</button>
+  </div>
+  <button class="drawer-item active" data-tab="problems" onclick="switchTab('problems')">Məsələlər (Cədvəl)</button>
+  <button class="drawer-item" data-tab="gym" onclick="switchTab('gym')">Gym (Keçmiş Yarışlar)</button>
+  <button class="drawer-item" data-tab="contests" onclick="switchTab('contests')">Yarışlar</button>
+  <button class="drawer-item" data-tab="rooms" onclick="switchTab('rooms')">Gizli Otaq & Söhbət (16-lıq)</button>
+  <button class="drawer-item" data-tab="community" onclick="switchTab('community')">Topluluq & Anketlər</button>
+  <button class="drawer-item" data-tab="propose" onclick="switchTab('propose')">Sual Təklif Et (+XP)</button>
+  <button class="drawer-item" data-tab="submissions" onclick="switchTab('submissions')">Göndərişlər</button>
+  <button class="drawer-item" data-tab="leaderboard" onclick="switchTab('leaderboard')">Lider Lövhəsi (XP)</button>
+  <button class="drawer-item" data-tab="creative" onclick="switchTab('creative')">Yaradıcı Kodlar</button>
+  <button class="drawer-item" data-tab="playground" onclick="switchTab('playground')">Playground</button>
+  <button id="navAdminBtn" class="drawer-item" data-tab="admin" style="display:none;color:var(--success);" onclick="switchTab('admin')">⚙ Admin Paneli</button>
+</aside>
+
+<main>
+  <!-- 1. MƏSƏLƏLƏR + HƏLL SAHƏSİ -->
+  <section id="tab-problems" class="section active">
+    <div id="problemListView" class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:10px;">
+        <h2 style="margin:0;">Məsələlər (Problemset)</h2>
+        <div class="row">
+          <label style="font-size:.82rem;display:flex;align-items:center;gap:5px;cursor:pointer;">
+            <input type="checkbox" id="hideTagsToggle" style="width:auto;" onchange="renderProblemsTable()" /> Teqləri gizlət
+          </label>
+          <input id="problemSearch" type="text" placeholder="Axtar..." style="width:180px;" oninput="renderProblemsTable()" />
+          <button class="btn btn-sm" onclick="loadProblems('archive')">Yenilə</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Məsələ</th><th>Teqlər</th><th>Reytinq</th><th>Həll</th><th>Paylaş</th></tr></thead>
+          <tbody id="problemsTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="problemSolveView" style="display:none;">
+      <div class="row" style="justify-content:space-between;margin-bottom:10px;">
+        <button class="btn btn-sm" onclick="backToProblemList()">← Siyahıya qayıt</button>
+        <div class="row">
+          <button class="btn btn-sm" onclick="shareProblem(currentProblem.id, currentProblem.title)">🔗 Dostuna At</button>
+          <button id="shareToRoomBtn" class="btn btn-sm" style="display:none;" onclick="shareProblemToRoom()">💬 Otaq Chat-ına At</button>
+          <button id="deleteProblemBtn" class="btn btn-danger btn-sm" style="display:none;" onclick="deleteCurrentProblem()">Sil (Admin)</button>
+        </div>
+      </div>
+      <div class="workspace">
+        <div class="card">
+          <div class="cf-header">
+            <h2 id="probTitle"></h2>
+            <div id="probLimits" class="cf-limits"></div>
+            <div id="probAuthorMeta" class="muted" style="font-size:.8rem;margin-top:4px;"></div>
+          </div>
+          <div id="probStatement" class="statement-body"></div>
+          <h4 style="margin:14px 0 4px;">Input</h4>
+          <div id="probInputSpec" class="statement-body muted"></div>
+          <h4 style="margin:12px 0 4px;">Output</h4>
+          <div id="probOutputSpec" class="statement-body muted"></div>
+          <h4 style="margin:12px 0 4px;">Examples</h4>
+          <div id="probSamples"></div>
+          <div id="probNoteWrap" style="display:none;margin-top:12px;">
+            <h4 style="margin:0 0 4px;">Note</h4>
+            <div id="probNote" class="statement-body muted"></div>
+          </div>
+          <details id="probEditorialWrap" style="display:none;margin-top:12px;">
+            <summary style="cursor:pointer;font-weight:600;color:var(--primary);">Həll İzahı (Editorial)</summary>
+            <div id="probEditorial" class="statement-body" style="margin-top:8px;"></div>
+          </details>
+        </div>
+        <div class="card">
+          <div class="row" style="justify-content:space-between;margin-bottom:8px;">
+            <div class="row">
+              <select id="solveLang" style="width:150px;" onchange="onSolveLangChange()">
+                <option value="python">Python 3</option><option value="cpp">C++ (GCC)</option>
+                <option value="c">C</option><option value="java">Java</option><option value="javascript">JavaScript</option>
+              </select>
+              <button class="btn btn-sm" onclick="resetStarterCode()">Şablon</button>
+            </div>
+            <div class="row">
+              <button id="runSolveBtn" class="btn btn-sm" onclick="runSolveCode()">▶ Test Et</button>
+              <button id="submitSolveBtn" class="btn btn-success btn-sm" onclick="submitSolution()">✔ Göndər</button>
+            </div>
+          </div>
+          <textarea id="solveEditorTextarea" class="code-fallback"></textarea>
+          <textarea id="solveStdin" rows="3" placeholder="Xüsusi giriş (Stdin)..." style="margin-top:8px;"></textarea>
+          <div id="solveResultBox" class="console-out" style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. GYM -->
+  <section id="tab-gym" class="section">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:10px;">
+        <div><h2 style="margin:0;">Gym (Keçmiş Yarış Zalı)</h2><span class="muted" style="font-size:.84rem;">Bitmiş yarışların sualları avtomatik buraya düşür.</span></div>
+        <button class="btn btn-sm" onclick="loadGym()">Yenilə</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Məsələ</th><th>Teqlər</th><th>Reytinq</th><th>Həll</th><th>Paylaş</th></tr></thead>
+          <tbody id="gymTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. YARIŞLAR -->
+  <section id="tab-contests" class="section">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:10px;">
+        <h2 style="margin:0;">Rəsmi Yarışlar</h2>
+        <button class="btn btn-sm" onclick="loadContests()">Yenilə</button>
+      </div>
+      <div id="contestsList"></div>
+    </div>
+  </section>
+
+  <!-- 4. GİZLİ OTAQ & SÖHBƏT -->
+  <section id="tab-rooms" class="section">
+    <div id="roomLobbyView" class="grid-2">
+      <div class="card">
+        <h3>16 Rəqəmli Kodla Qoşul</h3>
+        <input id="joinRoomCode" type="text" placeholder="16 rəqəmli otaq kodu (məs: 1234567890123456)" />
+        <button class="btn btn-primary" style="margin-top:10px;" onclick="joinRoom()">Otağa Daxil Ol</button>
+      </div>
+      <div class="card">
+        <h3>Yeni Gizli Otaq Yarat (Maks. 20 nəfər)</h3>
+        <input id="crRoomTitle" type="text" placeholder="Otaq adı (məs: Axşam Yarışı)" />
+        <div class="grid-2" style="margin-top:8px;">
+          <input id="crRoomDur" type="number" value="60" placeholder="Müddət (dəqiqə)" />
+          <input id="crRoomVoice" type="text" placeholder="Discord/Meet linki (istəyə bağlı)" />
+        </div>
+        <div style="margin-top:8px;">
+          <label class="muted" style="font-size:.82rem;">Otaq məsələlərini seç:</label>
+          <div id="crRoomProblemsList" style="max-height:130px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px;margin-top:4px;"></div>
+        </div>
+        <button class="btn btn-success" style="margin-top:10px;" onclick="createRoom()">Otaq Yarat (16-lıq kod al)</button>
+      </div>
+    </div>
+
+    <div id="roomActiveView" style="display:none;">
+      <div class="card">
+        <div class="row" style="justify-content:space-between;">
+          <div>
+            <h3 id="rmTitle" style="margin:0;"></h3>
+            <span class="muted" style="font-size:.84rem;">Kod: <strong id="rmCodeText"></strong> | Qalan vaxt: <strong id="rmTimerText"></strong> | Üzvlər: <strong id="rmMemCount"></strong>/20</span>
+          </div>
+          <div class="row">
+            <a id="rmVoiceBtn" href="#" target="_blank" rel="noopener" class="btn btn-sm" style="display:none;">🎧 Səsli Otaq</a>
+            <button class="btn btn-sm" onclick="copyRoomCode()">📋 Kodu Kopyala</button>
+            <button class="btn btn-danger btn-sm" onclick="leaveRoomView()">Otaqdan Çıx</button>
+          </div>
+        </div>
+      </div>
+      <div class="workspace">
+        <div>
+          <div class="card">
+            <h4>Otaq Məsələləri</h4>
+            <div id="rmProblemsList"></div>
+          </div>
+          <div class="card">
+            <h4>Canlı Yarış Lövhəsi</h4>
+            <table><thead><tr><th>#</th><th>İstifadəçi</th><th>Həll sayı</th></tr></thead><tbody id="rmStandingsBody"></tbody></table>
+          </div>
+        </div>
+        <div class="card">
+          <h4>Otaq Söhbəti (Chat)</h4>
+          <div id="rmChatBox" class="chat-box"></div>
+          <div class="row">
+            <input id="rmChatInput" type="text" placeholder="Mesaj yaz..." style="flex:1;" onkeydown="if(event.key==='Enter') sendRoomChat()" />
+            <button class="btn btn-primary btn-sm" onclick="sendRoomChat()">Göndər</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. TOPLULUQ -->
+  <section id="tab-community" class="section">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;">
+        <h2 style="margin:0;">Topluluq & Anketlər</h2>
+        <button class="btn btn-primary btn-sm" onclick="togglePostForm()">+ Paylaşım / Anket At</button>
+      </div>
+      <div id="postFormBox" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:12px;">
+        <input id="postTitle" type="text" placeholder="Başlıq *" />
+        <textarea id="postBody" rows="3" placeholder="Mətn *" style="margin-top:8px;"></textarea>
+        <input id="postPollOpts" type="text" placeholder="Anket variantları (vergüllə ayırın, boş qalsa adi paylaşım olar)" style="margin-top:8px;" />
+        <button class="btn btn-success btn-sm" style="margin-top:8px;" onclick="createPost()">Paylaş</button>
+      </div>
+    </div>
+    <div id="postsList"></div>
+  </section>
+
+  <!-- 6. SUAL TƏKLİF ET (+XP) -->
+  <section id="tab-propose" class="section">
+    <div class="card">
+      <h2>Sual Təklif Et & Əsas XP Qazan</h2>
+      <p class="muted" style="font-size:.88rem;">Göndərdiyiniz sual Admin tərəfindən yoxlanılıb təsdiqləndikdə səviyyəsinə görə yüksək XP qazanacaqsınız (gündə maks. 2 təklif).</p>
+      <div class="grid-2">
+        <input id="prTitle" type="text" placeholder="Məsələ başlığı *" />
+        <div class="grid-2">
+          <input id="prRating" type="number" value="900" placeholder="Təxmini reytinq" />
+          <input id="prTags" type="text" value="math, implementation" placeholder="Teqlər" />
+        </div>
+      </div>
+      <textarea id="prStatement" rows="4" placeholder="Məsələnin şərti *" style="margin-top:8px;"></textarea>
+      <div class="grid-2" style="margin-top:8px;">
+        <textarea id="prInputSpec" rows="2" placeholder="Giriş təsviri"></textarea>
+        <textarea id="prOutputSpec" rows="2" placeholder="Çıxış təsviri"></textarea>
+      </div>
+      <textarea id="prEditorial" rows="2" placeholder="Qısa həll izahı (Editorial)" style="margin-top:8px;"></textarea>
+      <div class="row" style="margin-top:8px;justify-content:space-between;">
+        <strong>Öz işləyən həll kodunuz *</strong>
+        <select id="prLang" style="width:150px;"><option value="python">Python</option><option value="cpp">C++</option><option value="javascript">JS</option></select>
+      </div>
+      <textarea id="prCode" rows="4" style="font-family:monospace;margin-top:4px;" placeholder="Müəllif həll kodu..."></textarea>
+      <div class="row" style="justify-content:space-between;margin-top:10px;">
+        <strong>Testlər *</strong>
+        <button class="btn btn-sm" onclick="addTestRow('prTestsContainer')">+ Test</button>
+      </div>
+      <div id="prTestsContainer" style="margin-top:6px;"></div>
+      <button class="btn btn-success" style="margin-top:10px;" onclick="submitProposal()">Yoxlamaya Göndər</button>
+    </div>
+    <div class="card">
+      <h3>Mənim Təkliflərim</h3>
+      <div id="myProposalsList" class="muted">Yüklənir...</div>
+    </div>
+  </section>
+
+  <!-- 7. GÖNDƏRİŞLƏR -->
+  <section id="tab-submissions" class="section">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:10px;">
+        <h2 style="margin:0;">Son Göndərişlər</h2>
+        <div class="row">
+          <select id="submissionFilterSelect" style="width:160px;" onchange="loadSubmissions()">
+            <option value="all">Hamısı</option><option value="mine">Yalnız mənimkilər</option>
+          </select>
+          <button class="btn btn-sm" onclick="loadSubmissions()">Yenilə</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>İstifadəçi</th><th>Məsələ</th><th>Dil</th><th>Nəticə</th><th>Test</th><th>Vaxt</th></tr></thead>
+          <tbody id="submissionsTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8. LİDER LÖVHƏSİ -->
+  <section id="tab-leaderboard" class="section">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:10px;">
+        <h2 style="margin:0;">Lider Lövhəsi (XP & Rütbə)</h2>
+        <button class="btn btn-sm" onclick="loadLeaderboard()">Yenilə</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>İstifadəçi</th><th>Rütbə</th><th>XP</th><th>Həll</th><th>Reytinq</th></tr></thead>
+          <tbody id="leaderboardBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. YARADICI KODLAR -->
+  <section id="tab-creative" class="section">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;">
+        <h2 style="margin:0;">Yaradıcı Kod Qalereyası</h2>
+        <button class="btn btn-primary btn-sm" onclick="document.getElementById('creativeFormBox').style.display='block'">+ Paylaş</button>
+      </div>
+      <div id="creativeFormBox" style="display:none;margin-top:10px;">
+        <div class="grid-2"><input id="crTitle" placeholder="Başlıq *" /><select id="crLang"><option value="python">Python</option><option value="cpp">C++</option><option value="javascript">JS</option></select></div>
+        <input id="crDesc" placeholder="İzah" style="margin-top:8px;" />
+        <textarea id="crCode" rows="5" placeholder="Kod *" style="font-family:monospace;margin-top:8px;"></textarea>
+        <input id="crStdin" placeholder="Nümunə giriş" style="margin-top:8px;" />
+        <button class="btn btn-success btn-sm" style="margin-top:8px;" onclick="createCreative()">Paylaş</button>
+      </div>
+    </div>
+    <div id="creativeGrid" class="creative-grid"></div>
+  </section>
+
+  <!-- 10. PLAYGROUND -->
+  <section id="tab-playground" class="section">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;margin-bottom:10px;">
+        <h2 style="margin:0;">Playground</h2>
+        <div class="row">
+          <select id="pgLang" style="width:150px;" onchange="onPgLangChange()"><option value="python">Python 3</option><option value="cpp">C++</option><option value="c">C</option><option value="java">Java</option><option value="javascript">JS</option></select>
+          <button id="pgRunBtn" class="btn btn-primary btn-sm" onclick="runPlayground()">▶ İşlət</button>
+        </div>
+      </div>
+      <textarea id="pgEditorTextarea" class="code-fallback"></textarea>
+      <div class="grid-2" style="margin-top:10px;">
+        <textarea id="pgStdin" rows="4" placeholder="Giriş (Stdin)..."></textarea>
+        <div id="pgOutput" class="console-out" style="margin-top:0;">Nəticə...</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11. ADMİN PANELİ (Yalnız Admin olduqda açılır) -->
+  <section id="tab-admin" class="section">
+    <div class="card">
+      <h3>Təsdiq Gözləyən Suallar (XP Təyin Et)</h3>
+      <div id="adminProposalsBox">Yüklənir...</div>
+    </div>
+
+    <div class="card">
+      <h3>Rəsmi Yarış Yarat (Bitdikdə Gym-ə düşür)</h3>
+      <div class="grid-2"><input id="adConTitle" placeholder="Yarış adı (məs: AzForces Round #1)" /><input id="adConDur" type="number" value="90" placeholder="Müddət (dəq)" /></div>
+      <input id="adConPids" placeholder="Məsələ ID-ləri vergüllə (məs: 1, 2, 3)" style="margin-top:8px;" />
+      <button class="btn btn-primary btn-sm" style="margin-top:8px;" onclick="adminCreateContest()">Yarışı Başlat</button>
+    </div>
+
+    <div class="card">
+      <h3>2FA & Sandbox Ayarları</h3>
+      <div class="row" style="margin-bottom:10px;">
+        <button class="btn btn-sm btn-primary" onclick="setupTotp(false)">Authenticator (TOTP) Qur</button>
+        <button class="btn btn-sm" onclick="setupTotp(true)">OTP Rejimi</button>
+      </div>
+      <div id="totpSetupOutput" class="notice-box" style="display:none;"></div>
+      <div class="grid-2" style="margin-top:10px;">
+        <select id="cfgProvider"><option value="piston">Piston</option><option value="judge0">Judge0</option><option value="local">Local</option></select>
+        <input id="cfgBaseUrl" placeholder="Base URL" />
+      </div>
+      <input id="cfgApiKey" type="password" placeholder="API Key (boş saxlasanız dəyişməz)" style="margin-top:8px;" />
+      <div class="row" style="margin-top:10px;">
+        <button class="btn btn-success btn-sm" onclick="saveSettings()">Saxla</button>
+        <button class="btn btn-sm" onclick="testConnection()">API Yoxla</button>
+      </div>
+      <div id="testConnOut" class="console-out" style="display:none;"></div>
+    </div>
+
+    <div class="card">
+      <h3>Birbaşa Yeni Məsələ Yarat</h3>
+      <div class="grid-2"><input id="npTitle" placeholder="Başlıq *" /><input id="npCodeLbl" placeholder="Kod (məs: 2A)" /></div>
+      <div class="grid-2" style="margin-top:8px;"><input id="npRating" type="number" value="800" /><input id="npTags" value="math" /></div>
+      <textarea id="npStatement" rows="3" placeholder="Şərt *" style="margin-top:8px;"></textarea>
+      <div class="grid-2" style="margin-top:8px;"><textarea id="npIn" rows="2" placeholder="Input"></textarea><textarea id="npOut" rows="2" placeholder="Output"></textarea></div>
+      <div class="row" style="justify-content:space-between;margin-top:8px;"><strong>Testlər *</strong><button class="btn btn-sm" onclick="addTestRow('npTestsContainer')">+ Test</button></div>
+      <div id="npTestsContainer" style="margin-top:6px;"></div>
+      <button class="btn btn-primary btn-sm" style="margin-top:10px;" onclick="adminCreateProblem()">Məsələni Yarat</button>
+    </div>
+  </section>
+</main>
+
+<!-- Tək Giriş / Qeydiyyat + Admin Girişi Modalı -->
+<div id="authModal" class="modal-backdrop" onclick="if(event.target===this) closeModal('authModal')">
+  <div class="modal-card">
+    <div class="modal-head"><strong>Hesab Girişi</strong><button class="btn btn-sm" onclick="closeModal('authModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="row" style="margin-bottom:12px;">
+        <button class="btn btn-sm btn-primary" onclick="switchAuthMode('user')">İstifadəçi</button>
+        <button class="btn btn-sm" onclick="switchAuthMode('admin')">Admin Girişi</button>
+      </div>
+      <div id="authUserPane">
+        <input id="auUsername" placeholder="İstifadəçi adı (3-24 simvol)" />
+        <input id="auPassword" type="password" placeholder="Parol (min. 6 simvol)" style="margin-top:8px;" />
+        <div class="row" style="margin-top:10px;">
+          <button class="btn btn-primary" onclick="doUserAuth('login')">Daxil Ol</button>
+          <button class="btn btn-success" onclick="doUserAuth('register')">Qeydiyyatdan Keç</button>
+        </div>
+      </div>
+      <div id="authAdminPane" style="display:none;">
+        <div id="adStep1">
+          <input id="adPassword" type="password" placeholder="Xüsusi Admin Parolu" onkeydown="if(event.key==='Enter') adminLoginStep1()" />
+          <button class="btn btn-primary" style="margin-top:10px;" onclick="adminLoginStep1()">1. Təsdiqlə</button>
+        </div>
+        <div id="adStep2" style="display:none;">
+          <div id="ad2faMsg" class="notice-box"></div>
+          <input id="ad2faCode" maxlength="6" placeholder="6 rəqəmli kod" style="margin-top:8px;letter-spacing:3px;font-weight:700;" onkeydown="if(event.key==='Enter') adminLoginStep2()" />
+          <button class="btn btn-success" style="margin-top:10px;" onclick="adminLoginStep2()">2. Kodu Yoxla</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Göndəriş Detalları Modalı -->
+<div id="detailModal" class="modal-backdrop" onclick="if(event.target===this) closeModal('detailModal')">
+  <div class="modal-card">
+    <div class="modal-head"><strong id="modalTitle">Detallar</strong><button class="btn btn-sm" onclick="closeModal('detailModal')">✕</button></div>
+    <div class="modal-body"><div id="modalMeta" class="muted" style="font-size:.86rem;"></div><pre id="modalPre" class="console-out"></pre></div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/clike/clike.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<script>
+let me={authenticated:false,username:null,is_admin:false,xp:0,rank:{name:"",color:"#8b949e"}};
+let allProblems=[],currentProblem=null,solveCM=null,pgCM=null,submissionsCache=[],pendingCid="";
+let activeRoomCode="",roomPollTimer=null,lastMsgId=0;
+const TEMPLATES={python:"# Kodunuz\n",cpp:"#include <iostream>\nusing namespace std;\nint main(){\n    return 0;\n}\n",c:"#include <stdio.h>\nint main(){\n    return 0;\n}\n",java:"import java.util.*;\npublic class Main{\n    public static void main(String[] a){\n    }\n}\n",javascript:"const fs=require('fs');\nconsole.log(fs.readFileSync(0,'utf8').trim());\n"};
+
+function esc(s){return String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
+function fmtStmt(t){return esc(t).replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>").replace(/`([^`]+)`/g,"<code>$1</code>");}
+function renderMath(el){if(typeof renderMathInElement==="function")renderMathInElement(el,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false});}
+function toast(m,err=false){const t=document.getElementById("toast");t.textContent=m;t.style.borderColor=err?"var(--danger)":"var(--primary)";t.style.display="block";clearTimeout(window._tt);window._tt=setTimeout(()=>t.style.display="none",3400);}
+function cmMode(l){return l==="python"?"python":l==="javascript"?"javascript":l==="cpp"?"text/x-c++src":l==="c"?"text/x-csrc":"text/x-java";}
+function closeModal(id){document.getElementById(id).classList.remove("open");}
+function toggleDrawer(force){const d=document.getElementById("sideDrawer"),b=document.getElementById("drawerBackdrop"),open=force!==undefined?force:!d.classList.contains("open");d.classList.toggle("open",open);b.classList.toggle("open",open);}
+
+function switchTab(tab){
+  toggleDrawer(false);
+  document.querySelectorAll(".section").forEach(s=>s.classList.remove("active"));
+  document.querySelectorAll(".drawer-item").forEach(b=>b.classList.remove("active"));
+  document.getElementById("tab-"+tab).classList.add("active");
+  const nav=document.querySelector(`.drawer-item[data-tab="${tab}"]`);if(nav)nav.classList.add("active");
+  if(tab==="problems")loadProblems("archive");
+  if(tab==="gym")loadGym();
+  if(tab==="contests")loadContests();
+  if(tab==="rooms")loadRoomProblemsPicker();
+  if(tab==="community")loadPosts();
+  if(tab==="propose")loadMyProposals();
+  if(tab==="submissions")loadSubmissions();
+  if(tab==="leaderboard")loadLeaderboard();
+  if(tab==="creative")loadCreative();
+  if(tab==="playground"&&pgCM)setTimeout(()=>pgCM.refresh(),50);
+  if(tab==="admin"&&me.is_admin)loadAdminData();
+}
+
+async function syncMe(){
+  const r=await fetch("/api/auth/me");me=await r.json();
+  const ub=document.getElementById("hdrUserBadge"),ap=document.getElementById("hdrAdminPill"),ab=document.getElementById("hdrAuthBtn"),lb=document.getElementById("hdrLogoutBtn"),na=document.getElementById("navAdminBtn");
+  if(me.authenticated){
+    ub.style.display="inline-block";ub.style.color=me.rank.color;ub.textContent=`${me.username} (${me.xp} XP · ${me.rank.name})`;
+    ab.style.display="none";lb.style.display="inline-flex";
+  }else{ub.style.display="none";ab.style.display="inline-flex";lb.style.display="none";}
+  ap.style.display=me.is_admin?"inline-block":"none";
+  na.style.display=me.is_admin?"flex":"none";
+  document.getElementById("deleteProblemBtn").style.display=me.is_admin?"inline-flex":"none";
+}
+
+function openAuthModal(){document.getElementById("authModal").classList.add("open");}
+function switchAuthMode(m){document.getElementById("authUserPane").style.display=m==="user"?"block":"none";document.getElementById("authAdminPane").style.display=m==="admin"?"block":"none";}
+async function doUserAuth(kind){
+  const r=await fetch(`/api/auth/${kind}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:document.getElementById("auUsername").value,password:document.getElementById("auPassword").value})});
+  const d=await r.json();if(!r.ok)return toast(d.error,true);
+  closeModal("authModal");await syncMe();loadProblems("archive");toast(d.message);
+}
+async function logoutAll(){await fetch("/api/auth/logout",{method:"POST"});await syncMe();loadProblems("archive");toast("Çıxış edildi");}
+
+async function adminLoginStep1(){
+  const r=await fetch("/api/admin/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password:document.getElementById("adPassword").value})});
+  const d=await r.json();if(!r.ok)return toast(d.error,true);
+  pendingCid=d.challenge_id;document.getElementById("adPassword").value="";
+  document.getElementById("adStep1").style.display="none";document.getElementById("adStep2").style.display="block";
+  document.getElementById("ad2faMsg").textContent=d.message;
+}
+async function adminLoginStep2(){
+  const r=await fetch("/api/admin/verify-2fa",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({challenge_id:pendingCid,code:document.getElementById("ad2faCode").value})});
+  const d=await r.json();if(!r.ok)return toast(d.error,true);
+  pendingCid="";document.getElementById("adStep1").style.display="block";document.getElementById("adStep2").style.display="none";
+  closeModal("authModal");await syncMe();toast(d.message);
+}
+
+/* Problems & Gym */
+async function loadProblems(view="archive"){
+  const r=await fetch(`/api/problems?view=${view}`);allProblems=await r.json();renderProblemsTable();
+}
+function renderProblemsTable(){
+  const q=(document.getElementById("problemSearch").value||"").toLowerCase(),hideTags=document.getElementById("hideTagsToggle").checked;
+  const rows=allProblems.filter(p=>p.title.toLowerCase().includes(q)||(p.tags||"").toLowerCase().includes(q)||(p.code_label||"").toLowerCase().includes(q));
+  const tb=document.getElementById("problemsTableBody");
+  if(!rows.length){tb.innerHTML=`<tr><td colspan="6" class="muted">Məsələ yoxdur.</td></tr>`;return;}
+  tb.innerHTML=rows.map(p=>`
+    <tr class="clickable ${p.solved?'solved-row':''}" onclick="openProblem(${p.id})">
+      <td><strong>${esc(p.code_label||p.id)}</strong></td>
+      <td><strong>${esc(p.title)}</strong></td>
+      <td>${hideTags?'<span class="muted">gizli</span>':(p.tags||"").split(",").map(t=>`<span class="tag-pill">${esc(t.trim())}</span>`).join("")}</td>
+      <td><span class="badge">${p.rating}</span></td>
+      <td class="muted">👤 x${p.solved_count||0}</td>
+      <td><button class="btn btn-sm" onclick="event.stopPropagation();shareProblem(${p.id},${JSON.stringify(p.title)})">🔗</button></td>
+    </tr>`).join("");
+}
+async function loadGym(){
+  const r=await fetch("/api/problems?view=gym");const list=await r.json();
+  const tb=document.getElementById("gymTableBody");
+  if(!list.length){tb.innerHTML=`<tr><td colspan="6" class="muted">Hələ bitmiş yarış məsələsi yoxdur.</td></tr>`;return;}
+  tb.innerHTML=list.map(p=>`<tr class="clickable ${p.solved?'solved-row':''}" onclick="openProblem(${p.id})"><td><strong>${esc(p.code_label||p.id)}</strong></td><td><strong>${esc(p.title)}</strong></td><td>${esc(p.tags)}</td><td><span class="badge">${p.rating}</span></td><td class="muted">👤 x${p.solved_count||0}</td><td><button class="btn btn-sm" onclick="event.stopPropagation();shareProblem(${p.id},${JSON.stringify(p.title)})">🔗</button></td></tr>`).join("");
+}
+async function openProblem(pid){
+  const r=await fetch(`/api/problems/${pid}`);const p=await r.json();if(!r.ok)return toast(p.error,true);
+  currentProblem=p;switchTab("problems");
+  document.getElementById("problemListView").style.display="none";document.getElementById("problemSolveView").style.display="block";
+  document.getElementById("solveResultBox").style.display="none";
+  document.getElementById("probTitle").textContent=`${p.code_label?p.code_label+'. ':''}${p.title}`;
+  document.getElementById("probLimits").textContent=`time limit: ${p.time_limit}s | memory limit: ${p.memory_limit} MB | input: standard input | output: standard output`;
+  document.getElementById("probAuthorMeta").textContent=`Müəllif: ${p.author} | Reytinq: ${p.rating}`;
+  document.getElementById("shareToRoomBtn").style.display=activeRoomCode?"inline-flex":"none";
+  document.getElementById("deleteProblemBtn").style.display=me.is_admin?"inline-flex":"none";
+  const st=document.getElementById("probStatement"),inp=document.getElementById("probInputSpec"),out=document.getElementById("probOutputSpec");
+  st.innerHTML=fmtStmt(p.statement);renderMath(st);inp.innerHTML=fmtStmt(p.input_spec||"—");renderMath(inp);out.innerHTML=fmtStmt(p.output_spec||"—");renderMath(out);
+  document.getElementById("probNoteWrap").style.display=p.note?"block":"none";
+  if(p.note){const n=document.getElementById("probNote");n.innerHTML=fmtStmt(p.note);renderMath(n);}
+  document.getElementById("probEditorialWrap").style.display=p.editorial?"block":"none";
+  if(p.editorial){const e=document.getElementById("probEditorial");e.innerHTML=fmtStmt(p.editorial);renderMath(e);}
+  document.getElementById("probSamples").innerHTML=(p.samples||[]).map((s,i)=>`<div class="sample-box"><div class="sample-head"><span>Nümunə #${i+1}</span><button class="btn btn-sm" onclick="copyText(currentProblem.samples[${i}].input_data,'Giriş kopyalandı')">Kopyala</button></div><div class="sample-grid"><pre>${esc(s.input_data)}</pre><pre>${esc(s.expected_output)}</pre></div></div>`).join("");
+  document.getElementById("solveLang").value="python";if(solveCM)solveCM.setOption("mode","python");
+  setSolveCode(p.starter_code||TEMPLATES.python);
+  document.getElementById("solveStdin").value=(p.samples&&p.samples[0])?p.samples[0].input_data:"";
+}
+function backToProblemList(){document.getElementById("problemSolveView").style.display="none";document.getElementById("problemListView").style.display="block";loadProblems("archive");}
+function copyText(txt,msg="Kopyalandı!"){navigator.clipboard?.writeText(txt).then(()=>toast(msg)).catch(()=>toast("Kopyalama uğursuz",true));}
+function shareProblem(pid,title){
+  const url=`${location.origin}/?problem=${pid}`;
+  if(navigator.share){navigator.share({title:`AzForces: ${title}`,text:`Bu maraqlı məsələni yoxla: ${title}`,url}).catch(()=>copyText(url,"Link kopyalandı!"));}
+  else copyText(url,"Məsələ linki kopyalandı! Dostuna ata bilərsən.");
+}
+async function shareProblemToRoom(){
+  if(!activeRoomCode||!currentProblem)return;
+  await fetch(`/api/rooms/${activeRoomCode}/chat`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:"Maraqlı məsələ paylaşdı:",shared_problem_id:currentProblem.id})});
+  toast("Məsələ otaq söhbətinə atıldı!");
+}
+
+/* Editors & Run/Submit */
+function initEditors(){
+  if(typeof CodeMirror!=="undefined"){
+    solveCM=CodeMirror.fromTextArea(document.getElementById("solveEditorTextarea"),{mode:"python",theme:"material-darker",lineNumbers:true});
+    pgCM=CodeMirror.fromTextArea(document.getElementById("pgEditorTextarea"),{mode:"python",theme:"material-darker",lineNumbers:true});
+    setPgCode("print('Salam AzForces!')\n");
+  }
+}
+function getSolveCode(){return solveCM?solveCM.getValue():document.getElementById("solveEditorTextarea").value;}
+function setSolveCode(v){if(solveCM){solveCM.setValue(v);setTimeout(()=>solveCM.refresh(),40);}else document.getElementById("solveEditorTextarea").value=v;}
+function getPgCode(){return pgCM?pgCM.getValue():document.getElementById("pgEditorTextarea").value;}
+function setPgCode(v){if(pgCM){pgCM.setValue(v);setTimeout(()=>pgCM.refresh(),40);}else document.getElementById("pgEditorTextarea").value=v;}
+function onSolveLangChange(){if(solveCM)solveCM.setOption("mode",cmMode(document.getElementById("solveLang").value));}
+function onPgLangChange(){if(pgCM)pgCM.setOption("mode",cmMode(document.getElementById("pgLang").value));}
+function resetStarterCode(){const l=document.getElementById("solveLang").value;setSolveCode((l==="python"&&currentProblem?.starter_code)?currentProblem.starter_code:(TEMPLATES[l]||""));}
+
+async function runSolveCode(){
+  const b=document.getElementById("solveResultBox");b.style.display="block";b.textContent="İşə salınır...";
+  const r=await fetch("/api/run",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({language:document.getElementById("solveLang").value,code:getSolveCode(),stdin:document.getElementById("solveStdin").value,time_limit:currentProblem?.time_limit||3})});
+  const d=await r.json();
+  b.textContent=!r.ok||d.ok===false?(d.error||d.stderr):`[${d.status} | ${d.time||"-"}]\n${d.stdout||""}${d.stderr?"\n--- Xəta ---\n"+d.stderr:""}`;
+}
+async function submitSolution(){
+  if(!me.authenticated)return openAuthModal();
+  const b=document.getElementById("solveResultBox");b.style.display="block";b.textContent="Yoxlanılır...";
+  const r=await fetch("/api/submit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({problem_id:currentProblem.id,language:document.getElementById("solveLang").value,code:getSolveCode(),room_id:window._activeRoomId||null})});
+  const d=await r.json();
+  if(!r.ok){b.textContent=d.error||"Xəta";return;}
+  b.textContent=`Nəticə: ${d.verdict} (${d.passed}/${d.total}) | Vaxt: ${d.time}\n${d.xp_gained?`+${d.xp_gained} XP qazandınız!\n`:""}${d.details||""}`;
+  await syncMe();toast(d.verdict==="Accepted"?"Accepted!":d.verdict,d.verdict!=="Accepted");
+}
+async function deleteCurrentProblem(){if(!confirm("Silinsin?"))return;const r=await fetch(`/api/problems/${currentProblem.id}`,{method:"DELETE"});if(r.ok){toast("Silindi");backToProblemList();}}
+
+/* Contests */
+async function loadContests(){
+  const r=await fetch("/api/contests");const list=await r.json();
+  const box=document.getElementById("contestsList");
+  if(!list.length){box.innerHTML=`<p class="muted">Hələ rəsmi yarış yoxdur.</p>`;return;}
+  box.innerHTML=list.map(c=>`<div class="card" style="background:var(--bg);"><div class="row" style="justify-content:space-between;"><strong>${esc(c.title)}</strong><span class="badge">${c.status==="active"?"Aktiv":"Bitib (Gym-də)"}</span></div>
+    <div style="margin-top:8px;">${c.problems.map(p=>`<button class="btn btn-sm" style="margin:3px;" onclick="openProblem(${p.id})">${esc(p.code_label)}. ${esc(p.title)}</button>`).join("")}</div>
+    ${me.is_admin&&c.status==="active"?`<button class="btn btn-danger btn-sm" style="margin-top:8px;" onclick="finishContest(${c.id})">Yarışı Bitir & Gym-ə Köçür</button>`:""}</div>`).join("");
+}
+async function finishContest(cid){await fetch(`/api/contests/${cid}/finish`,{method:"POST"});toast("Gym-ə köçürüldü!");loadContests();}
+
+/* 16-digit Rooms & Chat */
+async function loadRoomProblemsPicker(){
+  const r=await fetch("/api/problems?view=archive");const list=await r.json();
+  document.getElementById("crRoomProblemsList").innerHTML=list.map(p=>`<label style="display:flex;align-items:center;gap:6px;font-size:.86rem;cursor:pointer;margin-bottom:4px;"><input type="checkbox" class="rm-prob-chk" value="${p.id}" style="width:auto;" /> ${esc(p.code_label||p.id)}. ${esc(p.title)} (${p.rating})</label>`).join("");
+}
+async function createRoom(){
+  if(!me.authenticated)return openAuthModal();
+  const pids=[...document.querySelectorAll(".rm-prob-chk:checked")].map(x=>Number(x.value));
+  const r=await fetch("/api/rooms",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({title:document.getElementById("crRoomTitle").value,duration_min:document.getElementById("crRoomDur").value,voice_link:document.getElementById("crRoomVoice").value,problem_ids:pids})});
+  const d=await r.json();if(!r.ok)return toast(d.error,true);
+  enterRoom(d.room_code);
+}
+async function joinRoom(){
+  if(!me.authenticated)return openAuthModal();
+  const r=await fetch("/api/rooms/join",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({room_code:document.getElementById("joinRoomCode").value})});
+  const d=await r.json();if(!r.ok)return toast(d.error,true);
+  enterRoom(d.room_code);
+}
+function enterRoom(code){
+  activeRoomCode=code;lastMsgId=0;document.getElementById("rmChatBox").innerHTML="";
+  document.getElementById("roomLobbyView").style.display="none";document.getElementById("roomActiveView").style.display="block";
+  pollRoomState();clearInterval(roomPollTimer);roomPollTimer=setInterval(()=>{if(!document.hidden&&activeRoomCode)pollRoomState();},3000);
+}
+function leaveRoomView(){activeRoomCode="";window._activeRoomId=null;clearInterval(roomPollTimer);document.getElementById("roomActiveView").style.display="none";document.getElementById("roomLobbyView").style.display="grid";}
+function copyRoomCode(){copyText(activeRoomCode,"16 rəqəmli kod kopyalandı!");}
+async function pollRoomState(){
+  const r=await fetch(`/api/rooms/${activeRoomCode}/state?after_id=${lastMsgId}`);if(!r.ok)return;
+  const d=await r.json();window._activeRoomId=d.room.id;
+  document.getElementById("rmTitle").textContent=d.room.title;
+  document.getElementById("rmCodeText").textContent=d.room.room_code.replace(/(.{4})/g,"$1-").slice(0,-1);
+  document.getElementById("rmTimerText").textContent=Math.floor(d.room.remaining_sec/60)+" dəq";
+  document.getElementById("rmMemCount").textContent=d.members.length;
+  const vb=document.getElementById("rmVoiceBtn");vb.style.display=d.room.voice_link?"inline-flex":"none";if(d.room.voice_link)vb.href=d.room.voice_link;
+  document.getElementById("rmProblemsList").innerHTML=d.problems.map(p=>`<button class="btn btn-sm" style="margin:3px;" onclick="openProblem(${p.id})">${esc(p.code_label||p.id)}. ${esc(p.title)}</button>`).join("");
+  document.getElementById("rmStandingsBody").innerHTML=d.standings.map((s,i)=>`<tr><td>${i+1}</td><td>${esc(s.username)}</td><td>${s.solved}</td></tr>`).join("");
+  const box=document.getElementById("rmChatBox");
+  d.messages.forEach(m=>{
+    lastMsgId=Math.max(lastMsgId,m.id);
+    const el=document.createElement("div");el.className="chat-msg";
+    el.innerHTML=`<strong>${esc(m.username)}:</strong> ${esc(m.message)}`+(m.shared_problem_id?` <button class="btn btn-sm" onclick="openProblem(${m.shared_problem_id})">📘 ${esc(m.shared_problem_title||"Məsələyə bax")}</button>`:"");
+    box.appendChild(el);box.scrollTop=box.scrollHeight;
+  });
+}
+async function sendRoomChat(){
+  const inp=document.getElementById("rmChatInput");if(!inp.value.trim())return;
+  const r=await fetch(`/api/rooms/${activeRoomCode}/chat`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:inp.value})});
+  const d=await r.json();if(!r.ok)return toast(d.error,true);
+  inp.value="";pollRoomState();
+}
+
+/* Topluluq: Anket, Emoji, Şərh/Reply */
+function togglePostForm(){if(!me.authenticated)return openAuthModal();const f=document.getElementById("postFormBox");f.style.display=f.style.display==="none"?"block":"none";}
+async function createPost(){
+  const opts=document.getElementById("postPollOpts").value.split(",").map(s=>s.trim()).filter(Boolean);
+  const r=await fetch("/api/posts",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({title:document.getElementById("postTitle").value,body:document.getElementById("postBody").value,poll_options:opts})});
+  const d=await r.json();if(!r.ok)return toast(d.error,true);
+  document.getElementById("postTitle").value="";document.getElementById("postBody").value="";document.getElementById("postPollOpts").value="";
+  togglePostForm();loadPosts();
+}
+async function loadPosts(){
+  const r=await fetch("/api/posts");const posts=await r.json();
+  document.getElementById("postsList").innerHTML=posts.map(p=>`
+    <div class="card">
+      <div class="row" style="justify-content:space-between;"><strong>${esc(p.title)}</strong><span class="muted" style="font-size:.8rem;">@${esc(p.author)} · ${esc(p.created_at)}</span></div>
+      <p style="margin:8px 0;">${esc(p.body)}</p>
+      ${p.poll_options.length?p.poll_options.map((o,i)=>{const pct=p.total_votes?Math.round(o.votes*100/p.total_votes):0;return `<div class="poll-opt ${p.my_vote===i?'voted':''}" onclick="votePoll(${p.id},${i})"><div class="poll-bar" style="width:${pct}%"></div><div class="poll-txt"><span>${esc(o.text)}</span><span>${o.votes} (${pct}%)</span></div></div>`;}).join(""):""}
+      <div class="row" style="margin-top:10px;">${p.reactions.map(rx=>`<button class="react-btn ${rx.mine?'mine':''}" onclick="reactPost(${p.id},'${rx.emoji}')">${rx.emoji} ${rx.count}</button>`).join("")}</div>
+      <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:8px;">
+        ${p.comments.map(c=>`<div class="comment-item ${c.parent_id?'comment-reply':''}"><strong>@${esc(c.author)}:</strong> ${esc(c.body)} <button class="btn btn-sm" style="padding:1px 6px;font-size:.72rem;" onclick="replyComment(${p.id},${c.id},'${esc(c.author)}')">Cavabla</button></div>`).join("")}
+        <div class="row" style="margin-top:8px;">
+          <input id="cmtIn-${p.id}" placeholder="Altdan şərh yaz..." style="flex:1;" />
+          <input id="cmtPar-${p.id}" type="hidden" value="" />
+          <button class="btn btn-sm btn-primary" onclick="sendComment(${p.id})">Yaz</button>
+        </div>
+      </div>
+    </div>`).join("");
+}
+async function votePoll(pid,idx){if(!me.authenticated)return openAuthModal();await fetch(`/api/posts/${pid}/vote`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({option_index:idx})});loadPosts();}
+async function reactPost(pid,emoji){if(!me.authenticated)return openAuthModal();await fetch(`/api/posts/${pid}/react`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({emoji})});loadPosts();}
+function replyComment(pid,cid,author){document.getElementById(`cmtPar-${pid}`).value=cid;const inp=document.getElementById(`cmtIn-${pid}`);inp.placeholder=`@${author} şərhinə cavab...`;inp.focus();}
+async function sendComment(pid){
+  if(!me.authenticated)return openAuthModal();
+  const inp=document.getElementById(`cmtIn-${pid}`),par=document.getElementById(`cmtPar-${pid}`).value;
+  const r=await fetch(`/api/posts/${pid}/comment`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({body:inp.value,parent_id:par||null})});
+  const d=await r.json();if(!r.ok)return toast(d.error,true);loadPosts();
+}
+
+/* Sual Təklif Et & XP */
+function addTestRow(cid){
+  const el=document.createElement("div");el.className="card";el.style.padding="8px";
+  el.innerHTML=`<div class="grid-2"><textarea class="t-in" rows="2" placeholder="Giriş"></textarea><textarea class="t-out" rows="2" placeholder="Çıxış"></textarea></div><div class="row" style="justify-content:space-between;margin-top:4px;"><label style="font-size:.82rem;"><input type="checkbox" class="t-smp" checked style="width:auto;" /> Nümunə</label><button class="btn btn-danger btn-sm" onclick="this.closest('.card').remove()">Sil</button></div>`;
+  document.getElementById(cid).appendChild(el);
+}
+function collectTests(cid){return [...document.querySelectorAll(`#${cid}>.card`)].map(c=>({input:c.querySelector(".t-in").value,output:c.querySelector(".t-out").value,is_sample:c.querySelector(".t-smp").checked}));}
+async function submitProposal(){
+  if(!me.authenticated)return openAuthModal();
+  const r=await fetch("/api/proposals",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({title:document.getElementById("prTitle").value,rating:document.getElementById("prRating").value,tags:document.getElementById("prTags").value,statement:document.getElementById("prStatement").value,input_spec:document.getElementById("prInputSpec").value,output_spec:document.getElementById("prOutputSpec").value,editorial:document.getElementById("prEditorial").value,author_lang:document.getElementById("prLang").value,author_code:document.getElementById("prCode").value,tests:collectTests("prTestsContainer")})});
+  const d=await r.json();if(!r.ok)return toast(d.error,true);toast(d.message);loadMyProposals();
+}
+async function loadMyProposals(){
+  if(!me.authenticated){document.getElementById("myProposalsList").textContent="Görmək üçün daxil olun.";return;}
+  const r=await fetch("/api/my-proposals");const list=await r.json();
+  document.getElementById("myProposalsList").innerHTML=list.length?list.map(x=>`<div style="padding:6px 0;border-bottom:1px solid var(--border);"><strong>${esc(x.title)}</strong> — <span class="badge">${esc(x.visibility)}</span> ${x.awarded_xp?`(+${x.awarded_xp} XP)`:""} ${x.reject_reason?`<span class="muted">(${esc(x.reject_reason)})</span>`:""}</div>`).join(""):"Hələ təklif yoxdur.";
+}
+
+/* Submissions, Leaderboard, Creative, Playground */
+async function loadSubmissions(){
+  const mode=document.getElementById("submissionFilterSelect").value,u=(mode==="mine"&&me.username)?`?username=${encodeURIComponent(me.username)}`:"";
+  const r=await fetch("/api/submissions"+u);submissionsCache=await r.json();
+  document.getElementById("submissionsTableBody").innerHTML=submissionsCache.length?submissionsCache.map((s,i)=>`<tr class="clickable" onclick="openSubModal(${i})"><td>#${s.id}</td><td>${esc(s.username)}</td><td>${esc(s.problem_title)}</td><td>${esc(s.language)}</td><td style="font-weight:700;color:${s.verdict==='Accepted'?'var(--success)':'var(--danger)'}">${esc(s.verdict)}</td><td>${s.passed_tests}/${s.total_tests}</td><td>${esc(s.exec_time)}</td></tr>`).join(""):`<tr><td colspan="7" class="muted">Yoxdur.</td></tr>`;
+}
+function openSubModal(i){const s=submissionsCache[i];document.getElementById("modalTitle").textContent=`#${s.id} — ${s.problem_title}`;document.getElementById("modalMeta").textContent=`${s.username} | ${s.verdict} | ${s.exec_time}`;document.getElementById("modalPre").textContent=s.details||"Əlavə məlumat yoxdur.";document.getElementById("detailModal").classList.add("open");}
+async function loadLeaderboard(){
+  const r=await fetch("/api/leaderboard");const rows=await r.json();
+  document.getElementById("leaderboardBody").innerHTML=rows.map((u,i)=>`<tr><td><strong>#${i+1}</strong></td><td><strong>${esc(u.username)}</strong></td><td><span style="color:${u.rank.color};font-weight:700;">${esc(u.rank.name)}</span></td><td><span class="badge">${u.xp} XP</span></td><td>${u.solved_count}</td><td>${u.score}</td></tr>`).join("");
+}
+async function loadCreative(){
+  const r=await fetch("/api/creative");const list=await r.json();window._cr=list;
+  document.getElementById("creativeGrid").innerHTML=list.map((c,i)=>`<div class="card"><strong>${esc(c.title)}</strong> <span class="badge">${esc(c.language)}</span><p class="muted" style="font-size:.84rem;">${esc(c.description)}</p><pre class="console-out" style="max-height:130px;">${esc(c.code)}</pre><div class="row" style="margin-top:8px;"><button class="btn btn-sm btn-primary" onclick="runCr(${i})">▶ Playground</button>${me.is_admin?`<button class="btn btn-sm btn-danger" onclick="delCr(${c.id})">Sil</button>`:""}</div></div>`).join("");
+}
+function runCr(i){const c=window._cr[i];switchTab("playground");document.getElementById("pgLang").value=c.language;onPgLangChange();setPgCode(c.code);document.getElementById("pgStdin").value=c.sample_input||"";runPlayground();}
+async function createCreative(){if(!me.authenticated)return openAuthModal();const r=await fetch("/api/creative",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({title:document.getElementById("crTitle").value,language:document.getElementById("crLang").value,description:document.getElementById("crDesc").value,code:document.getElementById("crCode").value,sample_input:document.getElementById("crStdin").value})});const d=await r.json();if(!r.ok)return toast(d.error,true);toast(d.message);loadCreative();}
+async function delCr(id){await fetch(`/api/creative/${id}`,{method:"DELETE"});loadCreative();}
+async function runPlayground(){
+  const out=document.getElementById("pgOutput");out.textContent="İşə salınır...";
+  const r=await fetch("/api/run",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({language:document.getElementById("pgLang").value,code:getPgCode(),stdin:document.getElementById("pgStdin").value})});
+  const d=await r.json();out.textContent=!r.ok||d.ok===false?(d.error||d.stderr):`[${d.status} | ${d.time||"-"}]\n${d.stdout||""}${d.stderr?"\n--- Xəta ---\n"+d.stderr:""}`;
+}
+
+/* Admin Panel */
+async function loadAdminData(){
+  const [pr,sr]=await Promise.all([fetch("/api/admin/proposals"),fetch("/api/settings")]);
+  if(pr.ok){
+    const props=await pr.json();
+    document.getElementById("adminProposalsBox").innerHTML=props.length?props.map(p=>`<div class="card" style="background:var(--bg);"><strong>${esc(p.title)}</strong> (@${esc(p.author)} · ${p.rating} · Kod yoxlaması: ${esc(p.author_check_status)})<p style="font-size:.86rem;">${esc(p.statement)}</p><div class="row"><input id="xpVal-${p.id}" type="number" value="150" style="width:110px;" /><select id="visVal-${p.id}" style="width:130px;"><option value="archive">Arxiv</option><option value="gym">Gym</option></select><button class="btn btn-success btn-sm" onclick="reviewProp(${p.id},'approve')">Təsdiqlə (+XP)</button><button class="btn btn-danger btn-sm" onclick="reviewProp(${p.id},'reject')">Rədd Et</button></div></div>`).join(""):"Gözləyən sual yoxdur.";
+  }
+  if(sr.ok){const cfg=await sr.json();document.getElementById("cfgProvider").value=cfg.provider;document.getElementById("cfgBaseUrl").value=cfg.base_url;}
+}
+async function reviewProp(pid,action){
+  const r=await fetch(`/api/admin/proposals/${pid}/review`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action,xp_reward:document.getElementById(`xpVal-${pid}`).value,visibility:document.getElementById(`visVal-${pid}`).value})});
+  const d=await r.json();toast(d.message||d.error,!r.ok);loadAdminData();
+}
+async function adminCreateContest(){
+  const pids=document.getElementById("adConPids").value.split(",").map(x=>x.trim()).filter(Boolean);
+  const r=await fetch("/api/contests",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({title:document.getElementById("adConTitle").value,duration_min:document.getElementById("adConDur").value,problem_ids:pids})});
+  const d=await r.json();toast(d.message||d.error,!r.ok);
+}
+async function setupTotp(disable){const r=await fetch("/api/admin/totp-setup",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({disable})});const d=await r.json();const o=document.getElementById("totpSetupOutput");if(d.totp_enabled){o.style.display="block";o.textContent=`Secret: ${d.secret} | URI: ${d.otpauth_uri}`;}else o.style.display="none";toast(d.message);}
+async function saveSettings(){const r=await fetch("/api/settings",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({provider:document.getElementById("cfgProvider").value,base_url:document.getElementById("cfgBaseUrl").value,api_key:document.getElementById("cfgApiKey").value})});const d=await r.json();toast(d.message||d.error,!r.ok);}
+async function testConnection(){const o=document.getElementById("testConnOut");o.style.display="block";o.textContent="Yoxlanılır...";const r=await fetch("/api/test-connection",{method:"POST"});o.textContent=JSON.stringify(await r.json(),null,2);}
+async function adminCreateProblem(){
+  const r=await fetch("/api/problems",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({title:document.getElementById("npTitle").value,code_label:document.getElementById("npCodeLbl").value,rating:document.getElementById("npRating").value,tags:document.getElementById("npTags").value,statement:document.getElementById("npStatement").value,input_spec:document.getElementById("npIn").value,output_spec:document.getElementById("npOut").value,tests:collectTests("npTestsContainer")})});
+  const d=await r.json();toast(d.message||d.error,!r.ok);
+}
+
+window.addEventListener("DOMContentLoaded",async()=>{
+  initEditors();addTestRow("prTestsContainer");addTestRow("npTestsContainer");
+  await syncMe();await loadProblems("archive");
+  const pid=new URLSearchParams(location.search).get("problem");
+  if(pid&&/^\d+$/.test(pid))openProblem(Number(pid));
+});
+</script>
+</body>
+</html>
