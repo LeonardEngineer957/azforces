@@ -499,7 +499,7 @@ def run_code_sandbox(lang, code, stdin_data="", time_limit=2.0):
 # --- Səhifə & Tam Gizli Admin URL ---
 @app.route("/")
 def index():
-    return render_template("azforces.html", admin_portal=False)
+    return render_template("index.html", admin_portal=False)
 
 
 @app.route("/p/<slug>")
@@ -507,7 +507,7 @@ def secret_admin_portal(slug):
     _, adm, _, _ = get_session()
     if not adm or slug != ADMIN_SECRET_PATH:
         abort(404)
-    return render_template("azforces.html", admin_portal=True)
+    return render_template("index.html", admin_portal=True)
 
 
 # --- İnsan Doğrulaması + 5 Dəqiqəlik Qonaq + Açılış Rəyləri ---
