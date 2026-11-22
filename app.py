@@ -498,7 +498,7 @@ def run_code_sandbox(lang, code, stdin_data="", time_limit=2.0):
 
 @app.route("/")
 def index():
-    return render_template("azforces.html")
+    return render_template("index.html")
 
 
 @app.route("/api/human-challenge", methods=["GET"])
