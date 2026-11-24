@@ -29,7 +29,7 @@ except ImportError:
     RealDictCursor = None
 
 app = Flask(__name__)
-app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024  # 4 MB (şəkil / səs üçün)
+app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024
 
 if os.environ.get("TRUST_PROXY", "true").lower() == "true":
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
@@ -45,15 +45,17 @@ ALLOWED_PROVIDERS = {"judge0", "wandbox", "piston", "local"}
 ALLOWED_EMOJIS = {"👍", "🔥", "💡", "👏", "❤️"}
 ALLOW_LOCAL_RUNNER = os.environ.get("ALLOW_LOCAL_RUNNER", "false").lower() == "true"
 
-# Admin və gizli panel (Render mühit dəyişənlərindən oxunur)
+# Admin və gizli panel
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "").strip().lower()
 ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "Mr.Leonard").strip() or "Mr.Leonard"
 ADMIN_SECRET_PATH = os.environ.get("ADMIN_SECRET_PATH", "azf-panel-9482").strip("/")
+ADMIN_INFINITE_COINS = 999999999
+
 _ENV_ADMIN_HASH = os.environ.get("ADMIN_PASSWORD_HASH", "").strip()
 if not _ENV_ADMIN_HASH and os.environ.get("ADMIN_PASSWORD", "").strip():
     _ENV_ADMIN_HASH = generate_password_hash(os.environ["ADMIN_PASSWORD"].strip())
 
-# E-poçt (Brevo / SMTP)
+# E-poçt
 SMTP_HOST = os.environ.get("SMTP_HOST", "smtp.gmail.com").strip()
 SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
 SMTP_USER = os.environ.get("SMTP_USER", "").strip()
@@ -62,7 +64,7 @@ DEV_EMAIL_PREVIEW = os.environ.get("DEV_EMAIL_PREVIEW", "false").lower() == "tru
 BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "").strip()
 BREVO_SENDER_EMAIL = os.environ.get("BREVO_SENDER_EMAIL", "").strip() or SMTP_USER or ADMIN_EMAIL
 
-# Cloudinary & Xarici Səs Saxlama (sonradan başqa yerə bağlamaq üçün VOICE_UPLOAD_WEBHOOK)
+# Cloudinary & Səs saxlama
 CLOUD_NAME = os.environ.get("CLOUDINARY_CLOUD_NAME", "").strip()
 CLOUD_KEY = os.environ.get("CLOUDINARY_API_KEY", "").strip()
 CLOUD_SECRET = os.environ.get("CLOUDINARY_API_SECRET", "").strip()
@@ -76,17 +78,27 @@ MAX_DAILY_MSGS = 80
 MAX_DAILY_SUBS = 40
 MAX_DAILY_PROPS = 2
 
+# ══════════════════════════════════════════════════════════
+# MAĞAZA — ID-lər CSS class-ları ilə TAM uyğunlaşdırıldı
+# ══════════════════════════════════════════════════════════
 SHOP_ITEMS = [
     {"id": "none", "name": "Çərçivəsiz", "tier": "classic", "price": 0, "desc": "Sadə görünüş"},
     {"id": "neon-blue", "name": "Kiber Mavi", "tier": "classic", "price": 150, "desc": "Parlayan mavi halqa"},
     {"id": "aqua-frost", "name": "Buz Kristalı", "tier": "classic", "price": 300, "desc": "Sərin su parıltısı"},
     {"id": "emerald-matrix", "name": "Matris Yaşılı", "tier": "classic", "price": 500, "desc": "Alqoritmçi yaşıl enerji"},
+    {"id": "cyber-purple", "name": "Bənövşəyi Fırtına", "tier": "classic", "price": 800, "desc": "Dinamik bənövşəyi aura"},
+    {"id": "fire-phoenix", "name": "Alovlu Feniks", "tier": "classic", "price": 1000, "desc": "Qızmar alov çərçivəsi"},
     {"id": "gold-crown", "name": "Ustad Qızılı", "tier": "classic", "price": 1200, "desc": "Elit qızılı halqa"},
-    {"id": "dragon-flame", "name": "🐉 Alovlu Əjdaha", "tier": "fantasy", "price": 2500, "desc": "Fırlanan əjdaha alovu və qığılcımlar"},
-    {"id": "forest-vine", "name": "🌿 Canlı Meşə Sarmaşığı", "tier": "nature", "price": 3200, "desc": "Nəfəs alan zümrüd yarpaqlar və təbiət aurası"},
-    {"id": "ocean-leviathan", "name": "🌊 Okean Leviatanı", "tier": "nature", "price": 4000, "desc": "Axıcı dərin dəniz dalğası və enerji halqası"},
-    {"id": "storm-simurgh", "name": "🦅 Fırtına Simurqu", "tier": "fantasy", "price": 5500, "desc": "Qızmar qanadlı dönən mifik işıq"},
-    {"id": "cosmic-portal", "name": "🌌 Kosmik Portal", "tier": "fantasy", "price": 8000, "desc": "Fırlanan ulduzlu qalaktika vorteksi"},
+    {"id": "dragon-flame", "name": "🐉 Alovlu Əjdaha", "tier": "fantasy", "price": 2500, "desc": "Fırlanan əjdaha alovu"},
+    {"id": "unicorn-rainbow", "name": "🦄 Göyqurşağı Təkbuynuz", "tier": "fantasy", "price": 3000, "desc": "Rəng dəyişən sehrli halqa"},
+    {"id": "phoenix-ash", "name": "🔥 Kül Phoenix", "tier": "fantasy", "price": 3600, "desc": "Yüksələn alov quşu"},
+    {"id": "griffin-gold", "name": "🦅 Qızıl Qrifon", "tier": "fantasy", "price": 4200, "desc": "Mifik qanadlı qızıl aura"},
+    {"id": "forest-spirit", "name": "🌿 Meşə Ruhu", "tier": "nature", "price": 3200, "desc": "Nəfəs alan zümrüd yarpaqlar"},
+    {"id": "ocean-tide", "name": "🌊 Okean Qabarması", "tier": "nature", "price": 4000, "desc": "Axıcı dərin dəniz dalğası"},
+    {"id": "aurora-night", "name": "🌌 Şimal İşıqları", "tier": "nature", "price": 4800, "desc": "Axıcı qütb parıltısı"},
+    {"id": "cherry-blossom", "name": "🌸 Sakura Yarpaqları", "tier": "nature", "price": 5200, "desc": "Tökülən çəhrayı ləçəklər"},
+    {"id": "cosmic-void", "name": "🌌 Kosmik Portal", "tier": "legendary", "price": 8000, "desc": "Fırlanan qalaktika vorteksi"},
+    {"id": "divine-halo", "name": "👑 İlahi Halo", "tier": "legendary", "price": 12000, "desc": "Əfsanəvi ağ-qızıl parıltı"},
 ]
 
 _db_lock = threading.Lock()
@@ -206,6 +218,8 @@ def rate_limit(max_req=25, win=60, by_user=False):
     def dec(fn):
         @wraps(fn)
         def wrap(*a, **kw):
+            if getattr(request, "_adm", False):
+                return fn(*a, **kw)
             key = f"u:{getattr(request, '_u', '')}" if (by_user and getattr(request, "_u", "")) else (request.remote_addr or "ip")
             now = time.time()
             with _rate_lock:
@@ -228,7 +242,10 @@ def award_rewards(conn, username, xp_amt=0, coin_amt=0):
     u = conn.execute("SELECT level, xp, total_xp, coins FROM users WHERE LOWER(username)=LOWER(?)", (username,)).fetchone()
     if not u:
         return
-    lvl, cur, tot, coins = u["level"], u["xp"] + max(0, xp_amt), u["total_xp"] + max(0, xp_amt), u["coins"] + max(0, coin_amt)
+    lvl, cur, tot = u["level"], u["xp"] + max(0, xp_amt), u["total_xp"] + max(0, xp_amt)
+    coins = u["coins"] + max(0, coin_amt)
+    if username.lower() == ADMIN_USERNAME.lower():
+        coins = ADMIN_INFINITE_COINS
     while cur >= needed_xp(lvl):
         cur -= needed_xp(lvl)
         lvl += 1
@@ -255,7 +272,8 @@ def send_gmail_code(to_email, code):
             r = requests.post(
                 "https://api.brevo.com/v3/smtp/email",
                 headers={"accept": "application/json", "content-type": "application/json", "api-key": BREVO_API_KEY},
-                json={"sender": {"name": "AzForces", "email": BREVO_SENDER_EMAIL}, "to": [{"email": to_email}], "subject": "AzForces — Qeydiyyat Təsdiq Kodu", "textContent": text},
+                json={"sender": {"name": "AzForces", "email": BREVO_SENDER_EMAIL}, "to": [{"email": to_email}],
+                      "subject": "AzForces — Qeydiyyat Təsdiq Kodu", "textContent": text},
                 timeout=12,
             )
             if r.status_code in (200, 201, 202):
@@ -344,6 +362,7 @@ def require_admin(fn):
         if not adm:
             return jsonify({"error": "Yalnız Admin icazəsi tələb olunur."}), 403
         request._u = u or ADMIN_USERNAME
+        request._adm = True
         return fn(*a, **kw)
     return wrap
 
@@ -356,7 +375,8 @@ def safe_add_col(conn, table, col_def):
         try:
             conn.rollback()
         except Exception:
-            pass 
+            pass
+
 
 def init_db():
     conn = get_db()
@@ -394,7 +414,7 @@ def init_db():
         awarded_xp INTEGER DEFAULT 0, created_at {TS})""")
     conn.execute(f"CREATE TABLE IF NOT EXISTS test_cases (id {PK}, problem_id INTEGER NOT NULL REFERENCES problems(id) ON DELETE CASCADE, input_data TEXT NOT NULL, expected_output TEXT NOT NULL, is_sample INTEGER DEFAULT 1)")
     conn.execute(f"CREATE TABLE IF NOT EXISTS submissions (id {PK}, problem_id INTEGER NOT NULL, problem_title TEXT NOT NULL, username TEXT NOT NULL, language TEXT NOT NULL, code TEXT NOT NULL, verdict TEXT NOT NULL, passed_tests INTEGER DEFAULT 0, total_tests INTEGER DEFAULT 0, quality_pct INTEGER DEFAULT 0, exec_time TEXT DEFAULT '-', details TEXT DEFAULT '', room_id INTEGER DEFAULT NULL, created_at {TS})")
-    conn.execute(f"CREATE TABLE IF NOT EXISTS daily_challenges (day_date TEXT PRIMARY KEY, problem_id INTEGER NOT NULL)")
+    conn.execute("CREATE TABLE IF NOT EXISTS daily_challenges (day_date TEXT PRIMARY KEY, problem_id INTEGER NOT NULL)")
     conn.execute(f"CREATE TABLE IF NOT EXISTS daily_solves (id {PK}, day_date TEXT NOT NULL, username TEXT NOT NULL, quality_pct INTEGER DEFAULT 0, solved_at {TS}, UNIQUE(day_date, username))")
     conn.execute(f"CREATE TABLE IF NOT EXISTS rooms (id {PK}, room_code TEXT UNIQUE NOT NULL, title TEXT NOT NULL, bio TEXT DEFAULT 'Dostlarla söhbət və yarış qrupu', avatar_url TEXT DEFAULT '', avatar_color TEXT DEFAULT '#0ea5e9', creator TEXT NOT NULL, voice_link TEXT DEFAULT '', problem_ids_json TEXT DEFAULT '[]', duration_min INTEGER DEFAULT 0, max_members INTEGER DEFAULT 20, starts_at {DBL} NOT NULL, ends_at {DBL} NOT NULL, created_at {TS})")
     conn.execute(f"CREATE TABLE IF NOT EXISTS room_members (id {PK}, room_id INTEGER NOT NULL REFERENCES rooms(id) ON DELETE CASCADE, username TEXT NOT NULL, joined_at {TS}, UNIQUE(room_id, username))")
@@ -417,7 +437,9 @@ def init_db():
     ]:
         safe_add_col(conn, tbl, cdef)
 
-    for k, v in {"provider": os.environ.get("JUDGE_PROVIDER", "judge0"), "base_url": os.environ.get("JUDGE_BASE_URL", "https://ce.judge0.com"), "api_key": os.environ.get("JUDGE_API_KEY", "")}.items():
+    for k, v in {"provider": os.environ.get("JUDGE_PROVIDER", "judge0"),
+                 "base_url": os.environ.get("JUDGE_BASE_URL", "https://ce.judge0.com"),
+                 "api_key": os.environ.get("JUDGE_API_KEY", "")}.items():
         conn.execute("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO NOTHING", (k, v))
 
     if not _ENV_ADMIN_HASH:
@@ -425,16 +447,10 @@ def init_db():
         if not row or not row["value"]:
             gen = secrets.token_urlsafe(12)
             conn.execute("INSERT INTO settings (key, value) VALUES ('admin_password_hash', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value", (generate_password_hash(gen),))
-            # Təhlükəsizlik: ilkin admin parolu yalnız açıq şəkildə SHOW_INIT_ADMIN_PASSWORD=true
-            # mühit dəyişəni qoyulubsa konsola çap olunur. Əks halda production log-larında
-            # parolun görünməsinin qarşısı alınır — bunun yerinə ADMIN_PASSWORD env dəyişəni
-            # təyin edib deploy etmək tövsiyə olunur.
             if os.environ.get("SHOW_INIT_ADMIN_PASSWORD", "false").lower() == "true":
                 print(f"\n[AzForces] İlk Admin parolu: {gen} | Gizli panel: /p/{ADMIN_SECRET_PATH}\n", flush=True)
             else:
-                print(f"\n[AzForces] İlkin Admin parolu yaradıldı. Onu görmək üçün Render mühitində "
-                      f"SHOW_INIT_ADMIN_PASSWORD=true təyin edib yenidən deploy edin, "
-                      f"və ya daha təhlükəsizi — ADMIN_PASSWORD mühit dəyişənini özünüz təyin edin.\n", flush=True)
+                print("\n[AzForces] İlkin Admin parolu yaradıldı. ADMIN_PASSWORD env təyin etmək tövsiyə olunur.\n", flush=True)
 
     if conn.execute("SELECT COUNT(*) AS cnt FROM problems").fetchone()["cnt"] == 0:
         try:
@@ -442,11 +458,11 @@ def init_db():
             seed = SEED_PROBLEMS
         except ImportError:
             seed = [
-                ("1A", "A + B Cəmi", 650, "math, başlanğıc", 1.0, 256, "İki tam ədəd $a$ və $b$ verilir ($-10^9 \\le a,b \\le 10^9$). Onların cəmini ($a+b$) tapın.", "Tək sətirdə $a$ və $b$.", "$a+b$ cəmi.", "", "`print(sum(map(int, input().split())))`", [("3 5", "8", 1), ("-10 25", "15", 1), ("1000000000 1000000000", "2000000000", 0)]),
-                ("1B", "Tək yoxsa Cüt", 700, "math, başlanğıc", 1.0, 256, "Verilmiş $n$ ($1 \\le n \\le 10^9$) ədədinin tək və ya cüt olduğunu tapın.", "Bir tam ədəd $n$.", "Cütdürsə `EVEN`, təkdirsə `ODD`.", "", "`n % 2 == 0` yoxlayın.", [("4", "EVEN", 1), ("7", "ODD", 1), ("999999999", "ODD", 0)]),
-                ("1C", "Sadə Ədəd", 1000, "number theory", 2.0, 256, "$n$ ($1 \\le n \\le 10^9$) natural ədədinin sadə olub-olmadığını yoxlayın.", "Bir tam ədəd $n$.", "Sadədirsə `YES`, əks halda `NO`.", "$1$ sadə deyil.", "$2$-dən $\\sqrt{n}$-ə qədər bölənləri yoxlayın.", [("7", "YES", 1), ("1", "NO", 1), ("1000000007", "YES", 0)]),
-                ("1D", "Hədəf Cəm (Two Sum)", 1200, "hashing, arrays", 2.0, 256, "$n$ elementli massivdə cəmi $k$-ya bərabər iki müxtəlif indeksli element varmı?", "1-ci sətirdə $n, k$; 2-ci sətirdə $n$ ədəd.", "`YES` və ya `NO`.", "", "Ədədləri `set`-də saxlayın.", [("4 9\n2 7 11 15", "YES", 1), ("3 10\n1 2 3", "NO", 0)]),
-                ("1E", "Ən Uzun Artan Alt-ardıcıllıq (LIS)", 1800, "dp, binary search", 2.0, 256, "$n$ ($1 \\le n \\le 10^5$) ədəddən ibarət massivdə ən uzun ciddi artan alt-ardıcıllığın uzunluğunu tapın.", "1-ci sətirdə $n$; 2-ci sətirdə massiv.", "Maksimum uzunluq.", "", "$O(n \\log n)$ binary search + tails massivi.", [("6\n10 9 2 5 3 7", "3", 1), ("5\n5 4 3 2 1", "1", 0)]),
+                ("1A", "A + B Cəmi", 650, "math, başlanğıc", 1.0, 256, "İki tam ədəd $a$ və $b$ verilir. Onların cəmini tapın.", "Tək sətirdə $a$ və $b$.", "$a+b$ cəmi.", "", "`print(sum(map(int, input().split())))`", [("3 5", "8", 1), ("-10 25", "15", 1), ("1000000000 1000000000", "2000000000", 0)]),
+                ("1B", "Tək yoxsa Cüt", 700, "math, başlanğıc", 1.0, 256, "Verilmiş $n$ ədədinin tək və ya cüt olduğunu tapın.", "Bir tam ədəd $n$.", "Cütdürsə `EVEN`, təkdirsə `ODD`.", "", "`n % 2 == 0` yoxlayın.", [("4", "EVEN", 1), ("7", "ODD", 1), ("999999999", "ODD", 0)]),
+                ("1C", "Sadə Ədəd", 1000, "number theory", 2.0, 256, "$n$ natural ədədinin sadə olub-olmadığını yoxlayın.", "Bir tam ədəd $n$.", "Sadədirsə `YES`, əks halda `NO`.", "$1$ sadə deyil.", "Kökə qədər bölənləri yoxlayın.", [("7", "YES", 1), ("1", "NO", 1), ("1000000007", "YES", 0)]),
+                ("1D", "Hədəf Cəm (Two Sum)", 1200, "hashing, arrays", 2.0, 256, "Massivdə cəmi $k$-ya bərabər iki element varmı?", "1-ci sətirdə $n, k$; 2-ci sətirdə $n$ ədəd.", "`YES` və ya `NO`.", "", "Ədədləri `set`-də saxlayın.", [("4 9\n2 7 11 15", "YES", 1), ("3 10\n1 2 3", "NO", 0)]),
+                ("1E", "Ən Uzun Artan Alt-ardıcıllıq", 1800, "dp, binary search", 2.0, 256, "Ən uzun ciddi artan alt-ardıcıllığın uzunluğunu tapın.", "1-ci sətirdə $n$; 2-ci sətirdə massiv.", "Maksimum uzunluq.", "", "Binary search + tails.", [("6\n10 9 2 5 3 7", "3", 1), ("5\n5 4 3 2 1", "1", 0)]),
             ]
         for lbl, t, rt, tg, tl, ml, st, ins, outs, nt, ed, tests in seed:
             pid = conn.execute("INSERT INTO problems (code_label,title,rating,tags,time_limit,memory_limit,statement,input_spec,output_spec,note,editorial,author,visibility) VALUES (?,?,?,?,?,?,?,?,?,?,?,'AzForces','archive')",
@@ -456,12 +472,16 @@ def init_db():
 
     if conn.execute("SELECT COUNT(*) AS cnt FROM posts").fetchone()["cnt"] == 0:
         conn.execute("INSERT INTO posts (author, title, body, post_type, is_pinned) VALUES (?, ?, ?, 'announcement', 1)",
-                     (ADMIN_USERNAME, "AzForces Platformasına Xoş Gəldiniz!", "Burada rəsmi yarışlar, elanlar və anketlər paylaşılır. Hər gün Günün Məsələsini həll edərək aktivlik seriyanızı artırın, AzCoin yığıb fantastik animasiyalı çərçivələr əldə edin!"))
+                     (ADMIN_USERNAME, "AzForces Platformasına Xoş Gəldiniz!", "Rəsmi yarışlar, elanlar və anketlər burada paylaşılır. Hər gün Günün Məsələsini həll edib seriyınızı artırın!"))
+
     if conn.execute("SELECT COUNT(*) AS cnt FROM site_reviews").fetchone()["cnt"] == 0:
-        conn.execute("INSERT INTO site_reviews (username, rating, comment) VALUES (?, 5, ?) ON CONFLICT (username) DO NOTHING", (ADMIN_USERNAME, "Azərbaycan dilində müasir alqoritmik məsələ və icma platforması."))
+        conn.execute("INSERT INTO site_reviews (username, rating, comment) VALUES (?, 5, ?) ON CONFLICT (username) DO NOTHING",
+                     (ADMIN_USERNAME, "Azərbaycan dilində müasir alqoritmik məsələ və icma platforması."))
+
     if conn.execute("SELECT COUNT(*) AS cnt FROM creative_codes").fetchone()["cnt"] == 0:
         conn.execute("INSERT INTO creative_codes (title, description, language, code, sample_input, author) VALUES ('Almaz ASCII', 'Simmetrik almaz fiquru.', 'python', ?, '5', ?)",
                      ("n = int(input() or 5)\nfor i in range(n): print(' '*(n-i-1)+'*'*(2*i+1))\nfor i in range(n-2,-1,-1): print(' '*(n-i-1)+'*'*(2*i+1))", ADMIN_USERNAME))
+
     conn.commit()
     conn.close()
 
@@ -492,6 +512,8 @@ def sync_contests(conn):
 
 
 def check_daily(conn, username, kind, limit):
+    if username.lower() == ADMIN_USERNAME.lower():
+        return True
     u = conn.execute("SELECT * FROM users WHERE LOWER(username)=LOWER(?)", (username,)).fetchone()
     if not u:
         return True
@@ -546,22 +568,29 @@ def calc_quality_score(passed, total, time_str, time_limit, code):
 
 def upload_voice_storage(raw_bytes, ext="webm"):
     if VOICE_UPLOAD_WEBHOOK:
-        r = requests.post(VOICE_UPLOAD_WEBHOOK, files={"file": (f"voice.{ext}", raw_bytes, f"audio/{ext}")}, timeout=20)
-        if r.status_code < 400:
-            url = (r.json() or {}).get("url") or (r.json() or {}).get("secure_url")
-            if url:
-                return url, None
+        try:
+            r = requests.post(VOICE_UPLOAD_WEBHOOK, files={"file": (f"voice.{ext}", raw_bytes, f"audio/{ext}")}, timeout=20)
+            if r.status_code < 400:
+                j = r.json() or {}
+                url = j.get("url") or j.get("secure_url")
+                if url:
+                    return url, None
+        except Exception:
+            pass
         return None, "Xarici səs servisi cavab vermədi."
     if CLOUD_NAME and CLOUD_KEY and CLOUD_SECRET:
         ts = int(time.time())
         sig = hashlib.sha1(f"folder=azforces_voice&timestamp={ts}{CLOUD_SECRET}".encode("utf-8")).hexdigest()
-        r = requests.post(
-            f"https://api.cloudinary.com/v1_1/{CLOUD_NAME}/video/upload",
-            data={"api_key": CLOUD_KEY, "timestamp": ts, "folder": "azforces_voice", "signature": sig},
-            files={"file": (f"voice.{ext}", raw_bytes)}, timeout=25,
-        )
-        if r.status_code < 400:
-            return r.json().get("secure_url", ""), None
+        try:
+            r = requests.post(
+                f"https://api.cloudinary.com/v1_1/{CLOUD_NAME}/video/upload",
+                data={"api_key": CLOUD_KEY, "timestamp": ts, "folder": "azforces_voice", "signature": sig},
+                files={"file": (f"voice.{ext}", raw_bytes)}, timeout=25,
+            )
+            if r.status_code < 400:
+                return r.json().get("secure_url", ""), None
+        except Exception:
+            pass
         return None, "Cloudinary səs yükləməsi alınmadı."
     return None, "Səs saxlama servisi qoşulmayıb (Cloudinary və ya VOICE_UPLOAD_WEBHOOK təyin edin)."
 
@@ -622,10 +651,17 @@ def _run_judge0(base_url, api_key, lang, code, stdin_data, t_limit):
             hdrs["X-RapidAPI-Key"], hdrs["X-RapidAPI-Host"] = api_key, base_url.split("//")[-1].split("/")[0]
         else:
             hdrs["X-Auth-Token"] = api_key
-    b64 = lambda s: base64.b64encode((s or "").encode("utf-8")).decode("ascii")
-    deb64 = lambda s: base64.b64decode(s).decode("utf-8", errors="replace") if s else ""
+
+    def b64(s):
+        return base64.b64encode((s or "").encode("utf-8")).decode("ascii")
+
+    def deb64(s):
+        return base64.b64decode(s).decode("utf-8", errors="replace") if s else ""
+
     try:
-        r = requests.post(f"{base_url}/submissions?base64_encoded=true&wait=true", json={"language_id": lids[lang], "source_code": b64(code), "stdin": b64(stdin_data), "cpu_time_limit": t_limit}, headers=hdrs, timeout=22)
+        r = requests.post(f"{base_url}/submissions?base64_encoded=true&wait=true",
+                          json={"language_id": lids[lang], "source_code": b64(code), "stdin": b64(stdin_data), "cpu_time_limit": t_limit},
+                          headers=hdrs, timeout=22)
         if r.status_code >= 400:
             return {"ok": False, "status": "API Error", "stderr": f"HTTP {r.status_code}"}
         d = r.json()
@@ -637,7 +673,8 @@ def _run_judge0(base_url, api_key, lang, code, stdin_data, t_limit):
                     d = pr.json()
                     if d.get("status", {}).get("id", 0) not in (1, 2):
                         break
-        sid, et = d.get("status", {}).get("id", 0), f"{d.get('time')}s" if d.get("time") else "-"
+        sid = d.get("status", {}).get("id", 0)
+        et = f"{d.get('time')}s" if d.get("time") else "-"
         out, err, comp = deb64(d.get("stdout")), deb64(d.get("stderr")), deb64(d.get("compile_output"))
         if sid == 6:
             return {"ok": True, "status": "Compilation Error", "stdout": "", "stderr": comp or "Kompilyasiya xətası", "time": et}
@@ -657,12 +694,15 @@ def run_code_sandbox(lang, code, stdin_data="", time_limit=2.0):
     conn = get_db()
     cfg = {r["key"]: r["value"] for r in conn.execute("SELECT key, value FROM settings WHERE key IN ('provider','base_url','api_key')").fetchall()}
     conn.close()
-    prov, url, key = cfg.get("provider", "judge0"), cfg.get("base_url", "https://ce.judge0.com").strip().rstrip("/"), cfg.get("api_key", "").strip()
+    prov = cfg.get("provider", "judge0")
+    url = cfg.get("base_url", "https://ce.judge0.com").strip().rstrip("/")
+    key = cfg.get("api_key", "").strip()
 
     if prov == "local" and ALLOW_LOCAL_RUNNER and lang == "python":
         with tempfile.TemporaryDirectory() as td:
             src = os.path.join(td, "m.py")
-            open(src, "w", encoding="utf-8").write(code)
+            with open(src, "w", encoding="utf-8") as fh:
+                fh.write(code)
             try:
                 t0 = time.perf_counter()
                 p = subprocess.run([sys.executable, "-I", src], input=stdin_data, capture_output=True, text=True, timeout=t_limit, cwd=td)
@@ -672,6 +712,7 @@ def run_code_sandbox(lang, code, stdin_data="", time_limit=2.0):
 
     if prov == "wandbox":
         return _run_wandbox(lang, code, stdin_data)
+
     res = _run_judge0(url or "https://ce.judge0.com", key, lang, code, stdin_data, t_limit)
     if not res.get("ok"):
         wb = _run_wandbox(lang, code, stdin_data)
@@ -679,6 +720,8 @@ def run_code_sandbox(lang, code, stdin_data="", time_limit=2.0):
             return wb
     return res
 
+
+# ═══════════════ SƏHİFƏLƏR ═══════════════
 @app.route("/")
 def index():
     return render_template("index.html", admin_portal=False)
@@ -692,6 +735,7 @@ def secret_admin_portal(slug):
     return render_template("index.html", admin_portal=True)
 
 
+# ═══════════════ İNSAN / QONAQ / RƏYLƏR ═══════════════
 @app.route("/api/human-challenge", methods=["GET"])
 def human_challenge():
     tok = secrets.token_urlsafe(20)
@@ -756,16 +800,22 @@ def site_reviews():
     return jsonify({"message": "Dəyərləndirməniz qeyd edildi!"})
 
 
+# ═══════════════ AUTH ═══════════════
 @app.route("/api/auth/me", methods=["GET"])
 def auth_me():
     u, adm, hum, guest_rem = get_session()
-    info = {"authenticated": bool(u), "username": u, "is_admin": adm, "infinite_coins": adm, "human_verified": hum, "guest_remaining_sec": guest_rem, "level": 1, "xp": 0, "needed_xp": 100, "coins": 0, "avatar_url": "", "avatar_frame": "none", "avatar_color": "#3b82f6"}
+    info = {"authenticated": bool(u), "username": u, "is_admin": adm, "infinite_coins": adm,
+            "human_verified": hum, "guest_remaining_sec": guest_rem, "level": 1, "xp": 0,
+            "needed_xp": 100, "coins": 0, "avatar_url": "", "avatar_frame": "none", "avatar_color": "#3b82f6"}
     if u:
         conn = get_db()
         row = conn.execute("SELECT level, xp, total_xp, coins, rating, daily_streak, avatar_url, avatar_color, avatar_frame FROM users WHERE LOWER(username)=LOWER(?)", (u,)).fetchone()
         conn.close()
         if row:
-            info.update({"level": row["level"], "xp": row["xp"], "needed_xp": needed_xp(row["level"]), "total_xp": row["total_xp"], "coins": row["coins"], "rating": row["rating"], "streak": row["daily_streak"], "avatar_url": row["avatar_url"], "avatar_color": row["avatar_color"], "avatar_frame": row["avatar_frame"]})
+            info.update({"level": row["level"], "xp": row["xp"], "needed_xp": needed_xp(row["level"]),
+                         "total_xp": row["total_xp"], "coins": ADMIN_INFINITE_COINS if adm else row["coins"],
+                         "rating": row["rating"], "streak": row["daily_streak"], "avatar_url": row["avatar_url"],
+                         "avatar_color": row["avatar_color"], "avatar_frame": row["avatar_frame"]})
     return jsonify(info)
 
 
@@ -773,23 +823,27 @@ def auth_me():
 @rate_limit(5, 60)
 def send_reg_code():
     d = request.get_json(silent=True) or {}
-    email, uname, pw, pw2 = str(d.get("email") or "").strip().lower(), str(d.get("username") or "").strip(), str(d.get("password") or ""), str(d.get("password_confirm") or "")
+    email = str(d.get("email") or "").strip().lower()
+    uname = str(d.get("username") or "").strip()
+    pw = str(d.get("password") or "")
+    pw2 = str(d.get("password_confirm") or "")
     if not re.match(r"^[a-z0-9._%+-]+@gmail\.com$", email):
         return jsonify({"error": "Yalnız etibarlı @gmail.com ünvanı yazın."}), 400
     if ADMIN_EMAIL and email == ADMIN_EMAIL:
         return jsonify({"error": "Bu Gmail qeydiyyata bağlıdır."}), 400
     if not (3 <= len(uname) <= 22) or not re.match(r"^[a-zA-Z0-9_-]+$", uname) or uname.lower() == ADMIN_USERNAME.lower():
-        return jsonify({"error": "İstifadəçi adı 3-22 simvol (hərf, rəqəm, _ -) olmalı və unikal olmalıdır."}), 400
+        return jsonify({"error": "İstifadəçi adı 3-22 simvol (hərf, rəqəm, _ -) olmalıdır."}), 400
     if len(pw) < 6:
         return jsonify({"error": "Parol ən azı 6 simvol olmalıdır."}), 400
     if pw != pw2:
-        return jsonify({"error": "Şifrələr eyni deyil — zəhmət olmasa iki dəfə düzgün yazın."}), 400
+        return jsonify({"error": "Şifrələr eyni deyil — iki dəfə düzgün yazın."}), 400
     conn = get_db()
     if conn.execute("SELECT 1 FROM users WHERE LOWER(username)=LOWER(?) OR LOWER(email)=LOWER(?)", (uname, email)).fetchone():
         conn.close()
         return jsonify({"error": "Bu ad və ya Gmail artıq mövcuddur."}), 400
-    code = f"{secrets.randbelow(1_000_000):06d}"
-    conn.execute("INSERT INTO email_codes (email, code_hash, attempts, expires_at) VALUES (?, ?, 0, ?) ON CONFLICT (email) DO UPDATE SET code_hash=excluded.code_hash, attempts=0, expires_at=excluded.expires_at", (email, generate_password_hash(code), time.time() + 300))
+    code = f"{secrets.randbelow(1000000):06d}"
+    conn.execute("INSERT INTO email_codes (email, code_hash, attempts, expires_at) VALUES (?, ?, 0, ?) ON CONFLICT (email) DO UPDATE SET code_hash=excluded.code_hash, attempts=0, expires_at=excluded.expires_at",
+                 (email, generate_password_hash(code), time.time() + 300))
     conn.commit()
     conn.close()
     ok, mode = send_gmail_code(email, code)
@@ -805,7 +859,11 @@ def send_reg_code():
 @rate_limit(10, 60)
 def auth_register():
     d = request.get_json(silent=True) or {}
-    email, uname, pw, pw2, code = str(d.get("email") or "").strip().lower(), str(d.get("username") or "").strip(), str(d.get("password") or ""), str(d.get("password_confirm") or ""), str(d.get("code") or "").strip()
+    email = str(d.get("email") or "").strip().lower()
+    uname = str(d.get("username") or "").strip()
+    pw = str(d.get("password") or "")
+    pw2 = str(d.get("password_confirm") or "")
+    code = str(d.get("code") or "").strip()
     if pw != pw2 or len(pw) < 6:
         return jsonify({"error": "Şifrələr uyğun gəlmir."}), 400
     conn = get_db()
@@ -821,7 +879,8 @@ def auth_register():
     if conn.execute("SELECT 1 FROM users WHERE LOWER(username)=LOWER(?) OR LOWER(email)=LOWER(?)", (uname, email)).fetchone():
         conn.close()
         return jsonify({"error": "Ad və ya Gmail artıq tutulub."}), 400
-    conn.execute("INSERT INTO users (username, email, password_hash, coins, last_seen_at) VALUES (?, ?, ?, 50, ?)", (uname, email, generate_password_hash(pw), time.time()))
+    conn.execute("INSERT INTO users (username, email, password_hash, coins, last_seen_at) VALUES (?, ?, ?, 50, ?)",
+                 (uname, email, generate_password_hash(pw), time.time()))
     conn.execute("INSERT INTO user_inventory (username, item_id) VALUES (?, 'none') ON CONFLICT (username, item_id) DO NOTHING", (uname,))
     conn.execute("INSERT INTO rating_history (username, rating, label) VALUES (?, 800, 'Başlanğıc')", (uname,))
     conn.execute("DELETE FROM email_codes WHERE LOWER(email)=LOWER(?)", (email,))
@@ -852,15 +911,18 @@ def auth_login():
             with _fail_lock:
                 _admin_fails["count"] = 0
             if not conn.execute("SELECT 1 FROM users WHERE LOWER(username)=LOWER(?)", (ADMIN_USERNAME,)).fetchone():
-                conn.execute("INSERT INTO users (username, email, password_hash, coins, last_seen_at) VALUES (?, ?, ?, 999999, ?) ON CONFLICT (username) DO NOTHING", (ADMIN_USERNAME, ADMIN_EMAIL or "admin@azforces.local", adm_hash, now))
+                conn.execute("INSERT INTO users (username, email, password_hash, coins, last_seen_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT (username) DO NOTHING",
+                             (ADMIN_USERNAME, ADMIN_EMAIL or "admin@azforces.local", adm_hash, ADMIN_INFINITE_COINS, now))
                 conn.execute("INSERT INTO user_inventory (username, item_id) VALUES (?, 'none') ON CONFLICT (username, item_id) DO NOTHING", (ADMIN_USERNAME,))
                 conn.execute("INSERT INTO rating_history (username, rating, label) VALUES (?, 800, 'Başlanğıc')", (ADMIN_USERNAME,))
-            else:
-                conn.execute("UPDATE users SET last_seen_at=? WHERE LOWER(username)=LOWER(?)", (now, ADMIN_USERNAME))
+            conn.execute("UPDATE users SET last_seen_at=?, coins=? WHERE LOWER(username)=LOWER(?)", (now, ADMIN_INFINITE_COINS, ADMIN_USERNAME))
+            for it in SHOP_ITEMS:
+                conn.execute("INSERT INTO user_inventory (username, item_id) VALUES (?, ?) ON CONFLICT (username, item_id) DO NOTHING", (ADMIN_USERNAME, it["id"]))
             conn.commit()
             conn.close()
-            ut, at = create_session(ADMIN_USERNAME, "user", SESSION_TTL), create_session(ADMIN_USERNAME, "admin", ADMIN_TTL)
-            resp = make_response(jsonify({"ok": True, "username": ADMIN_USERNAME, "is_admin": True, "message": "Xoş gəldiniz!"}))
+            ut = create_session(ADMIN_USERNAME, "user", SESSION_TTL)
+            at = create_session(ADMIN_USERNAME, "admin", ADMIN_TTL)
+            resp = make_response(jsonify({"ok": True, "username": ADMIN_USERNAME, "is_admin": True, "infinite_coins": True, "message": "Xoş gəldiniz, Admin!"}))
             set_cookie(resp, "az_session", ut, SESSION_TTL)
             set_cookie(resp, "az_admin_session", at, ADMIN_TTL)
             return resp
@@ -899,6 +961,7 @@ def auth_logout():
     return resp
 
 
+# ═══════════════ PROFİL ═══════════════
 def _build_profile_payload(conn, target, include_private=False, viewer_is_admin=False):
     u = conn.execute("SELECT * FROM users WHERE LOWER(username)=LOWER(?)", (target,)).fetchone()
     if not u:
@@ -918,19 +981,21 @@ def _build_profile_payload(conn, target, include_private=False, viewer_is_admin=
         "username": uname, "bio": u["bio"], "avatar_url": u["avatar_url"], "avatar_color": u["avatar_color"],
         "avatar_frame": u["avatar_frame"], "level": u["level"], "xp": u["xp"], "needed_xp": need,
         "progress_pct": min(100, int(u["xp"] * 100 / need)), "total_xp": u["total_xp"],
-        "coins": u["coins"], "infinite_coins": target_is_adm,
+        "coins": ADMIN_INFINITE_COINS if target_is_adm else u["coins"], "infinite_coins": target_is_adm,
         "rating": u["rating"], "streak": u["daily_streak"], "solved_count": solved,
         "recent_solved": recent, "heatmap": dict(heat), "rating_history": r_hist, "is_admin_user": target_is_adm,
+        "created_at": u["created_at"],
     }
     if viewer_is_admin:
         last_ts = float(u["last_seen_at"] or 0)
-        is_on = (time.time() - last_ts) <= 120 if last_ts > 0 else False
         data["admin_meta"] = {
-            "is_online": is_on,
+            "is_online": (time.time() - last_ts) <= 120 if last_ts > 0 else False,
             "last_seen": datetime.datetime.fromtimestamp(last_ts).strftime("%Y-%m-%d %H:%M") if last_ts > 0 else "Məlumat yoxdur",
             "joined_at": u["created_at"],
             "email": u["email"],
         }
+        data["is_online"] = data["admin_meta"]["is_online"]
+        data["joined_at"] = u["created_at"]
     if include_private:
         fr_rows = conn.execute("SELECT * FROM friendships WHERE LOWER(user_a)=LOWER(?) OR LOWER(user_b)=LOWER(?)", (uname, uname)).fetchall()
         friends, inc = [], []
@@ -938,7 +1003,9 @@ def _build_profile_payload(conn, target, include_private=False, viewer_is_admin=
             other = f["user_b"] if f["user_a"].lower() == uname.lower() else f["user_a"]
             if f["status"] == "accepted":
                 fu = conn.execute("SELECT level, daily_streak, avatar_url, avatar_color, avatar_frame FROM users WHERE LOWER(username)=LOWER(?)", (other,)).fetchone()
-                friends.append({"username": other, "level": fu["level"] if fu else 1, "streak": fu["daily_streak"] if fu else 0, "avatar_url": fu["avatar_url"] if fu else "", "avatar_color": fu["avatar_color"] if fu else "#3b82f6", "avatar_frame": fu["avatar_frame"] if fu else "none", "is_admin_user": other == ADMIN_USERNAME})
+                friends.append({"username": other, "level": fu["level"] if fu else 1, "streak": fu["daily_streak"] if fu else 0,
+                                "avatar_url": fu["avatar_url"] if fu else "", "avatar_color": fu["avatar_color"] if fu else "#3b82f6",
+                                "avatar_frame": fu["avatar_frame"] if fu else "none", "is_admin_user": other == ADMIN_USERNAME})
             elif f["status"] == "pending" and f["action_by"].lower() != uname.lower():
                 inc.append(other)
         data["email"] = u["email"]
@@ -995,7 +1062,9 @@ def upload_avatar():
     ts = int(time.time())
     sig = hashlib.sha1(f"folder=azforces_avatars&timestamp={ts}{CLOUD_SECRET}".encode("utf-8")).hexdigest()
     try:
-        r = requests.post(f"https://api.cloudinary.com/v1_1/{CLOUD_NAME}/image/upload", data={"api_key": CLOUD_KEY, "timestamp": ts, "folder": "azforces_avatars", "signature": sig}, files={"file": (f.filename or "avatar.jpg", raw)}, timeout=20)
+        r = requests.post(f"https://api.cloudinary.com/v1_1/{CLOUD_NAME}/image/upload",
+                          data={"api_key": CLOUD_KEY, "timestamp": ts, "folder": "azforces_avatars", "signature": sig},
+                          files={"file": (f.filename or "avatar.jpg", raw)}, timeout=20)
         if r.status_code >= 400:
             return jsonify({"error": "Şəkil yüklənmədi."}), 502
         url = r.json().get("secure_url", "").replace("/upload/", "/upload/c_fill,w_256,h_256,q_auto/")
@@ -1027,18 +1096,19 @@ def upload_voice():
     return jsonify({"audio_url": url})
 
 
+# ═══════════════ COİN (Admin limitsiz) ═══════════════
 @app.route("/api/coins/transfer", methods=["POST"])
 @require_user
 @rate_limit(15, 60, by_user=True)
 def transfer_coins():
-    me, is_adm = request._u, request._adm
+    me_u, is_adm = request._u, request._adm
     d = request.get_json(silent=True) or {}
     target = str(d.get("username") or "").strip().lstrip("@")
-    amount = safe_int(d.get("amount"), 0, 1, 100000)
-    if not target or target.lower() == me.lower() or amount <= 0:
+    amount = safe_int(d.get("amount"), 0, 1, 1000000)
+    if not target or target.lower() == me_u.lower() or amount <= 0:
         return jsonify({"error": "Düzgün istifadəçi adı və AzCoin miqdarı yazın."}), 400
     conn = get_db()
-    sender = conn.execute("SELECT username, coins FROM users WHERE LOWER(username)=LOWER(?)", (me,)).fetchone()
+    sender = conn.execute("SELECT username, coins FROM users WHERE LOWER(username)=LOWER(?)", (me_u,)).fetchone()
     receiver = conn.execute("SELECT username FROM users WHERE LOWER(username)=LOWER(?)", (target,)).fetchone()
     if not receiver:
         conn.close()
@@ -1047,14 +1117,16 @@ def transfer_coins():
         if not sender or sender["coins"] < amount:
             conn.close()
             return jsonify({"error": "Balansınızda kifayət qədər AzCoin yoxdur."}), 400
-        conn.execute("UPDATE users SET coins = coins - ? WHERE LOWER(username)=LOWER(?)", (amount, me))
+        conn.execute("UPDATE users SET coins = coins - ? WHERE LOWER(username)=LOWER(?)", (amount, me_u))
     conn.execute("UPDATE users SET coins = coins + ? WHERE LOWER(username)=LOWER(?)", (amount, receiver["username"]))
-    conn.execute("INSERT INTO direct_messages (sender, receiver, message) VALUES (?, ?, ?)", (me, receiver["username"], f"🪙 Sizə {amount} AzCoin göndərdi!"))
+    conn.execute("INSERT INTO direct_messages (sender, receiver, message) VALUES (?, ?, ?)",
+                 (me_u, receiver["username"], f"🪙 Sizə {amount} AzCoin göndərdi!"))
     conn.commit()
     conn.close()
-    return jsonify({"message": f"{receiver['username']} istifadəçisinə {amount} AzCoin göndərildi!"})
+    return jsonify({"message": f"{receiver['username']} istifadəçisinə {amount} AzCoin göndərildi!", "infinite_coins": is_adm})
 
 
+# ═══════════════ MAĞAZA ═══════════════
 @app.route("/api/shop", methods=["GET"])
 @require_user
 def get_shop():
@@ -1062,8 +1134,12 @@ def get_shop():
     u = conn.execute("SELECT coins, avatar_frame FROM users WHERE LOWER(username)=LOWER(?)", (request._u,)).fetchone()
     owned = {r["item_id"] for r in conn.execute("SELECT item_id FROM user_inventory WHERE LOWER(username)=LOWER(?)", (request._u,)).fetchall()}
     owned.add("none")
+    if request._adm:
+        owned = {it["id"] for it in SHOP_ITEMS}
     conn.close()
-    return jsonify({"coins": u["coins"], "infinite_coins": request._adm, "equipped": u["avatar_frame"], "items": [it | {"owned": it["id"] in owned, "equipped": u["avatar_frame"] == it["id"]} for it in SHOP_ITEMS]})
+    return jsonify({"coins": ADMIN_INFINITE_COINS if request._adm else u["coins"], "infinite_coins": request._adm,
+                    "equipped": u["avatar_frame"],
+                    "items": [it | {"owned": it["id"] in owned, "equipped": u["avatar_frame"] == it["id"]} for it in SHOP_ITEMS]})
 
 
 @app.route("/api/shop/buy", methods=["POST"])
@@ -1074,7 +1150,7 @@ def shop_buy():
     if not item:
         return jsonify({"error": "Məhsul tapılmadı."}), 404
     conn = get_db()
-    if conn.execute("SELECT 1 FROM user_inventory WHERE LOWER(username)=LOWER(?) AND item_id=?", (request._u, iid)).fetchone():
+    if not request._adm and conn.execute("SELECT 1 FROM user_inventory WHERE LOWER(username)=LOWER(?) AND item_id=?", (request._u, iid)).fetchone():
         conn.close()
         return jsonify({"error": "Artıq inventarınızdadır."}), 400
     if not request._adm:
@@ -1088,7 +1164,7 @@ def shop_buy():
     conn.execute("INSERT INTO user_inventory (username, item_id) VALUES (?, ?) ON CONFLICT (username, item_id) DO NOTHING", (request._u, iid))
     conn.commit()
     conn.close()
-    return jsonify({"message": f"'{item['name']}' alındı və taxıldı!"})
+    return jsonify({"message": f"'{item['name']}' alındı və taxıldı!", "infinite_coins": request._adm})
 
 
 @app.route("/api/shop/equip", methods=["POST"])
@@ -1096,7 +1172,7 @@ def shop_buy():
 def shop_equip():
     iid = str((request.get_json(silent=True) or {}).get("item_id") or "none")
     conn = get_db()
-    if iid != "none" and not conn.execute("SELECT 1 FROM user_inventory WHERE LOWER(username)=LOWER(?) AND item_id=?", (request._u, iid)).fetchone():
+    if iid != "none" and not request._adm and not conn.execute("SELECT 1 FROM user_inventory WHERE LOWER(username)=LOWER(?) AND item_id=?", (request._u, iid)).fetchone():
         conn.close()
         return jsonify({"error": "Bu çərçivə sizdə yoxdur."}), 403
     conn.execute("UPDATE users SET avatar_frame=? WHERE LOWER(username)=LOWER(?)", (iid, request._u))
@@ -1105,22 +1181,24 @@ def shop_equip():
     return jsonify({"message": "Çərçivə dəyişdirildi!"})
 
 
+# ═══════════════ DOSTLAR ═══════════════
 @app.route("/api/friends/request", methods=["POST"])
 @require_user
 def friend_req():
-    me, target = request._u, str((request.get_json(silent=True) or {}).get("username") or "").strip().lstrip("@")
-    if not target or target.lower() == me.lower():
+    me_u = request._u
+    target = str((request.get_json(silent=True) or {}).get("username") or "").strip().lstrip("@")
+    if not target or target.lower() == me_u.lower():
         return jsonify({"error": "Düzgün istifadəçi adı yazın."}), 400
     conn = get_db()
     tu = conn.execute("SELECT username FROM users WHERE LOWER(username)=LOWER(?)", (target,)).fetchone()
     if not tu:
         conn.close()
         return jsonify({"error": "İstifadəçi tapılmadı."}), 404
-    a, b = sorted([me, tu["username"]], key=str.lower)
+    a, b = sorted([me_u, tu["username"]], key=str.lower)
     if conn.execute("SELECT 1 FROM friendships WHERE LOWER(user_a)=LOWER(?) AND LOWER(user_b)=LOWER(?)", (a, b)).fetchone():
         conn.close()
         return jsonify({"error": "Artıq dostsunuz və ya sorğu var."}), 400
-    conn.execute("INSERT INTO friendships (user_a, user_b, status, action_by) VALUES (?, ?, 'pending', ?)", (a, b, me))
+    conn.execute("INSERT INTO friendships (user_a, user_b, status, action_by) VALUES (?, ?, 'pending', ?)", (a, b, me_u))
     conn.commit()
     conn.close()
     return jsonify({"message": f"{tu['username']} istifadəçisinə sorğu göndərildi!"})
@@ -1129,11 +1207,11 @@ def friend_req():
 @app.route("/api/friends/respond", methods=["POST"])
 @require_user
 def friend_resp():
-    me, d = request._u, request.get_json(silent=True) or {}
-    a, b = sorted([me, str(d.get("username") or "").strip()], key=str.lower)
+    me_u, d = request._u, request.get_json(silent=True) or {}
+    a, b = sorted([me_u, str(d.get("username") or "").strip()], key=str.lower)
     conn = get_db()
     if d.get("action") == "accept":
-        conn.execute("UPDATE friendships SET status='accepted', action_by=? WHERE LOWER(user_a)=LOWER(?) AND LOWER(user_b)=LOWER(?) AND status='pending'", (me, a, b))
+        conn.execute("UPDATE friendships SET status='accepted', action_by=? WHERE LOWER(user_a)=LOWER(?) AND LOWER(user_b)=LOWER(?) AND status='pending'", (me_u, a, b))
     else:
         conn.execute("DELETE FROM friendships WHERE LOWER(user_a)=LOWER(?) AND LOWER(user_b)=LOWER(?)", (a, b))
     conn.commit()
@@ -1141,6 +1219,7 @@ def friend_resp():
     return jsonify({"ok": True})
 
 
+# ═══════════════ ADMIN: İSTİFADƏÇİLƏR ═══════════════
 @app.route("/api/admin/users", methods=["GET"])
 @require_admin
 def admin_list_users():
@@ -1154,7 +1233,10 @@ def admin_list_users():
         if q and q not in r["username"].lower() and q not in r["email"].lower():
             continue
         ts = float(r["last_seen_at"] or 0)
-        out.append(r | {"solved_count": solved_map.get(r["username"].lower(), 0), "is_admin_user": r["username"] == ADMIN_USERNAME, "is_online": (now - ts) <= 120 if ts > 0 else False})
+        out.append(r | {"solved_count": solved_map.get(r["username"].lower(), 0),
+                        "is_admin_user": r["username"] == ADMIN_USERNAME,
+                        "is_online": (now - ts) <= 120 if ts > 0 else False,
+                        "infinite_coins": r["username"] == ADMIN_USERNAME})
     return jsonify(out)
 
 
@@ -1162,7 +1244,7 @@ def admin_list_users():
 @require_admin
 def admin_gift_user(target):
     d = request.get_json(silent=True) or {}
-    coins = safe_int(d.get("coins"), 0, -10000, 100000)
+    coins = safe_int(d.get("coins"), 0, -1000000, 1000000)
     xp = safe_int(d.get("xp"), 0, 0, 100000)
     conn = get_db()
     u = conn.execute("SELECT username, coins FROM users WHERE LOWER(username)=LOWER(?)", (target,)).fetchone()
@@ -1192,6 +1274,7 @@ def admin_delete_user(target):
     return jsonify({"message": f"{target} silindi."}) if cur.rowcount else (jsonify({"error": "Tapılmadı."}), 404)
 
 
+# ═══════════════ GÜNÜN MƏSƏLƏSİ ═══════════════
 @app.route("/api/daily", methods=["GET"])
 def daily_challenge():
     u, _, _, _ = get_session()
@@ -1205,10 +1288,17 @@ def daily_challenge():
         ur = conn.execute("SELECT daily_streak FROM users WHERE LOWER(username)=LOWER(?)", (u,)).fetchone()
         streak = ur["daily_streak"] if ur else 0
     top = [r | {"is_admin_user": r["username"] == ADMIN_USERNAME} for r in conn.execute("SELECT username, quality_pct, solved_at FROM daily_solves WHERE day_date=? ORDER BY id ASC LIMIT 10", (today,)).fetchall()]
+    board = [r | {"is_admin_user": r["username"] == ADMIN_USERNAME} for r in conn.execute("SELECT username, daily_streak FROM users WHERE daily_streak > 0 ORDER BY daily_streak DESC LIMIT 10").fetchall()]
+    heat = {}
+    if u:
+        for row in conn.execute("SELECT day_date FROM daily_solves WHERE LOWER(username)=LOWER(?) ORDER BY id DESC LIMIT 60", (u,)).fetchall():
+            heat[row["day_date"]] = 1
     conn.close()
-    now_lt = time.localtime()
-    sec_left = 86400 - (now_lt.tm_hour * 3600 + now_lt.tm_min * 60 + now_lt.tm_sec)
-    return jsonify({"day_date": today, "problem": prob, "solved_today": solved_today, "streak": streak, "seconds_left": sec_left, "reward_xp": 50, "reward_coins": 40, "chest_7day_coins": 200, "top_solvers": top})
+    lt = time.localtime()
+    sec_left = 86400 - (lt.tm_hour * 3600 + lt.tm_min * 60 + lt.tm_sec)
+    return jsonify({"day_date": today, "problem": prob, "solved_today": solved_today, "streak": streak,
+                    "seconds_left": sec_left, "reward_xp": 50, "reward_coins": 40, "chest_7day_coins": 200,
+                    "top_solvers": top, "streak_board": board, "heatmap": heat})
 
 
 @app.route("/api/admin/daily", methods=["POST"])
@@ -1227,6 +1317,7 @@ def admin_set_daily():
     return jsonify({"message": f"Günün məsələsi '{p['code_label']}. {p['title']}' seçildi!"})
 
 
+# ═══════════════ MƏSƏLƏLƏR ═══════════════
 @app.route("/api/problems", methods=["GET"])
 def list_problems():
     view = request.args.get("view", "archive")
@@ -1271,13 +1362,16 @@ def create_problem():
         return jsonify({"error": "Başlıq, şərt və test mütləqdir."}), 400
     conn = get_db()
     pid = conn.execute("INSERT INTO problems (code_label,title,rating,tags,time_limit,memory_limit,statement,input_spec,output_spec,note,editorial,author,visibility) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                       (str(d.get("code_label") or "").strip().upper()[:10], t, safe_int(d.get("rating"), 800, 100, 4000), str(d.get("tags", "custom")), safe_float(d.get("time_limit"), 2.0), safe_int(d.get("memory_limit"), 256, 16, 1024),
-                        st, str(d.get("input_spec", "")), str(d.get("output_spec", "")), str(d.get("note", "")), str(d.get("editorial", "")), ADMIN_USERNAME, d.get("visibility", "archive"))).lastrowid
+                       (str(d.get("code_label") or "").strip().upper()[:10], t, safe_int(d.get("rating"), 800, 100, 4000),
+                        str(d.get("tags", "custom")), safe_float(d.get("time_limit"), 2.0), safe_int(d.get("memory_limit"), 256, 16, 1024),
+                        st, str(d.get("input_spec", "")), str(d.get("output_spec", "")), str(d.get("note", "")),
+                        str(d.get("editorial", "")), ADMIN_USERNAME, "archive")).lastrowid
     if not conn.execute("SELECT code_label FROM problems WHERE id=?", (pid,)).fetchone()["code_label"]:
         conn.execute("UPDATE problems SET code_label=? WHERE id=?", (f"{pid}A", pid))
     for tc in tests:
         if isinstance(tc, dict):
-            conn.execute("INSERT INTO test_cases (problem_id, input_data, expected_output, is_sample) VALUES (?, ?, ?, ?)", (pid, str(tc.get("input", "")), str(tc.get("output", "")), 1 if tc.get("is_sample", True) else 0))
+            conn.execute("INSERT INTO test_cases (problem_id, input_data, expected_output, is_sample) VALUES (?, ?, ?, ?)",
+                         (pid, str(tc.get("input", "")), str(tc.get("output", "")), 1 if tc.get("is_sample", True) else 0))
     conn.commit()
     conn.close()
     return jsonify({"id": pid, "message": "Məsələ birbaşa Məsələlər bölməsinə əlavə olundu!"})
@@ -1293,6 +1387,7 @@ def delete_problem(pid):
     return jsonify({"message": "Silindi."})
 
 
+# ═══════════════ YARIŞLAR ═══════════════
 @app.route("/api/contests", methods=["GET", "POST"])
 def contests_handler():
     conn = get_db()
@@ -1314,11 +1409,13 @@ def contests_handler():
         conn.close()
         return jsonify({"error": "Yarış adı yazın."}), 400
     dur, now = safe_int(d.get("duration_min"), 90, 10, 1440), time.time()
-    cid = conn.execute("INSERT INTO contests (title, duration_min, starts_at, ends_at, status) VALUES (?, ?, ?, ?, 'active')", (title, dur, now, now + dur * 60)).lastrowid
+    cid = conn.execute("INSERT INTO contests (title, duration_min, starts_at, ends_at, status) VALUES (?, ?, ?, ?, 'active')",
+                       (title, dur, now, now + dur * 60)).lastrowid
     for i, raw_pid in enumerate(d.get("problem_ids") or []):
         pid = safe_int(raw_pid, 0)
         if pid > 0:
-            conn.execute("UPDATE problems SET contest_id=?, visibility='contest', code_label=? WHERE id=?", (cid, chr(65 + i) if i < 26 else f"P{i+1}", pid))
+            conn.execute("UPDATE problems SET contest_id=?, visibility='contest', code_label=? WHERE id=?",
+                         (cid, chr(65 + i) if i < 26 else f"P{i+1}", pid))
     conn.commit()
     conn.close()
     return jsonify({"message": "Yarış başladıldı!"})
@@ -1335,33 +1432,41 @@ def finish_contest(cid):
     return jsonify({"message": "Yarış bitirildi, suallar Gym-ə köçürüldü!"})
 
 
+# ═══════════════ TƏKLİFLƏR ═══════════════
 @app.route("/api/proposals", methods=["POST"])
 @require_user
 @rate_limit(5, 60, by_user=True)
 def submit_proposal():
-    me, is_adm, d = request._u, request._adm, request.get_json(silent=True) or {}
-    t, st, tests, code, lang = str(d.get("title") or "").strip(), str(d.get("statement") or "").strip(), d.get("tests") or [], str(d.get("author_code") or ""), str(d.get("author_lang") or "python")
+    me_u, is_adm = request._u, request._adm
+    d = request.get_json(silent=True) or {}
+    t, st = str(d.get("title") or "").strip(), str(d.get("statement") or "").strip()
+    tests, code, lang = d.get("tests") or [], str(d.get("author_code") or ""), str(d.get("author_lang") or "python")
     if not t or not st or not tests or (not is_adm and not code.strip()):
         return jsonify({"error": "Bütün vacib xanaları doldurun."}), 400
     conn = get_db()
+
     if is_adm:
         pid = conn.execute("INSERT INTO problems (code_label,title,rating,tags,statement,input_spec,output_spec,editorial,starter_code,author,visibility) VALUES (?,?,?,?,?,?,?,?,?,?,'archive')",
-                           (str(d.get("code_label") or "").strip().upper()[:10], t[:120], safe_int(d.get("rating"), 800, 600, 3500), str(d.get("tags", "custom")), st, str(d.get("input_spec", "")), str(d.get("output_spec", "")), str(d.get("editorial", "")), code, me)).lastrowid
+                           (str(d.get("code_label") or "").strip().upper()[:10], t[:120], safe_int(d.get("rating"), 800, 600, 3500),
+                            str(d.get("tags", "custom")), st, str(d.get("input_spec", "")), str(d.get("output_spec", "")),
+                            str(d.get("editorial", "")), code, me_u)).lastrowid
         if not conn.execute("SELECT code_label FROM problems WHERE id=?", (pid,)).fetchone()["code_label"]:
             conn.execute("UPDATE problems SET code_label=? WHERE id=?", (f"A{pid}", pid))
         for tc in tests[:15]:
             if isinstance(tc, dict):
-                conn.execute("INSERT INTO test_cases (problem_id, input_data, expected_output, is_sample) VALUES (?, ?, ?, ?)", (pid, str(tc.get("input", "")), str(tc.get("output", "")), 1 if tc.get("is_sample", True) else 0))
+                conn.execute("INSERT INTO test_cases (problem_id, input_data, expected_output, is_sample) VALUES (?, ?, ?, ?)",
+                             (pid, str(tc.get("input", "")), str(tc.get("output", "")), 1 if tc.get("is_sample", True) else 0))
         conn.commit()
         conn.close()
-        return jsonify({"message": "Admin sualı birbaşa Məsələlər bölməsinə əlavə edildi!"})
+        return jsonify({"message": "Admin sualı birbaşa Məsələlər bölməsinə əlavə edildi!", "direct": True})
 
-    if conn.execute("SELECT COUNT(*) AS cnt FROM problems WHERE LOWER(author)=LOWER(?) AND visibility='pending'", (me,)).fetchone()["cnt"] >= 2:
+    if conn.execute("SELECT COUNT(*) AS cnt FROM problems WHERE LOWER(author)=LOWER(?) AND visibility='pending'", (me_u,)).fetchone()["cnt"] >= MAX_DAILY_PROPS:
         conn.close()
         return jsonify({"error": "Gözləmədə maks. 2 təklifiniz ola bilər."}), 400
-    if not check_daily(conn, me, "prop", MAX_DAILY_PROPS):
+    if not check_daily(conn, me_u, "prop", MAX_DAILY_PROPS):
         conn.close()
         return jsonify({"error": "Gündəlik təklif limitiniz bitib."}), 429
+
     ok_cnt, status_txt = 0, "Keçdi ✔"
     for tc in tests[:4]:
         res = run_code_sandbox(lang, code, str(tc.get("input", "")), 2.0)
@@ -1369,12 +1474,16 @@ def submit_proposal():
             status_txt = f"Xəta ({res.get('status', 'WA')})"
             break
         ok_cnt += 1
+
     pid = conn.execute("INSERT INTO problems (code_label,title,rating,tags,statement,input_spec,output_spec,editorial,starter_code,author,visibility,author_check_status) VALUES (?,?,?,?,?,?,?,?,?,?,'pending',?)",
-                       ("P0", t[:120], safe_int(d.get("rating"), 800, 600, 3500), str(d.get("tags", "custom")), st, str(d.get("input_spec", "")), str(d.get("output_spec", "")), str(d.get("editorial", "")), code, me, f"{status_txt} ({ok_cnt}/{min(len(tests),4)})")).lastrowid
+                       ("P0", t[:120], safe_int(d.get("rating"), 800, 600, 3500), str(d.get("tags", "custom")), st,
+                        str(d.get("input_spec", "")), str(d.get("output_spec", "")), str(d.get("editorial", "")), code, me_u,
+                        f"{status_txt} ({ok_cnt}/{min(len(tests),4)})")).lastrowid
     conn.execute("UPDATE problems SET code_label=? WHERE id=?", (f"U{pid}", pid))
     for tc in tests[:12]:
         if isinstance(tc, dict):
-            conn.execute("INSERT INTO test_cases (problem_id, input_data, expected_output, is_sample) VALUES (?, ?, ?, ?)", (pid, str(tc.get("input", "")), str(tc.get("output", "")), 1 if tc.get("is_sample", True) else 0))
+            conn.execute("INSERT INTO test_cases (problem_id, input_data, expected_output, is_sample) VALUES (?, ?, ?, ?)",
+                         (pid, str(tc.get("input", "")), str(tc.get("output", "")), 1 if tc.get("is_sample", True) else 0))
     conn.commit()
     conn.close()
     return jsonify({"message": f"Təklif Adminə göndərildi! ({status_txt})"})
@@ -1425,12 +1534,10 @@ def review_proposal(pid):
     return jsonify({"message": "Təklif rədd edildi və siyahıdan silindi."})
 
 
+# ═══════════════ RUN / SUBMIT ═══════════════
 @app.route("/api/run", methods=["POST"])
 @rate_limit(25, 60)
 def run_custom():
-    # Təhlükəsizlik: açıq sandbox icra endpoint-i tamamilə anonim botlara açıq qalmasın deyə,
-    # yalnız daxil olmuş istifadəçi, insan-doğrulaması keçmiş ziyarətçi və ya aktiv qonaq
-    # sessiyası olanlar kod işlədə bilər (frontend-dəki human-challenge/guest axını ilə üst-üstə düşür).
     u, _, hum, guest_rem = get_session()
     if not (u or hum or guest_rem is not None):
         return jsonify({"ok": False, "status": "Validation Error", "stderr": "Kodu işlətmək üçün insan-doğrulamasından keçin və ya daxil olun."}), 401
@@ -1444,7 +1551,7 @@ def run_custom():
 @require_user
 @rate_limit(20, 60, by_user=True)
 def submit_solution():
-    me, d = request._u, request.get_json(silent=True) or {}
+    me_u, d = request._u, request.get_json(silent=True) or {}
     p_key = str(d.get("problem_code") or d.get("problem_id") or "").strip()
     lang, code, room_id = str(d.get("language", "python")), str(d.get("code", "")), safe_int(d.get("room_id"), 0)
     if not p_key or not code.strip():
@@ -1454,14 +1561,14 @@ def submit_solution():
     if not p or p["visibility"] in ("pending", "rejected"):
         conn.close()
         return jsonify({"error": f"'{p_key}' kodlu məsələ tapılmadı."}), 404
-    if not check_daily(conn, me, "sub", MAX_DAILY_SUBS):
+    if not check_daily(conn, me_u, "sub", MAX_DAILY_SUBS):
         conn.close()
         return jsonify({"error": "Gündəlik göndəriş limitiniz bitib."}), 429
-
     pid = p["id"]
-    already = conn.execute("SELECT 1 FROM submissions WHERE problem_id=? AND LOWER(username)=LOWER(?) AND verdict='Accepted' LIMIT 1", (pid, me)).fetchone()
+    already = conn.execute("SELECT 1 FROM submissions WHERE problem_id=? AND LOWER(username)=LOWER(?) AND verdict='Accepted' LIMIT 1", (pid, me_u)).fetchone()
     tests = conn.execute("SELECT * FROM test_cases WHERE problem_id=? ORDER BY is_sample DESC, id ASC", (pid,)).fetchall()
     passed, total, verdict, details, mtime = 0, len(tests), "Accepted", "", "0.00s"
+
     for idx, t in enumerate(tests, 1):
         res = run_code_sandbox(lang, code, t["input_data"], p["time_limit"])
         if not res.get("ok"):
@@ -1483,35 +1590,36 @@ def submit_solution():
     xp_gain, coin_gain, daily_bonus_msg = 0, 0, ""
 
     if verdict == "Accepted":
-        if not already and p["author"] != me:
+        if not already and p["author"] != me_u:
             xp_gain = 15 if p["rating"] < 1000 else (25 if p["rating"] < 1500 else 45)
             coin_gain = 10 if p["rating"] < 1000 else (20 if p["rating"] < 1500 else 35)
-            award_rewards(conn, me, xp_gain, coin_gain)
-            cur_r = conn.execute("SELECT rating FROM users WHERE LOWER(username)=LOWER(?)", (me,)).fetchone()["rating"]
+            award_rewards(conn, me_u, xp_gain, coin_gain)
+            cur_r = conn.execute("SELECT rating FROM users WHERE LOWER(username)=LOWER(?)", (me_u,)).fetchone()["rating"]
             new_r = min(3500, cur_r + (12 if p["rating"] >= cur_r else 5))
-            conn.execute("UPDATE users SET rating=? WHERE LOWER(username)=LOWER(?)", (new_r, me))
-            conn.execute("INSERT INTO rating_history (username, rating, label) VALUES (?, ?, ?)", (me, new_r, p["code_label"] or p["title"][:12]))
-
+            conn.execute("UPDATE users SET rating=? WHERE LOWER(username)=LOWER(?)", (new_r, me_u))
+            conn.execute("INSERT INTO rating_history (username, rating, label) VALUES (?, ?, ?)", (me_u, new_r, p["code_label"] or p["title"][:12]))
         daily_pid = get_or_create_daily_pid(conn)
         today = time.strftime("%Y-%m-%d")
-        if daily_pid == pid and not conn.execute("SELECT 1 FROM daily_solves WHERE day_date=? AND LOWER(username)=LOWER(?)", (today, me)).fetchone():
-            conn.execute("INSERT INTO daily_solves (day_date, username, quality_pct) VALUES (?, ?, ?)", (today, me, quality_pct))
-            new_streak = update_daily_streak(conn, me)
+        if daily_pid == pid and not conn.execute("SELECT 1 FROM daily_solves WHERE day_date=? AND LOWER(username)=LOWER(?)", (today, me_u)).fetchone():
+            conn.execute("INSERT INTO daily_solves (day_date, username, quality_pct) VALUES (?, ?, ?)", (today, me_u, quality_pct))
+            new_streak = update_daily_streak(conn, me_u)
             d_xp, d_coins = 50, 40
             if new_streak > 0 and new_streak % 7 == 0:
                 d_coins += 200
                 daily_bonus_msg = f"🔥 {new_streak} günlük seriya sandığı! +50 XP, +240 AzCoin!"
             else:
                 daily_bonus_msg = f"🔥 Günün Məsələsi tamamlandı! Seriya: {new_streak} gün (+50 XP, +40 AzCoin)"
-            award_rewards(conn, me, d_xp, d_coins)
+            award_rewards(conn, me_u, d_xp, d_coins)
             xp_gain += d_xp
             coin_gain += d_coins
 
     conn.execute("INSERT INTO submissions (problem_id,problem_title,username,language,code,verdict,passed_tests,total_tests,quality_pct,exec_time,details,room_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
-                 (pid, f"{p['code_label']}. {p['title']}", me, lang, code, verdict, passed, total, quality_pct, mtime, details, room_id if room_id > 0 else None))
+                 (pid, f"{p['code_label']}. {p['title']}", me_u, lang, code, verdict, passed, total, quality_pct, mtime, details, room_id if room_id > 0 else None))
     conn.commit()
     conn.close()
-    return jsonify({"verdict": verdict, "passed": passed, "total": total, "quality_pct": quality_pct, "quality_breakdown": q_break, "time": mtime, "details": details, "xp_gained": xp_gain, "coins_gained": coin_gain, "daily_msg": daily_bonus_msg})
+    return jsonify({"verdict": verdict, "passed": passed, "total": total, "quality_pct": quality_pct,
+                    "quality_breakdown": q_break, "time": mtime, "details": details,
+                    "xp_gained": xp_gain, "coins_gained": coin_gain, "daily_msg": daily_bonus_msg})
 
 
 @app.route("/api/submissions", methods=["GET"])
@@ -1532,6 +1640,7 @@ def leaderboard():
     return jsonify([u | {"solved_count": solved.get(u["username"].lower(), 0), "needed_xp": needed_xp(u["level"]), "is_admin_user": u["username"] == ADMIN_USERNAME} for u in users])
 
 
+# ═══════════════ QRUPLAR ═══════════════
 @app.route("/api/rooms/mine", methods=["GET"])
 @require_user
 def my_rooms():
@@ -1545,8 +1654,9 @@ def my_rooms():
 @require_user
 @rate_limit(5, 60, by_user=True)
 def create_room():
-    me, d = request._u, request.get_json(silent=True) or {}
-    title, bio = str(d.get("title") or "").strip()[:70], str(d.get("bio") or "Dostlarla söhbət və kodlaşdırma qrupu").strip()[:220]
+    me_u, d = request._u, request.get_json(silent=True) or {}
+    title = str(d.get("title") or "").strip()[:70]
+    bio = str(d.get("bio") or "Dostlarla söhbət və kodlaşdırma qrupu").strip()[:220]
     color = str(d.get("avatar_color") or "#0ea5e9").strip()
     if not re.match(r"^#[0-9a-fA-F]{6}$", color):
         color = "#0ea5e9"
@@ -1558,8 +1668,8 @@ def create_room():
     code16 = f"{secrets.randbelow(10**16):016d}"
     conn = get_db()
     rid = conn.execute("INSERT INTO rooms (room_code,title,bio,avatar_color,creator,voice_link,problem_ids_json,duration_min,max_members,starts_at,ends_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                       (code16, title, bio, color, me, str(d.get("voice_link") or "").strip()[:240], json.dumps(pids), dur, MAX_ROOM_MEMBERS, now, ends)).lastrowid
-    conn.execute("INSERT INTO room_members (room_id, username) VALUES (?, ?)", (rid, me))
+                       (code16, title, bio, color, me_u, str(d.get("voice_link") or "").strip()[:240], json.dumps(pids), dur, MAX_ROOM_MEMBERS, now, ends)).lastrowid
+    conn.execute("INSERT INTO room_members (room_id, username) VALUES (?, ?)", (rid, me_u))
     conn.commit()
     conn.close()
     return jsonify({"room_code": code16, "title": title})
@@ -1569,7 +1679,7 @@ def create_room():
 @require_user
 @rate_limit(15, 60)
 def join_room():
-    me = request._u
+    me_u = request._u
     code = re.sub(r"\D", "", str((request.get_json(silent=True) or {}).get("room_code") or ""))
     if len(code) != 16:
         return jsonify({"error": "16 rəqəmli kod daxil edin."}), 400
@@ -1578,12 +1688,12 @@ def join_room():
     if not rm:
         conn.close()
         return jsonify({"error": "Qrup tapılmadı."}), 404
-    if not conn.execute("SELECT 1 FROM room_members WHERE room_id=? AND LOWER(username)=LOWER(?)", (rm["id"], me)).fetchone():
+    if not conn.execute("SELECT 1 FROM room_members WHERE room_id=? AND LOWER(username)=LOWER(?)", (rm["id"], me_u)).fetchone():
         if conn.execute("SELECT COUNT(*) AS cnt FROM room_members WHERE room_id=?", (rm["id"],)).fetchone()["cnt"] >= rm["max_members"]:
             conn.close()
             return jsonify({"error": "Qrup doludur (maks. 20 nəfər)."}), 403
-        conn.execute("INSERT INTO room_members (room_id, username) VALUES (?, ?)", (rm["id"], me))
-        conn.commit()
+        conn.execute("INSERT INTO room_members (room_id, username) VALUES (?, ?)", (rm["id"], me_u))
+    conn.commit()
     conn.close()
     return jsonify({"ok": True, "room_code": code})
 
@@ -1631,7 +1741,7 @@ def leave_room(code):
     rm = conn.execute("SELECT id FROM rooms WHERE room_code=?", (code,)).fetchone()
     if rm:
         conn.execute("DELETE FROM room_members WHERE room_id=? AND LOWER(username)=LOWER(?)", (rm["id"], request._u))
-        conn.commit()
+    conn.commit()
     conn.close()
     return jsonify({"ok": True})
 
@@ -1639,14 +1749,17 @@ def leave_room(code):
 @app.route("/api/rooms/<code>/state", methods=["GET"])
 @require_user
 def room_state(code):
-    me, after_id = request._u, safe_int(request.args.get("after_id"), 0, 0)
+    me_u, after_id = request._u, safe_int(request.args.get("after_id"), 0, 0)
     conn = get_db()
     rm = conn.execute("SELECT * FROM rooms WHERE room_code=?", (code,)).fetchone()
-    if not rm or not conn.execute("SELECT 1 FROM room_members WHERE room_id=? AND LOWER(username)=LOWER(?)", (rm["id"], me)).fetchone():
+    if not rm or not conn.execute("SELECT 1 FROM room_members WHERE room_id=? AND LOWER(username)=LOWER(?)", (rm["id"], me_u)).fetchone():
         conn.close()
         return jsonify({"error": "İcazə yoxdur."}), 403
     pids = json.loads(rm["problem_ids_json"] or "[]")
-    probs = conn.execute(f"SELECT id, code_label, title, rating FROM problems WHERE id IN ({','.join('?'*len(pids))})", pids).fetchall() if pids else []
+    probs = []
+    if pids:
+        placeholders = ",".join("?" * len(pids))
+        probs = conn.execute(f"SELECT id, code_label, title, rating FROM problems WHERE id IN ({placeholders})", pids).fetchall()
     members = [m | {"is_admin_user": m["username"] == ADMIN_USERNAME} for m in conn.execute("SELECT u.username, u.level, u.avatar_url, u.avatar_color, u.avatar_frame FROM room_members rm JOIN users u ON LOWER(u.username)=LOWER(rm.username) WHERE rm.room_id=?", (rm["id"],)).fetchall()]
     msgs = [m | {"is_admin_user": m["username"] == ADMIN_USERNAME} for m in conn.execute("""
         SELECT m.*, p.code_label AS shared_code, p.title AS shared_problem_title,
@@ -1663,50 +1776,53 @@ def room_state(code):
     conn.close()
     board = sorted([{"username": m["username"], "solved": ac.get(m["username"].lower(), 0), "is_admin_user": m["username"] == ADMIN_USERNAME} for m in members], key=lambda x: (-x["solved"], x["username"]))
     rem = max(0, int(rm["ends_at"] - time.time())) if rm["duration_min"] > 0 else -1
-    return jsonify({"room": rm | {"remaining_sec": rem}, "problems": probs, "shared_problems": shared_all, "members": members, "standings": board, "messages": msgs})
+    return jsonify({"room": rm | {"remaining_sec": rem}, "problems": probs, "shared_problems": shared_all,
+                    "members": members, "standings": board, "messages": msgs})
 
 
 @app.route("/api/rooms/<code>/chat", methods=["POST"])
 @require_user
 @rate_limit(30, 60, by_user=True)
 def room_chat(code):
-    me, d = request._u, request.get_json(silent=True) or {}
-    msg, r_id, spid = str(d.get("message") or "").strip()[:500], safe_int(d.get("reply_to_id"), 0), safe_int(d.get("shared_problem_id"), 0)
-    a_url, a_dur = str(d.get("audio_url") or "").strip()[:300], safe_int(d.get("audio_duration"), 0, 0, 180)
+    me_u, d = request._u, request.get_json(silent=True) or {}
+    msg = str(d.get("message") or "").strip()[:500]
+    r_id, spid = safe_int(d.get("reply_to_id"), 0), safe_int(d.get("shared_problem_id"), 0)
+    a_url = str(d.get("audio_url") or "").strip()[:300]
+    a_dur = safe_int(d.get("audio_duration"), 0, 0, 180)
     if not msg and spid <= 0 and not a_url:
         return jsonify({"error": "Mesaj boşdur."}), 400
     conn = get_db()
     rm = conn.execute("SELECT id FROM rooms WHERE room_code=?", (code,)).fetchone()
-    if not rm or not conn.execute("SELECT 1 FROM room_members WHERE room_id=? AND LOWER(username)=LOWER(?)", (rm["id"], me)).fetchone():
+    if not rm or not conn.execute("SELECT 1 FROM room_members WHERE room_id=? AND LOWER(username)=LOWER(?)", (rm["id"], me_u)).fetchone():
         conn.close()
         return jsonify({"error": "Üzv deyilsiniz."}), 403
-    if not check_daily(conn, me, "msg", MAX_DAILY_MSGS):
+    if not check_daily(conn, me_u, "msg", MAX_DAILY_MSGS):
         conn.close()
         return jsonify({"error": "Gündəlik mesaj limitiniz bitib."}), 429
     conn.execute("INSERT INTO room_messages (room_id, username, message, reply_to_id, shared_problem_id, audio_url, audio_duration) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                 (rm["id"], me, msg or ("🎤 Səsli mesaj" if a_url else "Məsələ yönləndirdi:"), r_id if r_id > 0 else None, spid if spid > 0 else None, a_url, a_dur))
+                 (rm["id"], me_u, msg or ("🎤 Səsli mesaj" if a_url else "Məsələ yönləndirdi:"),
+                  r_id if r_id > 0 else None, spid if spid > 0 else None, a_url, a_dur))
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
 
 
+# ═══════════════ DM ═══════════════
 @app.route("/api/dm/chats", methods=["GET"])
 @require_user
 def dm_chats():
-    me = request._u
+    me_u = request._u
     conn = get_db()
-    rows = conn.execute("SELECT CASE WHEN LOWER(sender)=LOWER(?) THEN receiver ELSE sender END AS partner, message, created_at FROM direct_messages WHERE LOWER(sender)=LOWER(?) OR LOWER(receiver)=LOWER(?) ORDER BY id DESC", (me, me, me)).fetchall()
+    rows = conn.execute("SELECT CASE WHEN LOWER(sender)=LOWER(?) THEN receiver ELSE sender END AS partner, message, created_at FROM direct_messages WHERE LOWER(sender)=LOWER(?) OR LOWER(receiver)=LOWER(?) ORDER BY id DESC", (me_u, me_u, me_u)).fetchall()
     seen, chats = set(), []
     for r in rows:
         if r["partner"].lower() not in seen:
             seen.add(r["partner"].lower())
             pu = conn.execute("SELECT avatar_url, avatar_color, avatar_frame, last_seen_at FROM users WHERE LOWER(username)=LOWER(?)", (r["partner"],)).fetchone()
-            chats.append({
-                "username": r["partner"], "last_message": r["message"][:50], "created_at": r["created_at"],
-                "is_admin_user": r["partner"] == ADMIN_USERNAME,
-                "avatar_url": pu["avatar_url"] if pu else "", "avatar_color": pu["avatar_color"] if pu else "#3b82f6",
-                "avatar_frame": pu["avatar_frame"] if pu else "none",
-            })
+            chats.append({"username": r["partner"], "last_message": r["message"][:50], "created_at": r["created_at"],
+                          "is_admin_user": r["partner"] == ADMIN_USERNAME,
+                          "avatar_url": pu["avatar_url"] if pu else "", "avatar_color": pu["avatar_color"] if pu else "#3b82f6",
+                          "avatar_frame": pu["avatar_frame"] if pu else "none"})
     conn.close()
     return jsonify(chats)
 
@@ -1714,7 +1830,7 @@ def dm_chats():
 @app.route("/api/dm/<other>", methods=["GET", "POST"])
 @require_user
 def dm_thread(other):
-    me = request._u
+    me_u = request._u
     conn = get_db()
     tu = conn.execute("SELECT username, avatar_url, avatar_color, avatar_frame FROM users WHERE LOWER(username)=LOWER(?)", (other.lstrip("@"),)).fetchone()
     if not tu:
@@ -1724,32 +1840,37 @@ def dm_thread(other):
     if request.method == "GET":
         after_id = safe_int(request.args.get("after_id"), 0, 0)
         msgs = [m | {"is_admin_user": m["sender"] == ADMIN_USERNAME} for m in conn.execute("""
-            SELECT d.*, p.code_label AS shared_code, p.title AS shared_problem_title, r.sender AS reply_author, r.message AS reply_text
+            SELECT d.*, p.code_label AS shared_code, p.title AS shared_problem_title,
+                   r.sender AS reply_author, r.message AS reply_text
             FROM direct_messages d
             LEFT JOIN problems p ON p.id=d.shared_problem_id
             LEFT JOIN direct_messages r ON r.id=d.reply_to_id
-            WHERE ((LOWER(d.sender)=LOWER(?) AND LOWER(d.receiver)=LOWER(?)) OR (LOWER(d.sender)=LOWER(?) AND LOWER(d.receiver)=LOWER(?))) AND d.id>?
+            WHERE ((LOWER(d.sender)=LOWER(?) AND LOWER(d.receiver)=LOWER(?))
+                OR (LOWER(d.sender)=LOWER(?) AND LOWER(d.receiver)=LOWER(?))) AND d.id>?
             ORDER BY d.id ASC LIMIT 100
-        """, (me, partner, partner, me, after_id)).fetchall()]
+        """, (me_u, partner, partner, me_u, after_id)).fetchall()]
         conn.close()
         return jsonify({"partner": partner, "partner_is_admin": partner == ADMIN_USERNAME, "partner_avatar": tu, "messages": msgs})
-
     d = request.get_json(silent=True) or {}
-    msg, r_id, spid = str(d.get("message") or "").strip()[:600], safe_int(d.get("reply_to_id"), 0), safe_int(d.get("shared_problem_id"), 0)
-    a_url, a_dur = str(d.get("audio_url") or "").strip()[:300], safe_int(d.get("audio_duration"), 0, 0, 180)
+    msg = str(d.get("message") or "").strip()[:600]
+    r_id, spid = safe_int(d.get("reply_to_id"), 0), safe_int(d.get("shared_problem_id"), 0)
+    a_url = str(d.get("audio_url") or "").strip()[:300]
+    a_dur = safe_int(d.get("audio_duration"), 0, 0, 180)
     if not msg and spid <= 0 and not a_url:
         conn.close()
         return jsonify({"error": "Mesaj boşdur."}), 400
-    if not check_daily(conn, me, "msg", MAX_DAILY_MSGS):
+    if not check_daily(conn, me_u, "msg", MAX_DAILY_MSGS):
         conn.close()
         return jsonify({"error": "Gündəlik mesaj limitiniz bitib."}), 429
     conn.execute("INSERT INTO direct_messages (sender, receiver, message, reply_to_id, shared_problem_id, audio_url, audio_duration) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                 (me, partner, msg or ("🎤 Səsli mesaj" if a_url else "Məsələ göndərdi:"), r_id if r_id > 0 else None, spid if spid > 0 else None, a_url, a_dur))
+                 (me_u, partner, msg or ("🎤 Səsli mesaj" if a_url else "Məsələ göndərdi:"),
+                  r_id if r_id > 0 else None, spid if spid > 0 else None, a_url, a_dur))
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
 
 
+# ═══════════════ MİNİ OYUNLAR ═══════════════
 @app.route("/api/games/sprint/start", methods=["POST"])
 @require_user
 def sprint_start():
@@ -1816,11 +1937,14 @@ def bulls_guess():
         if check_daily(conn, request._u, "game", 5):
             xp, coins = max(10, 40 - tries * 3), max(10, 35 - tries * 3)
             award_rewards(conn, request._u, xp, coins)
-            conn.commit()
+        conn.commit()
         conn.close()
-    return jsonify({"bulls": bulls, "cows": cows, "tries": tries, "won": won, "lost": (not won and tries >= 10), "answer": sec if (won or tries >= 10) else None, "xp_gained": xp, "coins_gained": coins})
+    return jsonify({"bulls": bulls, "cows": cows, "tries": tries, "won": won,
+                    "lost": (not won and tries >= 10), "answer": sec if (won or tries >= 10) else None,
+                    "xp_gained": xp, "coins_gained": coins})
 
 
+# ═══════════════ DUYURU PANOSU ═══════════════
 @app.route("/api/posts", methods=["GET", "POST"])
 def posts_handler():
     u, adm, _, _ = get_session()
@@ -1836,7 +1960,7 @@ def posts_handler():
             p["total_votes"] = sum(vmap.values())
             rmap = {r["emoji"]: r["cnt"] for r in conn.execute("SELECT emoji, COUNT(*) AS cnt FROM post_reactions WHERE post_id=? GROUP BY emoji", (pid,)).fetchall()}
             mr = {r["emoji"] for r in conn.execute("SELECT emoji FROM post_reactions WHERE post_id=? AND LOWER(username)=LOWER(?)", (pid, u)).fetchall()} if u else set()
-            p["reactions"] = [{"emoji": e, "count": rmap.get(e, 0), "mine": e in mr} for e in ALLOWED_EMOJIS]
+            p["reactions"] = [{"emoji": e, "count": rmap.get(e, 0), "mine": e in mr} for e in sorted(ALLOWED_EMOJIS)]
             p["comments"] = [c | {"is_admin_user": c["author"] == ADMIN_USERNAME} for c in conn.execute("SELECT * FROM post_comments WHERE post_id=? ORDER BY id ASC", (pid,)).fetchall()]
         conn.close()
         return jsonify(posts)
@@ -1880,7 +2004,10 @@ def react_post(pid):
         return jsonify({"error": "Yanlış emoji."}), 400
     conn = get_db()
     ex = conn.execute("SELECT id FROM post_reactions WHERE post_id=? AND LOWER(username)=LOWER(?) AND emoji=?", (pid, request._u, em)).fetchone()
-    conn.execute("DELETE FROM post_reactions WHERE id=?" if ex else "INSERT INTO post_reactions (post_id, username, emoji) VALUES (?, ?, ?)", (ex["id"],) if ex else (pid, request._u, em))
+    if ex:
+        conn.execute("DELETE FROM post_reactions WHERE id=?", (ex["id"],))
+    else:
+        conn.execute("INSERT INTO post_reactions (post_id, username, emoji) VALUES (?, ?, ?)", (pid, request._u, em))
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
@@ -1913,6 +2040,7 @@ def delete_post(pid):
     return jsonify({"ok": True})
 
 
+# ═══════════════ CREATIVE / SETTINGS ═══════════════
 @app.route("/api/creative", methods=["GET", "POST"])
 def creative_handler():
     conn = get_db()
@@ -1929,7 +2057,8 @@ def creative_handler():
     if not t or not code.strip() or lang not in ALLOWED_LANGS:
         conn.close()
         return jsonify({"error": "Məlumatlar natamamdır."}), 400
-    conn.execute("INSERT INTO creative_codes (title, description, language, code, sample_input, author) VALUES (?, ?, ?, ?, ?, ?)", (t[:100], str(d.get("description", ""))[:400], lang, code, str(d.get("sample_input", ""))[:1000], u))
+    conn.execute("INSERT INTO creative_codes (title, description, language, code, sample_input, author) VALUES (?, ?, ?, ?, ?, ?)",
+                 (t[:100], str(d.get("description", ""))[:400], lang, code, str(d.get("sample_input", ""))[:1000], u))
     conn.commit()
     conn.close()
     return jsonify({"message": "Paylaşıldı!"})
@@ -1962,6 +2091,8 @@ def test_conn():
 
 
 if __name__ == "__main__":
-    _boot()
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=os.environ.get("FLASK_DEBUG", "false").lower() == "true", threaded=True)
-            
+    with app.app_context():
+        init_db()
+        _db_ready = True
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)),
+            debug=os.environ.get("FLASK_DEBUG", "false").lower() == "true", threaded=True)
