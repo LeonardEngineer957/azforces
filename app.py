@@ -29,7 +29,7 @@ except ImportError:
     RealDictCursor = None
 
 app = Flask(__name__)
-app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024
+app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024  # 4 MB (şəkil / səs üçün)
 
 if os.environ.get("TRUST_PROXY", "true").lower() == "true":
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
@@ -45,17 +45,17 @@ ALLOWED_PROVIDERS = {"judge0", "wandbox", "piston", "local"}
 ALLOWED_EMOJIS = {"👍", "🔥", "💡", "👏", "❤️"}
 ALLOW_LOCAL_RUNNER = os.environ.get("ALLOW_LOCAL_RUNNER", "false").lower() == "true"
 
-# Admin və gizli panel
+# ── Admin və gizli panel (Render mühit dəyişənlərindən oxunur) ──
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "").strip().lower()
 ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "Mr.Leonard").strip() or "Mr.Leonard"
 ADMIN_SECRET_PATH = os.environ.get("ADMIN_SECRET_PATH", "azf-panel-9482").strip("/")
-ADMIN_INFINITE_COINS = 999999999
+ADMIN_INFINITE_COINS = 999999999  # Admin üçün limitsiz AzCoin
 
 _ENV_ADMIN_HASH = os.environ.get("ADMIN_PASSWORD_HASH", "").strip()
 if not _ENV_ADMIN_HASH and os.environ.get("ADMIN_PASSWORD", "").strip():
     _ENV_ADMIN_HASH = generate_password_hash(os.environ["ADMIN_PASSWORD"].strip())
 
-# E-poçt
+# ── E-poçt (Brevo / SMTP) ──
 SMTP_HOST = os.environ.get("SMTP_HOST", "smtp.gmail.com").strip()
 SMTP_PORT = int(os.environ.get("SMTP_PORT", "587"))
 SMTP_USER = os.environ.get("SMTP_USER", "").strip()
@@ -64,7 +64,7 @@ DEV_EMAIL_PREVIEW = os.environ.get("DEV_EMAIL_PREVIEW", "false").lower() == "tru
 BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "").strip()
 BREVO_SENDER_EMAIL = os.environ.get("BREVO_SENDER_EMAIL", "").strip() or SMTP_USER or ADMIN_EMAIL
 
-# Cloudinary & Səs saxlama
+# ── Cloudinary & Xarici Səs Saxlama ──
 CLOUD_NAME = os.environ.get("CLOUDINARY_CLOUD_NAME", "").strip()
 CLOUD_KEY = os.environ.get("CLOUDINARY_API_KEY", "").strip()
 CLOUD_SECRET = os.environ.get("CLOUDINARY_API_SECRET", "").strip()
@@ -78,9 +78,7 @@ MAX_DAILY_MSGS = 80
 MAX_DAILY_SUBS = 40
 MAX_DAILY_PROPS = 2
 
-# ══════════════════════════════════════════════════════════
-# MAĞAZA — ID-lər CSS class-ları ilə TAM uyğunlaşdırıldı
-# ══════════════════════════════════════════════════════════
+# ── MAĞAZA: klassik + fantastik + təbiət + əfsanəvi (CSS class adları ilə sinxron) ──
 SHOP_ITEMS = [
     {"id": "none", "name": "Çərçivəsiz", "tier": "classic", "price": 0, "desc": "Sadə görünüş"},
     {"id": "neon-blue", "name": "Kiber Mavi", "tier": "classic", "price": 150, "desc": "Parlayan mavi halqa"},
@@ -92,12 +90,13 @@ SHOP_ITEMS = [
     {"id": "dragon-flame", "name": "🐉 Alovlu Əjdaha", "tier": "fantasy", "price": 2500, "desc": "Fırlanan əjdaha alovu"},
     {"id": "unicorn-rainbow", "name": "🦄 Göyqurşağı Təkbuynuz", "tier": "fantasy", "price": 3000, "desc": "Rəng dəyişən sehrli halqa"},
     {"id": "phoenix-ash", "name": "🔥 Kül Phoenix", "tier": "fantasy", "price": 3600, "desc": "Yüksələn alov quşu"},
+    {"id": "storm-simurgh", "name": "🦅 Fırtına Simurqu", "tier": "fantasy", "price": 5500, "desc": "Qızmar qanadlı dönən mifik işıq"},
     {"id": "griffin-gold", "name": "🦅 Qızıl Qrifon", "tier": "fantasy", "price": 4200, "desc": "Mifik qanadlı qızıl aura"},
-    {"id": "forest-spirit", "name": "🌿 Meşə Ruhu", "tier": "nature", "price": 3200, "desc": "Nəfəs alan zümrüd yarpaqlar"},
-    {"id": "ocean-tide", "name": "🌊 Okean Qabarması", "tier": "nature", "price": 4000, "desc": "Axıcı dərin dəniz dalğası"},
+    {"id": "forest-vine", "name": "🌿 Canlı Meşə Sarmaşığı", "tier": "nature", "price": 3200, "desc": "Nəfəs alan zümrüd yarpaqlar"},
+    {"id": "ocean-leviathan", "name": "🌊 Okean Leviatanı", "tier": "nature", "price": 4000, "desc": "Axıcı dərin dəniz dalğası"},
     {"id": "aurora-night", "name": "🌌 Şimal İşıqları", "tier": "nature", "price": 4800, "desc": "Axıcı qütb parıltısı"},
     {"id": "cherry-blossom", "name": "🌸 Sakura Yarpaqları", "tier": "nature", "price": 5200, "desc": "Tökülən çəhrayı ləçəklər"},
-    {"id": "cosmic-void", "name": "🌌 Kosmik Portal", "tier": "legendary", "price": 8000, "desc": "Fırlanan qalaktika vorteksi"},
+    {"id": "cosmic-portal", "name": "🌌 Kosmik Portal", "tier": "legendary", "price": 8000, "desc": "Fırlanan ulduzlu qalaktika vorteksi"},
     {"id": "divine-halo", "name": "👑 İlahi Halo", "tier": "legendary", "price": 12000, "desc": "Əfsanəvi ağ-qızıl parıltı"},
 ]
 
@@ -546,6 +545,7 @@ def get_or_create_daily_pid(conn):
 
 
 def calc_quality_score(passed, total, time_str, time_limit, code):
+    """Faiz əsaslı qiymətləndirmə: 60% testlər + 25% sürət + 15% kod stili."""
     if total <= 0:
         return 0, {"tests_pct": 0, "speed_pct": 0, "style_pct": 0}
     test_pts = round(60 * passed / total)
@@ -800,7 +800,7 @@ def site_reviews():
     return jsonify({"message": "Dəyərləndirməniz qeyd edildi!"})
 
 
-# ═══════════════ AUTH ═══════════════
+# ═══════════════ AUTH (parol 2 dəfə + admin ∞ coin) ═══════════════
 @app.route("/api/auth/me", methods=["GET"])
 def auth_me():
     u, adm, hum, guest_rem = get_session()
@@ -961,7 +961,7 @@ def auth_logout():
     return resp
 
 
-# ═══════════════ PROFİL ═══════════════
+# ═══════════════ PROFİL + ADMIN META (onlayn status + qeydiyyat) ═══════════════
 def _build_profile_payload(conn, target, include_private=False, viewer_is_admin=False):
     u = conn.execute("SELECT * FROM users WHERE LOWER(username)=LOWER(?)", (target,)).fetchone()
     if not u:
@@ -994,8 +994,6 @@ def _build_profile_payload(conn, target, include_private=False, viewer_is_admin=
             "joined_at": u["created_at"],
             "email": u["email"],
         }
-        data["is_online"] = data["admin_meta"]["is_online"]
-        data["joined_at"] = u["created_at"]
     if include_private:
         fr_rows = conn.execute("SELECT * FROM friendships WHERE LOWER(user_a)=LOWER(?) OR LOWER(user_b)=LOWER(?)", (uname, uname)).fetchall()
         friends, inc = [], []
@@ -1096,7 +1094,7 @@ def upload_voice():
     return jsonify({"audio_url": url})
 
 
-# ═══════════════ COİN (Admin limitsiz) ═══════════════
+# ═══════════════ COİN (admin limitsiz) ═══════════════
 @app.route("/api/coins/transfer", methods=["POST"])
 @require_user
 @rate_limit(15, 60, by_user=True)
@@ -1219,7 +1217,7 @@ def friend_resp():
     return jsonify({"ok": True})
 
 
-# ═══════════════ ADMIN: İSTİFADƏÇİLƏR ═══════════════
+# ═══════════════ ADMIN: İSTİFADƏÇİLƏR (onlayn + qeydiyyat) ═══════════════
 @app.route("/api/admin/users", methods=["GET"])
 @require_admin
 def admin_list_users():
@@ -1274,7 +1272,7 @@ def admin_delete_user(target):
     return jsonify({"message": f"{target} silindi."}) if cur.rowcount else (jsonify({"error": "Tapılmadı."}), 404)
 
 
-# ═══════════════ GÜNÜN MƏSƏLƏSİ ═══════════════
+# ═══════════════ GÜNÜN MƏSƏLƏSİ & SERİYA ═══════════════
 @app.route("/api/daily", methods=["GET"])
 def daily_challenge():
     u, _, _, _ = get_session()
@@ -1283,16 +1281,15 @@ def daily_challenge():
     prob = conn.execute("SELECT id, code_label, title, rating, tags, time_limit, memory_limit FROM problems WHERE id=?", (pid,)).fetchone() if pid else None
     today = time.strftime("%Y-%m-%d")
     solved_today, streak = False, 0
+    heat = {}
     if u:
         solved_today = bool(conn.execute("SELECT 1 FROM daily_solves WHERE day_date=? AND LOWER(username)=LOWER(?)", (today, u)).fetchone())
         ur = conn.execute("SELECT daily_streak FROM users WHERE LOWER(username)=LOWER(?)", (u,)).fetchone()
         streak = ur["daily_streak"] if ur else 0
-    top = [r | {"is_admin_user": r["username"] == ADMIN_USERNAME} for r in conn.execute("SELECT username, quality_pct, solved_at FROM daily_solves WHERE day_date=? ORDER BY id ASC LIMIT 10", (today,)).fetchall()]
-    board = [r | {"is_admin_user": r["username"] == ADMIN_USERNAME} for r in conn.execute("SELECT username, daily_streak FROM users WHERE daily_streak > 0 ORDER BY daily_streak DESC LIMIT 10").fetchall()]
-    heat = {}
-    if u:
         for row in conn.execute("SELECT day_date FROM daily_solves WHERE LOWER(username)=LOWER(?) ORDER BY id DESC LIMIT 60", (u,)).fetchall():
             heat[row["day_date"]] = 1
+    top = [r | {"is_admin_user": r["username"] == ADMIN_USERNAME} for r in conn.execute("SELECT username, quality_pct, solved_at FROM daily_solves WHERE day_date=? ORDER BY id ASC LIMIT 10", (today,)).fetchall()]
+    board = [r | {"is_admin_user": r["username"] == ADMIN_USERNAME} for r in conn.execute("SELECT username, daily_streak FROM users WHERE daily_streak > 0 ORDER BY daily_streak DESC LIMIT 10").fetchall()]
     conn.close()
     lt = time.localtime()
     sec_left = 86400 - (lt.tm_hour * 3600 + lt.tm_min * 60 + lt.tm_sec)
@@ -1432,7 +1429,7 @@ def finish_contest(cid):
     return jsonify({"message": "Yarış bitirildi, suallar Gym-ə köçürüldü!"})
 
 
-# ═══════════════ TƏKLİFLƏR ═══════════════
+# ═══════════════ TƏKLİFLƏR (admin birbaşa, user pending) ═══════════════
 @app.route("/api/proposals", methods=["POST"])
 @require_user
 @rate_limit(5, 60, by_user=True)
@@ -1534,7 +1531,7 @@ def review_proposal(pid):
     return jsonify({"message": "Təklif rədd edildi və siyahıdan silindi."})
 
 
-# ═══════════════ RUN / SUBMIT ═══════════════
+# ═══════════════ RUN / SUBMIT (faiz əsaslı) ═══════════════
 @app.route("/api/run", methods=["POST"])
 @rate_limit(25, 60)
 def run_custom():
