@@ -2582,7 +2582,7 @@ def settings_handler():
     if "base_url" in d:
         conn.execute("INSERT INTO settings (key, value) VALUES ('base_url', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value", (str(d["base_url"]).strip(),))
     if str(d.get("api_key") or "").strip():
-        conn.execute("INSERT INTO settings (key, value) VALUES ('api_key', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value", (str(d.get("api_key"]).strip(),))
+        conn.execute("INSERT INTO settings (key, value) VALUES ('api_key', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value", (str(d.get("api_key")).strip(),))
     conn.commit()
     conn.close()
     return jsonify({"message": "Ayarlar yadda saxlanıldı!"})
