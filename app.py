@@ -1,8 +1,11 @@
+```python
 import base64
 import datetime
+from fractions import Fraction
 import hashlib
 import json
 import os
+import random
 import re
 import secrets
 import smtplib
@@ -29,7 +32,7 @@ except ImportError:
     RealDictCursor = None
 
 app = Flask(__name__)
-app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024  # 4 MB (şəkil / səs üçün)
+app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024  # 4 MB (şəkil / səs / çərçivə üçün)
 
 if os.environ.get("TRUST_PROXY", "true").lower() == "true":
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
@@ -49,7 +52,7 @@ ALLOW_LOCAL_RUNNER = os.environ.get("ALLOW_LOCAL_RUNNER", "false").lower() == "t
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "").strip().lower()
 ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "Mr.Leonard").strip() or "Mr.Leonard"
 ADMIN_SECRET_PATH = os.environ.get("ADMIN_SECRET_PATH", "azf-panel-9482").strip("/")
-ADMIN_INFINITE_COINS = 999999999  # Admin üçün limitsiz AzCoin
+ADMIN_INFINITE_COINS = 999999999
 
 _ENV_ADMIN_HASH = os.environ.get("ADMIN_PASSWORD_HASH", "").strip()
 if not _ENV_ADMIN_HASH and os.environ.get("ADMIN_PASSWORD", "").strip():
@@ -71,33 +74,207 @@ CLOUD_SECRET = os.environ.get("CLOUDINARY_API_SECRET", "").strip()
 VOICE_UPLOAD_WEBHOOK = os.environ.get("VOICE_UPLOAD_WEBHOOK", "").strip()
 
 SESSION_TTL = 86400 * 7
-ADMIN_TTL = 7200
+ADMIN_TTL = SESSION_TTL  # Admin sessiyası istifadəçi sessiyası ilə eyni müddətdə qalır
 GUEST_TTL = 300
 MAX_ROOM_MEMBERS = 20
 MAX_DAILY_MSGS = 80
 MAX_DAILY_SUBS = 40
 MAX_DAILY_PROPS = 2
+CALC_TIME_LIMIT = 300  # 5 dəqiqə = 300 saniyə
 
-# ── MAĞAZA: klassik + fantastik + təbiət + əfsanəvi (CSS class adları ilə sinxron) ──
+# ── MAĞAZA: Hərəkətli SVG Fantastik/Təbiət/Əfsanəvi Çərçivələr (12.000 – 50.000 AzCoin) ──
 SHOP_ITEMS = [
     {"id": "none", "name": "Çərçivəsiz", "tier": "classic", "price": 0, "desc": "Sadə görünüş"},
-    {"id": "neon-blue", "name": "Kiber Mavi", "tier": "classic", "price": 150, "desc": "Parlayan mavi halqa"},
-    {"id": "aqua-frost", "name": "Buz Kristalı", "tier": "classic", "price": 300, "desc": "Sərin su parıltısı"},
-    {"id": "emerald-matrix", "name": "Matris Yaşılı", "tier": "classic", "price": 500, "desc": "Alqoritmçi yaşıl enerji"},
-    {"id": "cyber-purple", "name": "Bənövşəyi Fırtına", "tier": "classic", "price": 800, "desc": "Dinamik bənövşəyi aura"},
-    {"id": "fire-phoenix", "name": "Alovlu Feniks", "tier": "classic", "price": 1000, "desc": "Qızmar alov çərçivəsi"},
-    {"id": "gold-crown", "name": "Ustad Qızılı", "tier": "classic", "price": 1200, "desc": "Elit qızılı halqa"},
-    {"id": "dragon-flame", "name": "🐉 Alovlu Əjdaha", "tier": "fantasy", "price": 2500, "desc": "Fırlanan əjdaha alovu"},
-    {"id": "unicorn-rainbow", "name": "🦄 Göyqurşağı Təkbuynuz", "tier": "fantasy", "price": 3000, "desc": "Rəng dəyişən sehrli halqa"},
-    {"id": "phoenix-ash", "name": "🔥 Kül Phoenix", "tier": "fantasy", "price": 3600, "desc": "Yüksələn alov quşu"},
-    {"id": "storm-simurgh", "name": "🦅 Fırtına Simurqu", "tier": "fantasy", "price": 5500, "desc": "Qızmar qanadlı dönən mifik işıq"},
-    {"id": "griffin-gold", "name": "🦅 Qızıl Qrifon", "tier": "fantasy", "price": 4200, "desc": "Mifik qanadlı qızıl aura"},
-    {"id": "forest-vine", "name": "🌿 Canlı Meşə Sarmaşığı", "tier": "nature", "price": 3200, "desc": "Nəfəs alan zümrüd yarpaqlar"},
-    {"id": "ocean-leviathan", "name": "🌊 Okean Leviatanı", "tier": "nature", "price": 4000, "desc": "Axıcı dərin dəniz dalğası"},
-    {"id": "aurora-night", "name": "🌌 Şimal İşıqları", "tier": "nature", "price": 4800, "desc": "Axıcı qütb parıltısı"},
-    {"id": "cherry-blossom", "name": "🌸 Sakura Yarpaqları", "tier": "nature", "price": 5200, "desc": "Tökülən çəhrayı ləçəklər"},
-    {"id": "cosmic-portal", "name": "🌌 Kosmik Portal", "tier": "legendary", "price": 8000, "desc": "Fırlanan ulduzlu qalaktika vorteksi"},
-    {"id": "divine-halo", "name": "👑 İlahi Halo", "tier": "legendary", "price": 12000, "desc": "Əfsanəvi ağ-qızıl parıltı"},
+    {"id": "angry-anime", "name": "💢 Sinirli", "tier": "classic", "price": 12000, "desc": "Döyünən anime əsəb işarəsi və ! balonu"},
+    {"id": "neon-spark", "name": "⚡ Kiber Şimşək", "tier": "classic", "price": 14000, "desc": "Fırlanan neon enerji və qığılcımlar"},
+    {"id": "afternoon-bloom", "name": "🌸 Bahar Çiçəkləri", "tier": "nature", "price": 16000, "desc": "Yellənən çiçəklər və yaşıl çəmən"},
+    {"id": "butterfly-dream", "name": "🦋 Kəpənək Yuxusu", "tier": "nature", "price": 18000, "desc": "Qırmızı glitch halqa və qanad çalan kəpənək"},
+    {"id": "golden-aura", "name": "✨ Altın Sarısı Parlama", "tier": "classic", "price": 20000, "desc": "Fırlanan qızılı plazma halqası"},
+    {"id": "purple-runes", "name": "🔮 Sehrbaz Rünləri", "tier": "fantasy", "price": 22000, "desc": "Dönən bənövşəyi rün simvolları"},
+    {"id": "cyclone-wind", "name": "🌪️ Qasırğa", "tier": "nature", "price": 25000, "desc": "Avatarın ətrafında dönən külək zolaqları"},
+    {"id": "venom-symbiote", "name": "🕷️ Venom Kölgəsi", "tier": "fantasy", "price": 28000, "desc": "Qıvrılan qara simbiot çıxıntıları"},
+    {"id": "oni-glitch", "name": "👾 O.N.I Holoqram", "tier": "fantasy", "price": 32000, "desc": "Kiber holoqram və neon skan xətləri"},
+    {"id": "thunder-god", "name": "⚡ Yıldırım Tanrısı", "tier": "fantasy", "price": 35000, "desc": "Çaxan qızılı ildırım qövsləri"},
+    {"id": "flaming-bull", "name": "🔥 Alovlu Buğa", "tier": "fantasy", "price": 38000, "desc": "Alovlanan buynuzlar və od halqası"},
+    {"id": "phoenix-wings", "name": "🔥 Feniks Qanadları", "tier": "legendary", "price": 42000, "desc": "Alovlu yüksələn simurq qanadları"},
+    {"id": "fallen-angel", "name": "🪽 Yitik Mələk", "tier": "legendary", "price": 50000, "desc": "Ən bahalı — çırpınan böyük mələk qanadları və halo"},
+]
+
+# ── 5 DƏQİQƏLİK ÇƏTİN RİYAZİ OYUN BANKI (Törəmə, İnteqral, Limit) ──
+CALCULUS_BANK = [
+    # ── TÖRƏMƏ ──
+    {
+        "id": "d1", "category": "Törəmə",
+        "title": "3-cü Tərtib Törəmə (Leybnis)",
+        "prompt": "$$f(x) = x^2 e^{3x} \\cos(2x)$$ funksiyası üçün $$f'''(0)$$ qiymətini tapın.",
+        "answer": "18",
+        "solution": "$g(x)=e^{3x}\\cos(2x)$ götürək. Leybnis düsturu ilə $(x^2 g(x))'''|_{x=0} = 3 \\cdot 2 \\cdot g'(0) = 6 g'(0)$. $g'(0)=3$, odur ki $f'''(0) = 18$."
+    },
+    {
+        "id": "d2", "category": "Törəmə",
+        "title": "4-cü Tərtib Törəmə (Makloren)",
+        "prompt": "$$f(x) = \\frac{x \\sin(2x)}{1 - x}$$ funksiyası üçün $$f^{(4)}(0)$$ qiymətini tapın.",
+        "answer": "16",
+        "solution": "$x\\sin(2x) = 2x^2 - \\frac{4}{3}x^4 + \\dots$ və $(1-x)^{-1} = 1 + x + x^2 + \\dots$. Hasilin $x^4$ əmsalı $2 - \\frac{4}{3} = \\frac{2}{3}$. Beləliklə, $f^{(4)}(0) = 4! \\cdot \\frac{2}{3} = 16$."
+    },
+    {
+        "id": "d3", "category": "Törəmə",
+        "title": "Qeyri-aşkar Funksiyanın 2-ci Törəməsi",
+        "prompt": "$$x^3 + y^3 - 3xy = 3$$ əyrisinin $$(2, 1)$$ nöqtəsində $$\\frac{d^2y}{dx^2}$$ qiymətini tapın.",
+        "answer": "16",
+        "solution": "1-ci törəmə: $x^2 + y^2 y' - y - xy' = 0 \\Rightarrow y'(2,1)=3$. Yenidən diferensiallayıb $(2,1)$ və $y'=3$ yazsaq: $4 + 18 + y'' - 6 - 2y'' = 0 \\Rightarrow y'' = 16$."
+    },
+    {
+        "id": "d4", "category": "Törəmə",
+        "title": "Tərs Funksiyanın 2-ci Törəməsi",
+        "prompt": "$$f(x) = x^3 + 2e^{x-1} + x$$ funksiyasının tərsi $$g(x) = f^{-1}(x)$$ olarsa, $$g''(4)$$ qiymətini tapın.",
+        "answer": "-1/27",
+        "solution": "$f(1)=4$, $f'(1)=3+2+1=6$, $f''(1)=6+2=8$. $g''(f(x)) = -\\frac{f''(x)}{(f'(x))^3} \\Rightarrow g''(4) = -\\frac{8}{6^3} = -\\frac{1}{27}$."
+    },
+    {
+        "id": "d5", "category": "Törəmə",
+        "title": "Parametrik Funksiyanın 2-ci Törəməsi",
+        "prompt": "$$x(t) = t^2 + \\ln t,\\; y(t) = t^3 + 3t$$ parametrik əyrisi üçün $$t = 1$$ nöqtəsində $$\\frac{d^2y}{dx^2}$$ qiymətini tapın.",
+        "answer": "4/9",
+        "solution": "$x'(1)=3, x''(1)=1, y'(1)=6, y''(1)=6$. Düstura görə $\\frac{y''x' - y'x''}{(x')^3} = \\frac{18 - 6}{27} = \\frac{4}{9}$."
+    },
+    {
+        "id": "d6", "category": "Törəmə",
+        "title": "Üstlü-Qüvvət Funksiyasının 2-ci Törəməsi",
+        "prompt": "$$f(x) = (x^2 - x + 1)^{x^3 + 3x - 1}$$ funksiyası üçün $$f''(1)$$ qiymətini tapın.",
+        "answer": "24",
+        "solution": "$L(x)=\\ln f(x) = (x^3+3x-1)\\ln(x^2-x+1)$. $L(1)=0 \\Rightarrow f(1)=1$. $L'(1)=3 \\Rightarrow f'(1)=3$. $L''(1)=15 \\Rightarrow f''(1)=f'(1)L'(1)+f(1)L''(1)=9+15=24$."
+    },
+    {
+        "id": "d7", "category": "Törəmə",
+        "title": "Dəyişən Sərhədli İnteqralın 2-ci Törəməsi",
+        "prompt": "$$F(x) = \\int_{x^2}^{2x} \\frac{2t + 1}{t^2 + 1}\\,dt$$ funksiyası üçün $$F''(1)$$ qiymətini tapın.",
+        "answer": "-13/5",
+        "solution": "$g(t)=\\frac{2t+1}{t^2+1}$. $F'(x)=2g(2x)-2xg(x^2)$, $F''(x)=4g'(2x)-2g(x^2)-4x^2g'(x^2)$. $g(1)=\\frac{3}{2}, g'(1)=-\\frac{1}{2}, g'(2)=-\\frac{2}{5}$ olduğundan $F''(1)=4(-\\frac{2}{5})-3+2=-\\frac{13}{5}$."
+    },
+    {
+        "id": "d8", "category": "Törəmə",
+        "title": "Tərs Triqonometrik Törəmə (Bölgə Analizi)",
+        "prompt": "$$f(x) = \\arcsin\\!\\left(\\frac{2x}{1 + x^2}\\right)$$ funksiyası üçün $$f'(2)$$ qiymətini tapın.",
+        "answer": "-2/5",
+        "solution": "$x > 1$ üçün $\\arcsin(\\frac{2x}{1+x^2}) = \\pi - 2\\arctan x$. Odur ki, $f'(x) = -\\frac{2}{1+x^2}$ və $f'(2) = -\\frac{2}{5}$."
+    },
+
+    # ── İNTEQRAL ──
+    {
+        "id": "i1", "category": "İnteqral",
+        "title": "Simmetriya Üsulu ilə İnteqral",
+        "prompt": "$$\\int_{-3}^{3} \\frac{5x^4 + 3x^2}{1 + e^{x^3}}\\,dx$$ müəyyən inteqralını hesablayın.",
+        "answer": "270",
+        "solution": "$x \\to -x$ əvəzləməsi edib verilən inteqralla toplasaq: $2I = \\int_{-3}^3 (5x^4+3x^2)\\,dx = 2[x^5+x^3]_0^3 = 2(243+27) \\Rightarrow I = 270$."
+    },
+    {
+        "id": "i2", "category": "İnteqral",
+        "title": "Eksponensial Hissə-Hissə İnteqrallama",
+        "prompt": "$$\\int_{0}^{1} (x^5 - x^3 - x) e^{x^2}\\,dx$$ müəyyən inteqralını hesablayın.",
+        "answer": "-1",
+        "solution": "$u = x^2$ əvəzləməsi ilə $I = \\frac{1}{2}\\int_0^1 (u^2 - u - 1)e^u\\,du = \\frac{1}{2}[(u^2 - 3u + 2)e^u]_0^1 = \\frac{1}{2}(0 - 2) = -1$."
+    },
+    {
+        "id": "i3", "category": "İnteqral",
+        "title": "Tərs Funksiyanın Müəyyən İnteqralı",
+        "prompt": "$$f(x) = x^5 + 2x^3 + 3x$$ funksiyasının tərsi $$f^{-1}(x)$$ olarsa, $$\\int_{6}^{54} f^{-1}(x)\\,dx$$ inteqralını hesablayın.",
+        "answer": "159/2",
+        "solution": "$f(1)=6, f(2)=54$. $\\int_6^{54} f^{-1}(x)dx = 2\\cdot 54 - 1\\cdot 6 - \\int_1^2 (x^5+2x^3+3x)dx = 102 - \\frac{45}{2} = \\frac{159}{2}$."
+    },
+    {
+        "id": "i4", "category": "İnteqral",
+        "title": "İrrasional İnteqral",
+        "prompt": "$$\\int_{0}^{4/5} \\frac{x^3}{(1 - x^2)^{3/2}}\\,dx$$ müəyyən inteqralını hesablayın.",
+        "answer": "4/15",
+        "solution": "$u = \\sqrt{1-x^2}$ əvəzləməsi ilə $I = \\int_{3/5}^1 (u^{-2}-1)\\,du = [-u^{-1}-u]_{3/5}^1 = -2 + \\frac{34}{15} = \\frac{4}{15}$."
+    },
+    {
+        "id": "i5", "category": "İnteqral",
+        "title": "Yüksək Dərəcəli Rasional Kəsr İnteqralı",
+        "prompt": "$$\\int_{0}^{\\sqrt{3}} \\frac{x^3}{(x^2 + 1)^4}\\,dx$$ müəyyən inteqralını hesablayın.",
+        "answer": "9/128",
+        "solution": "$u = x^2+1$ ilə $I = \\frac{1}{2}\\int_1^4 (u^{-3}-u^{-4})\\,du = \\frac{1}{2}[-\\frac{1}{2u^2}+\\frac{1}{3u^3}]_1^4 = \\frac{9}{128}$."
+    },
+    {
+        "id": "i6", "category": "İnteqral",
+        "title": "Triqonometrik Əvəzləmə",
+        "prompt": "$$\\int_{0}^{\\pi/2} \\frac{\\sin^3 x \\cos x}{(1 + \\cos^2 x)^3}\\,dx$$ müəyyən inteqralını hesablayın.",
+        "answer": "1/8",
+        "solution": "$u = 1+\\cos^2 x$ götürsək $\\sin^2 x = 2-u$ və $du = -2\\sin x\\cos x\\,dx$. $I = \\frac{1}{2}\\int_1^2 (2u^{-3}-u^{-2})\\,du = \\frac{1}{8}$."
+    },
+    {
+        "id": "i7", "category": "İnteqral",
+        "title": "Qeyri-Məxsusi Eksponensial-Triqonometrik İnteqral",
+        "prompt": "$$\\int_{0}^{\\infty} x e^{-3x} \\cos(2x)\\,dx$$ qeyri-məxsusi inteqralını hesablayın.",
+        "answer": "5/169",
+        "solution": "$\\text{Re}\\int_0^\\infty x e^{-(3-2i)x}dx = \\text{Re}\\frac{1}{(3-2i)^2} = \\frac{3^2 - 2^2}{(3^2+2^2)^2} = \\frac{5}{169}$."
+    },
+    {
+        "id": "i8", "category": "İnteqral",
+        "title": "Eyler Beta Funksiyası İnteqralı",
+        "prompt": "$$\\int_{0}^{2} x^3 (2 - x)^4\\,dx$$ müəyyən inteqralını hesablayın.",
+        "answer": "32/35",
+        "solution": "$x = 2t$ əvəzləməsi ilə $2^8 \\int_0^1 t^3(1-t)^4 dt = 256 \\cdot B(4,5) = 256 \\cdot \\frac{3!4!}{8!} = \\frac{32}{35}$."
+    },
+
+    # ── LİMİT ──
+    {
+        "id": "l1", "category": "Limit",
+        "title": "5-ci Tərtib Teylor Açılışı Limiti",
+        "prompt": "$$\\lim_{x \\to 0} \\frac{x \\cos x - \\sin x + \\frac{x^3}{3}}{x^5}$$ limitini hesablayın.",
+        "answer": "1/30",
+        "solution": "$x\\cos x = x - \\frac{x^3}{2} + \\frac{x^5}{24} - \\dots$ və $\\sin x = x - \\frac{x^3}{6} + \\frac{x^5}{120} - \\dots$. Surət $\\left(\\frac{1}{24}-\\frac{1}{120}\\right)x^5 = \\frac{x^5}{30}$, limit $\\frac{1}{30}$."
+    },
+    {
+        "id": "l2", "category": "Limit",
+        "title": "2-ci Tərtib 1^∞ Qeyri-Müəyyənliyi",
+        "prompt": "$$\\lim_{x \\to 0} \\frac{e^{-1}(1 + \\tan x)^{1/x} - 1 + \\frac{x}{2}}{x^2}$$ limitini hesablayın.",
+        "answer": "19/24",
+        "solution": "$\\frac{\\ln(1+\\tan x)}{x} = 1 - \\frac{x}{2} + \\frac{2}{3}x^2 + O(x^3)$. $\\exp(-\\frac{x}{2}+\\frac{2}{3}x^2) = 1 - \\frac{x}{2} + (\\frac{2}{3}+\\frac{1}{8})x^2 + \\dots$, odur ki limit $\\frac{19}{24}$."
+    },
+    {
+        "id": "l3", "category": "Limit",
+        "title": "Sonsuzluqda Yüksək Tərtibli Köklər Fərqi",
+        "prompt": "$$\\lim_{x \\to \\infty} x^2 \\left( \\sqrt{x^4 + 2x^2 + 3} - \\sqrt[3]{x^6 + 3x^4 + 5x^2} \\right)$$ limitini hesablayın.",
+        "answer": "1/3",
+        "solution": "$t=1/x$ əvəz etsək: $(1+2t^2+3t^4)^{1/2} = 1 + t^2 + t^4 + \\dots$ və $(1+3t^2+5t^4)^{1/3} = 1 + t^2 + \\frac{2}{3}t^4 + \\dots$. Fərq $\\frac{1}{3}x^2t^4 = \\frac{1}{3x^2}$, $x^2$ ilə vurduqda $\\frac{1}{3}$."
+    },
+    {
+        "id": "l4", "category": "Limit",
+        "title": "Riman İnteqral Cəmi Limiti",
+        "prompt": "$$\\lim_{n \\to \\infty} \\sum_{k=1}^{n} \\frac{k^3}{n^3 \\sqrt{n^2 + 3k^2}}$$ limitini hesablayın.",
+        "answer": "4/27",
+        "solution": "$\\lim \\frac{1}{n}\\sum \\frac{(k/n)^3}{\\sqrt{1+3(k/n)^2}} = \\int_0^1 \\frac{x^3}{\\sqrt{1+3x^2}}dx$. $u=\\sqrt{1+3x^2}$ ilə $\\frac{1}{9}\\int_1^2 (u^2-1)du = \\frac{4}{27}$."
+    },
+    {
+        "id": "l5", "category": "Limit",
+        "title": "Teleskopik Sonsuz Hasil Limiti",
+        "prompt": "$$\\lim_{n \\to \\infty} \\prod_{k=2}^{n} \\frac{k^3 - 1}{k^3 + 1}$$ limitini hesablayın.",
+        "answer": "2/3",
+        "solution": "$\\frac{k^3-1}{k^3+1} = \\frac{k-1}{k+1} \\cdot \\frac{k^2+k+1}{k^2-k+1}$. Hasil $\\frac{2}{n(n+1)} \\cdot \\frac{n^2+n+1}{3} \\to \\frac{2}{3}$."
+    },
+    {
+        "id": "l6", "category": "Limit",
+        "title": "Tərs Triqonometrik Teylor Limiti",
+        "prompt": "$$\\lim_{x \\to 0} \\frac{\\arcsin x - \\arctan x - \\frac{x^3}{2}}{x^5}$$ limitini hesablayın.",
+        "answer": "-1/8",
+        "solution": "$\\arcsin x = x + \\frac{x^3}{6} + \\frac{3}{40}x^5 + \\dots$ və $\\arctan x = x - \\frac{x^3}{3} + \\frac{1}{5}x^5 - \\dots$. $x^5$ əmsalı $\\frac{3}{40}-\\frac{1}{5} = -\\frac{1}{8}$."
+    },
+    {
+        "id": "l7", "category": "Limit",
+        "title": "Üstlü-Loqarifmik Limit",
+        "prompt": "$$\\lim_{x \\to 1} \\frac{x^x - x}{x - 1 - \\ln x}$$ limitini hesablayın.",
+        "answer": "2",
+        "solution": "$x = 1 + t$ götürsək $x^x = 1 + t + t^2 + O(t^3)$, surət $t^2 + O(t^3)$, məxrəc $\\frac{t^2}{2} + O(t^3)$. Limit $2$-dir."
+    },
+    {
+        "id": "l8", "category": "Limit",
+        "title": "Loqarifmik Tangens Teylor Limiti",
+        "prompt": "$$\\lim_{x \\to 0} \\frac{\\ln\\!\\left(\\tan\\!\\left(\\frac{\\pi}{4} + x\\right)\\right) - 2x}{x^3}$$ limitini hesablayın.",
+        "answer": "4/3",
+        "solution": "$(\\ln(\\tan(\\frac{\\pi}{4}+x)))' = 2\\sec(2x) = 2 + 4x^2 + \\dots$. İnteqrallasaq $2x + \\frac{4}{3}x^3 + \\dots$, odur ki limit $\\frac{4}{3}$."
+    },
 ]
 
 _db_lock = threading.Lock()
@@ -111,7 +288,7 @@ _rate_buckets = defaultdict(list)
 _wandbox_cache = {"ts": 0.0, "compilers": {}}
 _game_lock = threading.Lock()
 _bulls_games = {}
-_sprint_tokens = {}
+_calc_games = {}
 _seen_cache = {}
 
 
@@ -143,6 +320,47 @@ def clean_row(r):
         if isinstance(v, (datetime.datetime, datetime.date)):
             d[k] = v.strftime("%Y-%m-%d %H:%M:%S") if isinstance(v, datetime.datetime) else v.strftime("%Y-%m-%d")
     return d
+
+
+def get_user_rank(rating, is_admin=False):
+    """Codeforces tərzi reytinq ünvanları + Admin üçün dalğalanan 'Yaradıcı'."""
+    if is_admin:
+        return {"rank_title": "Yaradıcı", "rank_color": "rainbow", "is_creator": True}
+    r = safe_int(rating, 800)
+    if r < 1200:
+        return {"rank_title": "Beginner", "rank_color": "#9ca3af", "is_creator": False}
+    if r < 1400:
+        return {"rank_title": "Pupil", "rank_color": "#22c55e", "is_creator": False}
+    if r < 1600:
+        return {"rank_title": "Specialist", "rank_color": "#06b6d4", "is_creator": False}
+    if r < 1900:
+        return {"rank_title": "Expert", "rank_color": "#3b82f6", "is_creator": False}
+    if r < 2100:
+        return {"rank_title": "Candidate Master", "rank_color": "#a855f7", "is_creator": False}
+    if r < 2300:
+        return {"rank_title": "Master", "rank_color": "#f59e0b", "is_creator": False}
+    if r < 2400:
+        return {"rank_title": "International Master", "rank_color": "#ea580c", "is_creator": False}
+    if r < 2600:
+        return {"rank_title": "Grandmaster", "rank_color": "#ef4444", "is_creator": False}
+    if r < 3000:
+        return {"rank_title": "International Grandmaster", "rank_color": "#dc2626", "is_creator": False}
+    return {"rank_title": "Legendary Grandmaster", "rank_color": "#ff2e4c", "is_creator": False}
+
+
+def parse_math_answer(raw):
+    s = str(raw or "").strip().replace(" ", "").replace(",", ".").replace("−", "-")
+    if not s:
+        return None
+    try:
+        if "/" in s:
+            parts = s.split("/")
+            if len(parts) != 2:
+                return None
+            return float(Fraction(parts[0]) / Fraction(parts[1]))
+        return float(Fraction(s)) if "." not in s else float(s)
+    except (ValueError, ZeroDivisionError):
+        return None
 
 
 class _DualCursor:
@@ -320,7 +538,7 @@ def get_session():
         gr = conn.execute("SELECT expires_at FROM sessions WHERE token=? AND kind='guest'", (gt,)).fetchone()
         if gr:
             guest_rem = max(0, int(gr["expires_at"] - now))
-    if u and (now - _seen_cache.get(u.lower(), 0) > 30):
+    if u and (now - _seen_cache.get(u.lower(), 0) > 25):
         _seen_cache[u.lower()] = now
         conn.execute("UPDATE users SET last_seen_at=? WHERE LOWER(username)=LOWER(?)", (now, u))
     conn.commit()
@@ -405,7 +623,7 @@ def init_db():
     conn.execute(f"CREATE TABLE IF NOT EXISTS site_reviews (id {PK}, username TEXT UNIQUE NOT NULL, rating INTEGER NOT NULL, comment TEXT DEFAULT '', created_at {TS})")
     conn.execute(f"CREATE TABLE IF NOT EXISTS contests (id {PK}, title TEXT NOT NULL, duration_min INTEGER DEFAULT 90, starts_at {DBL} NOT NULL, ends_at {DBL} NOT NULL, status TEXT DEFAULT 'active', created_at {TS})")
     conn.execute(f"""CREATE TABLE IF NOT EXISTS problems (
-        id {PK}, code_label TEXT DEFAULT '', title TEXT NOT NULL, rating INTEGER DEFAULT 800, tags TEXT DEFAULT 'math',
+        id {PK}, code_label TEXT DEFAULT '', title TEXT NOT NULL, plan TEXT DEFAULT '', rating INTEGER DEFAULT 800, tags TEXT DEFAULT 'math',
         time_limit {DBL} DEFAULT 2.0, memory_limit INTEGER DEFAULT 256, statement TEXT NOT NULL,
         input_spec TEXT DEFAULT '', output_spec TEXT DEFAULT '', note TEXT DEFAULT '', editorial TEXT DEFAULT '',
         starter_code TEXT DEFAULT '', author TEXT DEFAULT 'AzForces', visibility TEXT DEFAULT 'archive',
@@ -424,10 +642,12 @@ def init_db():
     conn.execute(f"CREATE TABLE IF NOT EXISTS post_reactions (id {PK}, post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE, username TEXT NOT NULL, emoji TEXT NOT NULL, UNIQUE(post_id, username, emoji))")
     conn.execute(f"CREATE TABLE IF NOT EXISTS post_comments (id {PK}, post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE, parent_id INTEGER DEFAULT NULL, author TEXT NOT NULL, body TEXT NOT NULL, created_at {TS})")
     conn.execute(f"CREATE TABLE IF NOT EXISTS creative_codes (id {PK}, title TEXT NOT NULL, description TEXT DEFAULT '', language TEXT NOT NULL, code TEXT NOT NULL, sample_input TEXT DEFAULT '', author TEXT DEFAULT 'AzForces', created_at {TS})")
+    conn.execute(f"CREATE TABLE IF NOT EXISTS custom_frames (id TEXT PRIMARY KEY, name TEXT NOT NULL, tier TEXT DEFAULT 'fantasy', price INTEGER DEFAULT 15000, description TEXT DEFAULT '', image_url TEXT NOT NULL, anim_class TEXT DEFAULT 'fx-float', created_at {TS})")
     conn.commit()
 
     for tbl, cdef in [
         ("users", f"last_seen_at {DBL} DEFAULT 0"),
+        ("problems", "plan TEXT DEFAULT ''"),
         ("submissions", "quality_pct INTEGER DEFAULT 0"),
         ("room_messages", "audio_url TEXT DEFAULT ''"),
         ("room_messages", "audio_duration INTEGER DEFAULT 0"),
@@ -464,14 +684,14 @@ def init_db():
                 ("1E", "Ən Uzun Artan Alt-ardıcıllıq", 1800, "dp, binary search", 2.0, 256, "Ən uzun ciddi artan alt-ardıcıllığın uzunluğunu tapın.", "1-ci sətirdə $n$; 2-ci sətirdə massiv.", "Maksimum uzunluq.", "", "Binary search + tails.", [("6\n10 9 2 5 3 7", "3", 1), ("5\n5 4 3 2 1", "1", 0)]),
             ]
         for lbl, t, rt, tg, tl, ml, st, ins, outs, nt, ed, tests in seed:
-            pid = conn.execute("INSERT INTO problems (code_label,title,rating,tags,time_limit,memory_limit,statement,input_spec,output_spec,note,editorial,author,visibility) VALUES (?,?,?,?,?,?,?,?,?,?,?,'AzForces','archive')",
-                               (lbl, t, rt, tg, tl, ml, st, ins, outs, nt, ed)).lastrowid
+            pid = conn.execute("INSERT INTO problems (code_label,title,plan,rating,tags,time_limit,memory_limit,statement,input_spec,output_spec,note,editorial,author,visibility) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,'AzForces','archive')",
+                               (lbl, t, tg, rt, tg, tl, ml, st, ins, outs, nt, ed)).lastrowid
             for i_d, o_d, smp in tests:
                 conn.execute("INSERT INTO test_cases (problem_id, input_data, expected_output, is_sample) VALUES (?, ?, ?, ?)", (pid, i_d, o_d, smp))
 
     if conn.execute("SELECT COUNT(*) AS cnt FROM posts").fetchone()["cnt"] == 0:
         conn.execute("INSERT INTO posts (author, title, body, post_type, is_pinned) VALUES (?, ?, ?, 'announcement', 1)",
-                     (ADMIN_USERNAME, "AzForces Platformasına Xoş Gəldiniz!", "Rəsmi yarışlar, elanlar və anketlər burada paylaşılır. Hər gün Günün Məsələsini həll edib seriyınızı artırın!"))
+                     (ADMIN_USERNAME, "AzForces Platformasına Xoş Gəldiniz!", "Rəsmi yarışlar, elanlar və anketlər burada paylaşılır. Hər gün Günün Məsələsini həll edib seriyanızı artırın!"))
 
     if conn.execute("SELECT COUNT(*) AS cnt FROM site_reviews").fetchone()["cnt"] == 0:
         conn.execute("INSERT INTO site_reviews (username, rating, comment) VALUES (?, 5, ?) ON CONFLICT (username) DO NOTHING",
@@ -544,8 +764,19 @@ def get_or_create_daily_pid(conn):
     return chosen
 
 
+def get_all_shop_items(conn):
+    custom = conn.execute("SELECT * FROM custom_frames ORDER BY created_at DESC").fetchall()
+    items = [dict(it) | {"fx_type": "svg" if it["id"] != "none" else "none", "image_url": "", "anim_class": ""} for it in SHOP_ITEMS]
+    for cf in custom:
+        items.append({
+            "id": cf["id"], "name": cf["name"], "tier": cf["tier"] or "fantasy",
+            "price": cf["price"], "desc": cf["description"] or "Xüsusi animasiyalı çərçivə",
+            "fx_type": "img", "image_url": cf["image_url"], "anim_class": cf["anim_class"] or "fx-float",
+        })
+    return items
+
+
 def calc_quality_score(passed, total, time_str, time_limit, code):
-    """Faiz əsaslı qiymətləndirmə: 60% testlər + 25% sürət + 15% kod stili."""
     if total <= 0:
         return 0, {"tests_pct": 0, "speed_pct": 0, "style_pct": 0}
     test_pts = round(60 * passed / total)
@@ -735,7 +966,7 @@ def secret_admin_portal(slug):
     return render_template("index.html", admin_portal=True)
 
 
-# ═══════════════ İNSAN / QONAQ / RƏYLƏR ═══════════════
+# ═══════════════ İNSAN / QONAQ / HEARTBEAT / RƏYLƏR ═══════════════
 @app.route("/api/human-challenge", methods=["GET"])
 def human_challenge():
     tok = secrets.token_urlsafe(20)
@@ -773,11 +1004,22 @@ def guest_start():
     return resp
 
 
+@app.route("/api/ping", methods=["POST"])
+def ping_online():
+    get_session()
+    return jsonify({"ok": True})
+
+
 @app.route("/api/site-reviews", methods=["GET", "POST"])
 def site_reviews():
     conn = get_db()
     if request.method == "GET":
-        revs = [r | {"is_admin_user": r["username"] == ADMIN_USERNAME} for r in conn.execute("SELECT * FROM site_reviews ORDER BY id DESC LIMIT 12").fetchall()]
+        raw_revs = conn.execute("SELECT r.*, u.rating AS user_rating FROM site_reviews r LEFT JOIN users u ON LOWER(u.username)=LOWER(r.username) ORDER BY r.id DESC LIMIT 12").fetchall()
+        revs = []
+        for r in raw_revs:
+            is_adm = (r["username"] == ADMIN_USERNAME)
+            rk = get_user_rank(r.get("user_rating") or 800, is_adm)
+            revs.append(r | {"is_admin_user": is_adm} | rk)
         avg = conn.execute("SELECT ROUND(AVG(rating), 1) AS avg_r, COUNT(*) AS cnt FROM site_reviews").fetchone()
         stats = {
             "users": conn.execute("SELECT COUNT(*) AS cnt FROM users").fetchone()["cnt"],
@@ -800,22 +1042,28 @@ def site_reviews():
     return jsonify({"message": "Dəyərləndirməniz qeyd edildi!"})
 
 
-# ═══════════════ AUTH (parol 2 dəfə + admin ∞ coin) ═══════════════
+# ═══════════════ AUTH (parol 2 dəfə + rank + admin) ═══════════════
 @app.route("/api/auth/me", methods=["GET"])
 def auth_me():
     u, adm, hum, guest_rem = get_session()
     info = {"authenticated": bool(u), "username": u, "is_admin": adm, "infinite_coins": adm,
             "human_verified": hum, "guest_remaining_sec": guest_rem, "level": 1, "xp": 0,
-            "needed_xp": 100, "coins": 0, "avatar_url": "", "avatar_frame": "none", "avatar_color": "#3b82f6"}
+            "needed_xp": 100, "coins": 0, "rating": 800, "avatar_url": "", "avatar_frame": "none",
+            "avatar_color": "#3b82f6", "pending_proposals_count": 0} | get_user_rank(800, adm)
+    conn = get_db()
     if u:
-        conn = get_db()
         row = conn.execute("SELECT level, xp, total_xp, coins, rating, daily_streak, avatar_url, avatar_color, avatar_frame FROM users WHERE LOWER(username)=LOWER(?)", (u,)).fetchone()
-        conn.close()
         if row:
+            rk = get_user_rank(row["rating"], adm)
             info.update({"level": row["level"], "xp": row["xp"], "needed_xp": needed_xp(row["level"]),
                          "total_xp": row["total_xp"], "coins": ADMIN_INFINITE_COINS if adm else row["coins"],
                          "rating": row["rating"], "streak": row["daily_streak"], "avatar_url": row["avatar_url"],
-                         "avatar_color": row["avatar_color"], "avatar_frame": row["avatar_frame"]})
+                         "avatar_color": row["avatar_color"], "avatar_frame": row["avatar_frame"]} | rk)
+    if adm:
+        info["pending_proposals_count"] = conn.execute("SELECT COUNT(*) AS cnt FROM problems WHERE visibility='pending'").fetchone()["cnt"]
+    custom_frames = conn.execute("SELECT id, name, tier, price, image_url, anim_class FROM custom_frames").fetchall()
+    conn.close()
+    info["custom_frames"] = custom_frames
     return jsonify(info)
 
 
@@ -836,7 +1084,7 @@ def send_reg_code():
     if len(pw) < 6:
         return jsonify({"error": "Parol ən azı 6 simvol olmalıdır."}), 400
     if pw != pw2:
-        return jsonify({"error": "Şifrələr eyni deyil — iki dəfə düzgün yazın."}), 400
+        return jsonify({"error": "Şifrələr eyni deyil — parolu 2 dəfə eyni yazın."}), 400
     conn = get_db()
     if conn.execute("SELECT 1 FROM users WHERE LOWER(username)=LOWER(?) OR LOWER(email)=LOWER(?)", (uname, email)).fetchone():
         conn.close()
@@ -864,8 +1112,10 @@ def auth_register():
     pw = str(d.get("password") or "")
     pw2 = str(d.get("password_confirm") or "")
     code = str(d.get("code") or "").strip()
-    if pw != pw2 or len(pw) < 6:
-        return jsonify({"error": "Şifrələr uyğun gəlmir."}), 400
+    if len(pw) < 6:
+        return jsonify({"error": "Parol ən azı 6 simvol olmalıdır."}), 400
+    if pw != pw2:
+        return jsonify({"error": "Şifrələr uyğun gəlmir — iki dəfə düzgün yazın."}), 400
     conn = get_db()
     ec = conn.execute("SELECT * FROM email_codes WHERE LOWER(email)=LOWER(?)", (email,)).fetchone()
     if not ec or ec["expires_at"] < time.time():
@@ -899,7 +1149,7 @@ def auth_login():
     ident, pw = str(d.get("identifier") or "").strip(), str(d.get("password") or "")
     conn = get_db()
     adm_hash = _ENV_ADMIN_HASH or (conn.execute("SELECT value FROM settings WHERE key='admin_password_hash'").fetchone() or {"value": ""})["value"]
-    is_adm_id = (ADMIN_EMAIL and ident.lower() == ADMIN_EMAIL) or (not ADMIN_EMAIL and ident.lower() == ADMIN_USERNAME.lower())
+    is_adm_id = (ADMIN_EMAIL and ident.lower() == ADMIN_EMAIL) or (ident.lower() == ADMIN_USERNAME.lower())
 
     if is_adm_id:
         now = time.time()
@@ -920,9 +1170,10 @@ def auth_login():
                 conn.execute("INSERT INTO user_inventory (username, item_id) VALUES (?, ?) ON CONFLICT (username, item_id) DO NOTHING", (ADMIN_USERNAME, it["id"]))
             conn.commit()
             conn.close()
+            _seen_cache[ADMIN_USERNAME.lower()] = now
             ut = create_session(ADMIN_USERNAME, "user", SESSION_TTL)
             at = create_session(ADMIN_USERNAME, "admin", ADMIN_TTL)
-            resp = make_response(jsonify({"ok": True, "username": ADMIN_USERNAME, "is_admin": True, "infinite_coins": True, "message": "Xoş gəldiniz, Admin!"}))
+            resp = make_response(jsonify({"ok": True, "username": ADMIN_USERNAME, "is_admin": True, "infinite_coins": True, "message": "Xoş gəldiniz, Yaradıcı!"}))
             set_cookie(resp, "az_session", ut, SESSION_TTL)
             set_cookie(resp, "az_admin_session", at, ADMIN_TTL)
             return resp
@@ -937,7 +1188,9 @@ def auth_login():
     if not u or not check_password_hash(u["password_hash"], pw):
         conn.close()
         return jsonify({"error": "Məlumatlar yanlışdır."}), 401
-    conn.execute("UPDATE users SET last_seen_at=? WHERE LOWER(username)=LOWER(?)", (time.time(), u["username"]))
+    now = time.time()
+    _seen_cache[u["username"].lower()] = now
+    conn.execute("UPDATE users SET last_seen_at=? WHERE LOWER(username)=LOWER(?)", (now, u["username"]))
     conn.commit()
     conn.close()
     tok = create_session(u["username"], "user", SESSION_TTL)
@@ -961,7 +1214,7 @@ def auth_logout():
     return resp
 
 
-# ═══════════════ PROFİL + ADMIN META (onlayn status + qeydiyyat) ═══════════════
+# ═══════════════ PROFİL + QEYDİYYATLAR + ADMIN ONLAYN META ═══════════════
 def _build_profile_payload(conn, target, include_private=False, viewer_is_admin=False):
     u = conn.execute("SELECT * FROM users WHERE LOWER(username)=LOWER(?)", (target,)).fetchone()
     if not u:
@@ -977,6 +1230,7 @@ def _build_profile_payload(conn, target, include_private=False, viewer_is_admin=
     r_hist = conn.execute("SELECT rating, label, created_at FROM rating_history WHERE LOWER(username)=LOWER(?) ORDER BY id ASC LIMIT 30", (uname,)).fetchall()
     need = needed_xp(u["level"])
     target_is_adm = (uname == ADMIN_USERNAME)
+    rk = get_user_rank(u["rating"], target_is_adm)
     data = {
         "username": uname, "bio": u["bio"], "avatar_url": u["avatar_url"], "avatar_color": u["avatar_color"],
         "avatar_frame": u["avatar_frame"], "level": u["level"], "xp": u["xp"], "needed_xp": need,
@@ -985,7 +1239,7 @@ def _build_profile_payload(conn, target, include_private=False, viewer_is_admin=
         "rating": u["rating"], "streak": u["daily_streak"], "solved_count": solved,
         "recent_solved": recent, "heatmap": dict(heat), "rating_history": r_hist, "is_admin_user": target_is_adm,
         "created_at": u["created_at"],
-    }
+    } | rk
     if viewer_is_admin:
         last_ts = float(u["last_seen_at"] or 0)
         data["admin_meta"] = {
@@ -1000,16 +1254,83 @@ def _build_profile_payload(conn, target, include_private=False, viewer_is_admin=
         for f in fr_rows:
             other = f["user_b"] if f["user_a"].lower() == uname.lower() else f["user_a"]
             if f["status"] == "accepted":
-                fu = conn.execute("SELECT level, daily_streak, avatar_url, avatar_color, avatar_frame FROM users WHERE LOWER(username)=LOWER(?)", (other,)).fetchone()
+                fu = conn.execute("SELECT level, rating, daily_streak, avatar_url, avatar_color, avatar_frame FROM users WHERE LOWER(username)=LOWER(?)", (other,)).fetchone()
+                other_adm = (other == ADMIN_USERNAME)
+                frk = get_user_rank(fu["rating"] if fu else 800, other_adm)
                 friends.append({"username": other, "level": fu["level"] if fu else 1, "streak": fu["daily_streak"] if fu else 0,
                                 "avatar_url": fu["avatar_url"] if fu else "", "avatar_color": fu["avatar_color"] if fu else "#3b82f6",
-                                "avatar_frame": fu["avatar_frame"] if fu else "none", "is_admin_user": other == ADMIN_USERNAME})
+                                "avatar_frame": fu["avatar_frame"] if fu else "none", "is_admin_user": other_adm} | frk)
             elif f["status"] == "pending" and f["action_by"].lower() != uname.lower():
                 inc.append(other)
         data["email"] = u["email"]
         data["friends"] = friends
         data["incoming_requests"] = inc
     return data
+
+
+@app.route("/api/users/registrations", methods=["GET"])
+def list_registrations():
+    """Günlük və həftəlik qeydiyyat siyahısı (qeydiyyat tarixi ilə; onlayn/oflayn YALNIZ admin üçün)."""
+    _, adm, _, _ = get_session()
+    period = (request.args.get("period") or "weekly").strip().lower()
+    now_dt = datetime.datetime.now()
+    today_str = now_dt.strftime("%Y-%m-%d")
+    week_ago_str = (now_dt - datetime.timedelta(days=7)).strftime("%Y-%m-%d")
+
+    conn = get_db()
+    rows = conn.execute("SELECT username, email, level, rating, avatar_url, avatar_color, avatar_frame, last_seen_at, created_at FROM users ORDER BY id DESC LIMIT 200").fetchall()
+    conn.close()
+
+    now_ts = time.time()
+    today_cnt, week_cnt, online_cnt = 0, 0, 0
+    items = []
+
+    for r in rows:
+        reg_day = str(r["created_at"] or "")[:10]
+        is_adm_u = (r["username"] == ADMIN_USERNAME)
+        ts = float(r["last_seen_at"] or 0)
+        is_on = (now_ts - ts) <= 120 if ts > 0 else False
+
+        if reg_day == today_str:
+            today_cnt += 1
+        if reg_day >= week_ago_str:
+            week_cnt += 1
+        if is_on:
+            online_cnt += 1
+
+        if period == "daily" and reg_day != today_str:
+            continue
+        if period == "weekly" and reg_day < week_ago_str:
+            continue
+
+        rk = get_user_rank(r["rating"], is_adm_u)
+        item = {
+            "username": r["username"],
+            "level": r["level"],
+            "rating": r["rating"],
+            "avatar_url": r["avatar_url"],
+            "avatar_color": r["avatar_color"],
+            "avatar_frame": r["avatar_frame"],
+            "created_at": r["created_at"],
+            "is_admin_user": is_adm_u,
+        } | rk
+        if adm:
+            item["is_online"] = is_on
+            item["last_seen"] = datetime.datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M") if ts > 0 else "—"
+            item["email"] = r["email"]
+        items.append(item)
+
+    res = {
+        "period": period,
+        "today_count": today_cnt,
+        "week_count": week_cnt,
+        "total_count": len(rows),
+        "users": items,
+        "viewer_is_admin": adm,
+    }
+    if adm:
+        res["online_count"] = online_cnt
+    return jsonify(res)
 
 
 @app.route("/api/profile", methods=["GET"])
@@ -1124,7 +1445,7 @@ def transfer_coins():
     return jsonify({"message": f"{receiver['username']} istifadəçisinə {amount} AzCoin göndərildi!", "infinite_coins": is_adm})
 
 
-# ═══════════════ MAĞAZA ═══════════════
+# ═══════════════ MAĞAZA + ADMİN ÇƏRÇİVƏ ƏLAVƏ ETMƏ ═══════════════
 @app.route("/api/shop", methods=["GET"])
 @require_user
 def get_shop():
@@ -1132,22 +1453,28 @@ def get_shop():
     u = conn.execute("SELECT coins, avatar_frame FROM users WHERE LOWER(username)=LOWER(?)", (request._u,)).fetchone()
     owned = {r["item_id"] for r in conn.execute("SELECT item_id FROM user_inventory WHERE LOWER(username)=LOWER(?)", (request._u,)).fetchall()}
     owned.add("none")
+    all_items = get_all_shop_items(conn)
     if request._adm:
-        owned = {it["id"] for it in SHOP_ITEMS}
+        owned = {it["id"] for it in all_items}
     conn.close()
-    return jsonify({"coins": ADMIN_INFINITE_COINS if request._adm else u["coins"], "infinite_coins": request._adm,
-                    "equipped": u["avatar_frame"],
-                    "items": [it | {"owned": it["id"] in owned, "equipped": u["avatar_frame"] == it["id"]} for it in SHOP_ITEMS]})
+    return jsonify({
+        "coins": ADMIN_INFINITE_COINS if request._adm else u["coins"],
+        "infinite_coins": request._adm,
+        "equipped": u["avatar_frame"],
+        "items": [it | {"owned": it["id"] in owned, "equipped": u["avatar_frame"] == it["id"]} for it in all_items],
+    })
 
 
 @app.route("/api/shop/buy", methods=["POST"])
 @require_user
 def shop_buy():
     iid = str((request.get_json(silent=True) or {}).get("item_id") or "")
-    item = next((x for x in SHOP_ITEMS if x["id"] == iid), None)
-    if not item:
-        return jsonify({"error": "Məhsul tapılmadı."}), 404
     conn = get_db()
+    all_items = get_all_shop_items(conn)
+    item = next((x for x in all_items if x["id"] == iid), None)
+    if not item:
+        conn.close()
+        return jsonify({"error": "Məhsul tapılmadı."}), 404
     if not request._adm and conn.execute("SELECT 1 FROM user_inventory WHERE LOWER(username)=LOWER(?) AND item_id=?", (request._u, iid)).fetchone():
         conn.close()
         return jsonify({"error": "Artıq inventarınızdadır."}), 400
@@ -1177,6 +1504,42 @@ def shop_equip():
     conn.commit()
     conn.close()
     return jsonify({"message": "Çərçivə dəyişdirildi!"})
+
+
+@app.route("/api/admin/frames", methods=["POST"])
+@require_admin
+def admin_add_custom_frame():
+    """Admin mağazaya GIF/WebP/PNG animasiyalı şəkil çərçivə əlavə edir."""
+    d = request.get_json(silent=True) or {}
+    name = str(d.get("name") or "").strip()[:60]
+    url = str(d.get("image_url") or "").strip()[:400]
+    tier = str(d.get("tier") or "fantasy").strip()
+    if tier not in ("classic", "fantasy", "nature", "legendary"):
+        tier = "fantasy"
+    price = safe_int(d.get("price"), 15000, 12000, 1000000)
+    desc = str(d.get("description") or "Xüsusi animasiyalı çərçivə").strip()[:120]
+    anim = str(d.get("anim_class") or "fx-float").strip()
+    if anim not in ("fx-float", "fx-spin", "fx-pulse", "fx-flicker", "fx-glitch", "fx-flap", ""):
+        anim = "fx-float"
+    if not name or not (url.startswith("http://") or url.startswith("https://") or url.startswith("/")):
+        return jsonify({"error": "Çərçivə adı və düzgün şəkil/GIF linki (URL) daxil edin."}), 400
+    fid = "cf-" + secrets.token_hex(4)
+    conn = get_db()
+    conn.execute("INSERT INTO custom_frames (id, name, tier, price, description, image_url, anim_class) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                 (fid, name, tier, price, desc, url, anim))
+    conn.commit()
+    conn.close()
+    return jsonify({"message": f"'{name}' çərçivəsi mağazaya əlavə edildi!", "id": fid})
+
+
+@app.route("/api/admin/frames/<fid>", methods=["DELETE"])
+@require_admin
+def admin_delete_custom_frame(fid):
+    conn = get_db()
+    conn.execute("DELETE FROM custom_frames WHERE id=?", (fid,))
+    conn.commit()
+    conn.close()
+    return jsonify({"message": "Çərçivə silindi."})
 
 
 # ═══════════════ DOSTLAR ═══════════════
@@ -1217,24 +1580,39 @@ def friend_resp():
     return jsonify({"ok": True})
 
 
-# ═══════════════ ADMIN: İSTİFADƏÇİLƏR (onlayn + qeydiyyat) ═══════════════
+# ═══════════════ ADMIN: İSTİFADƏÇİLƏR (onlayn + qeydiyyat + filter) ═══════════════
 @app.route("/api/admin/users", methods=["GET"])
 @require_admin
 def admin_list_users():
     q = (request.args.get("q") or "").strip().lower()
+    period = (request.args.get("period") or "all").strip().lower()
+    now_dt = datetime.datetime.now()
+    today_str = now_dt.strftime("%Y-%m-%d")
+    week_ago_str = (now_dt - datetime.timedelta(days=7)).strftime("%Y-%m-%d")
+
     conn = get_db()
     rows = conn.execute("SELECT id, username, email, level, xp, total_xp, coins, rating, daily_streak, last_seen_at, created_at FROM users ORDER BY id DESC").fetchall()
     solved_map = {r["username"].lower(): r["cnt"] for r in conn.execute("SELECT LOWER(username) AS username, COUNT(DISTINCT problem_id) AS cnt FROM submissions WHERE verdict='Accepted' GROUP BY LOWER(username)").fetchall()}
     conn.close()
     now, out = time.time(), []
     for r in rows:
+        reg_day = str(r["created_at"] or "")[:10]
+        if period == "daily" and reg_day != today_str:
+            continue
+        if period == "weekly" and reg_day < week_ago_str:
+            continue
         if q and q not in r["username"].lower() and q not in r["email"].lower():
             continue
         ts = float(r["last_seen_at"] or 0)
-        out.append(r | {"solved_count": solved_map.get(r["username"].lower(), 0),
-                        "is_admin_user": r["username"] == ADMIN_USERNAME,
-                        "is_online": (now - ts) <= 120 if ts > 0 else False,
-                        "infinite_coins": r["username"] == ADMIN_USERNAME})
+        is_adm_u = (r["username"] == ADMIN_USERNAME)
+        rk = get_user_rank(r["rating"], is_adm_u)
+        out.append(r | {
+            "solved_count": solved_map.get(r["username"].lower(), 0),
+            "is_admin_user": is_adm_u,
+            "is_online": (now - ts) <= 120 if ts > 0 else False,
+            "last_seen": datetime.datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M") if ts > 0 else "—",
+            "infinite_coins": is_adm_u,
+        } | rk)
     return jsonify(out)
 
 
@@ -1272,7 +1650,7 @@ def admin_delete_user(target):
     return jsonify({"message": f"{target} silindi."}) if cur.rowcount else (jsonify({"error": "Tapılmadı."}), 404)
 
 
-# ═══════════════ GÜNÜN MƏSƏLƏSİ & SERİYA ═══════════════
+# ═══════════════ GÜNÜN MƏSƏLƏSİ & SERİYA (Admin birbaşa sual göndərə bilir) ═══════════════
 @app.route("/api/daily", methods=["GET"])
 def daily_challenge():
     u, _, _, _ = get_session()
@@ -1289,7 +1667,8 @@ def daily_challenge():
         for row in conn.execute("SELECT day_date FROM daily_solves WHERE LOWER(username)=LOWER(?) ORDER BY id DESC LIMIT 60", (u,)).fetchall():
             heat[row["day_date"]] = 1
     top = [r | {"is_admin_user": r["username"] == ADMIN_USERNAME} for r in conn.execute("SELECT username, quality_pct, solved_at FROM daily_solves WHERE day_date=? ORDER BY id ASC LIMIT 10", (today,)).fetchall()]
-    board = [r | {"is_admin_user": r["username"] == ADMIN_USERNAME} for r in conn.execute("SELECT username, daily_streak FROM users WHERE daily_streak > 0 ORDER BY daily_streak DESC LIMIT 10").fetchall()]
+    raw_board = conn.execute("SELECT username, daily_streak, rating FROM users WHERE daily_streak > 0 ORDER BY daily_streak DESC LIMIT 10").fetchall()
+    board = [r | {"is_admin_user": r["username"] == ADMIN_USERNAME} | get_user_rank(r["rating"], r["username"] == ADMIN_USERNAME) for r in raw_board]
     conn.close()
     lt = time.localtime()
     sec_left = 86400 - (lt.tm_hour * 3600 + lt.tm_min * 60 + lt.tm_sec)
@@ -1301,13 +1680,45 @@ def daily_challenge():
 @app.route("/api/admin/daily", methods=["POST"])
 @require_admin
 def admin_set_daily():
-    key = str((request.get_json(silent=True) or {}).get("problem_code") or "").strip()
+    """Həm mövcud sualı kodla seçir, həm də Adminin birbaşa yazdığı yeni sualı günün sualı edir."""
+    d = request.get_json(silent=True) or {}
+    today = time.strftime("%Y-%m-%d")
     conn = get_db()
+
+    # Yeni sual göndərilibsə (title + statement + tests)
+    if str(d.get("title") or "").strip() and str(d.get("statement") or "").strip():
+        t = str(d.get("title")).strip()[:120]
+        st = str(d.get("statement")).strip()
+        tests = d.get("tests") or []
+        if not tests:
+            conn.close()
+            return jsonify({"error": "Günün sualı üçün ən azı 1 test nümunəsi yazın."}), 400
+        clbl = str(d.get("code_label") or "").strip().upper()[:10]
+        pid = conn.execute(
+            "INSERT INTO problems (code_label,title,plan,rating,tags,time_limit,memory_limit,statement,input_spec,output_spec,note,editorial,author,visibility) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,'archive')",
+            (clbl, t, str(d.get("plan") or "Günün Sualı").strip()[:200],
+             safe_int(d.get("rating"), 1000, 400, 4000), str(d.get("tags") or "daily, custom").strip(),
+             safe_float(d.get("time_limit"), 2.0), safe_int(d.get("memory_limit"), 256, 16, 1024),
+             st, str(d.get("input_spec") or ""), str(d.get("output_spec") or ""),
+             str(d.get("note") or ""), str(d.get("editorial") or ""), ADMIN_USERNAME)
+        ).lastrowid
+        if not clbl:
+            clbl = f"D{pid}"
+            conn.execute("UPDATE problems SET code_label=? WHERE id=?", (clbl, pid))
+        for tc in tests:
+            if isinstance(tc, dict):
+                conn.execute("INSERT INTO test_cases (problem_id, input_data, expected_output, is_sample) VALUES (?, ?, ?, ?)",
+                             (pid, str(tc.get("input", "")), str(tc.get("output", "")), 1 if tc.get("is_sample", True) else 0))
+        conn.execute("INSERT INTO daily_challenges (day_date, problem_id) VALUES (?, ?) ON CONFLICT (day_date) DO UPDATE SET problem_id=excluded.problem_id", (today, pid))
+        conn.commit()
+        conn.close()
+        return jsonify({"message": f"Yeni sual '{clbl}. {t}' yaradıldı və Günün Sualı təyin edildi!"})
+
+    key = str(d.get("problem_code") or "").strip()
     p = conn.execute("SELECT id, code_label, title FROM problems WHERE id=? OR UPPER(code_label)=UPPER(?)", (safe_int(key, -1), key)).fetchone()
     if not p:
         conn.close()
         return jsonify({"error": "Məsələ tapılmadı."}), 404
-    today = time.strftime("%Y-%m-%d")
     conn.execute("INSERT INTO daily_challenges (day_date, problem_id) VALUES (?, ?) ON CONFLICT (day_date) DO UPDATE SET problem_id=excluded.problem_id", (today, p["id"]))
     conn.commit()
     conn.close()
@@ -1322,11 +1733,11 @@ def list_problems():
     conn = get_db()
     sync_contests(conn)
     if view == "gym":
-        rows = conn.execute("SELECT id, code_label, title, rating, tags, time_limit, memory_limit, author FROM problems WHERE visibility='gym' ORDER BY contest_id DESC, rating ASC").fetchall()
+        rows = conn.execute("SELECT id, code_label, title, plan, rating, tags, time_limit, memory_limit, author FROM problems WHERE visibility='gym' ORDER BY contest_id DESC, rating ASC").fetchall()
     elif view == "all" and adm:
-        rows = conn.execute("SELECT id, code_label, title, rating, tags, time_limit, memory_limit, author, visibility FROM problems WHERE visibility IN ('archive','gym','contest') ORDER BY id ASC").fetchall()
+        rows = conn.execute("SELECT id, code_label, title, plan, rating, tags, time_limit, memory_limit, author, visibility FROM problems WHERE visibility IN ('archive','gym','contest') ORDER BY id ASC").fetchall()
     else:
-        rows = conn.execute("SELECT id, code_label, title, rating, tags, time_limit, memory_limit, author FROM problems WHERE visibility='archive' ORDER BY rating ASC, id ASC").fetchall()
+        rows = conn.execute("SELECT id, code_label, title, plan, rating, tags, time_limit, memory_limit, author FROM problems WHERE visibility='archive' ORDER BY rating ASC, id ASC").fetchall()
     cnts = {r["problem_id"]: r["cnt"] for r in conn.execute("SELECT problem_id, COUNT(DISTINCT username) AS cnt FROM submissions WHERE verdict='Accepted' GROUP BY problem_id").fetchall()}
     solved = {r["problem_id"] for r in conn.execute("SELECT DISTINCT problem_id FROM submissions WHERE verdict='Accepted' AND LOWER(username)=LOWER(?)", (u,)).fetchall()} if u else set()
     conn.close()
@@ -1358,8 +1769,9 @@ def create_problem():
     if not t or not st or not tests:
         return jsonify({"error": "Başlıq, şərt və test mütləqdir."}), 400
     conn = get_db()
-    pid = conn.execute("INSERT INTO problems (code_label,title,rating,tags,time_limit,memory_limit,statement,input_spec,output_spec,note,editorial,author,visibility) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                       (str(d.get("code_label") or "").strip().upper()[:10], t, safe_int(d.get("rating"), 800, 100, 4000),
+    pid = conn.execute("INSERT INTO problems (code_label,title,plan,rating,tags,time_limit,memory_limit,statement,input_spec,output_spec,note,editorial,author,visibility) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                       (str(d.get("code_label") or "").strip().upper()[:10], t, str(d.get("plan") or d.get("tags") or "Standart").strip()[:200],
+                        safe_int(d.get("rating"), 800, 100, 4000),
                         str(d.get("tags", "custom")), safe_float(d.get("time_limit"), 2.0), safe_int(d.get("memory_limit"), 256, 16, 1024),
                         st, str(d.get("input_spec", "")), str(d.get("output_spec", "")), str(d.get("note", "")),
                         str(d.get("editorial", "")), ADMIN_USERNAME, "archive")).lastrowid
@@ -1429,25 +1841,28 @@ def finish_contest(cid):
     return jsonify({"message": "Yarış bitirildi, suallar Gym-ə köçürüldü!"})
 
 
-# ═══════════════ TƏKLİFLƏR (admin birbaşa, user pending) ═══════════════
+# ═══════════════ TƏKLİFLƏR (kod + ad + plan + tam detallar + təsdiq) ═══════════════
 @app.route("/api/proposals", methods=["POST"])
 @require_user
 @rate_limit(5, 60, by_user=True)
 def submit_proposal():
     me_u, is_adm = request._u, request._adm
     d = request.get_json(silent=True) or {}
-    t, st = str(d.get("title") or "").strip(), str(d.get("statement") or "").strip()
+    t = str(d.get("title") or "").strip()
+    plan = str(d.get("plan") or "").strip()[:220]
+    clbl = str(d.get("code_label") or "").strip().upper()[:10]
+    st = str(d.get("statement") or "").strip()
     tests, code, lang = d.get("tests") or [], str(d.get("author_code") or ""), str(d.get("author_lang") or "python")
     if not t or not st or not tests or (not is_adm and not code.strip()):
-        return jsonify({"error": "Bütün vacib xanaları doldurun."}), 400
+        return jsonify({"error": "Başlıq, şərt, həll kodu və testləri doldurun."}), 400
     conn = get_db()
 
-    if is_adm:
-        pid = conn.execute("INSERT INTO problems (code_label,title,rating,tags,statement,input_spec,output_spec,editorial,starter_code,author,visibility) VALUES (?,?,?,?,?,?,?,?,?,?,'archive')",
-                           (str(d.get("code_label") or "").strip().upper()[:10], t[:120], safe_int(d.get("rating"), 800, 600, 3500),
+    if is_adm and not d.get("as_pending"):
+        pid = conn.execute("INSERT INTO problems (code_label,title,plan,rating,tags,statement,input_spec,output_spec,editorial,starter_code,author,visibility) VALUES (?,?,?,?,?,?,?,?,?,?,?,'archive')",
+                           (clbl, t[:120], plan or str(d.get("tags", "custom")), safe_int(d.get("rating"), 800, 400, 3500),
                             str(d.get("tags", "custom")), st, str(d.get("input_spec", "")), str(d.get("output_spec", "")),
                             str(d.get("editorial", "")), code, me_u)).lastrowid
-        if not conn.execute("SELECT code_label FROM problems WHERE id=?", (pid,)).fetchone()["code_label"]:
+        if not clbl:
             conn.execute("UPDATE problems SET code_label=? WHERE id=?", (f"A{pid}", pid))
         for tc in tests[:15]:
             if isinstance(tc, dict):
@@ -1472,11 +1887,16 @@ def submit_proposal():
             break
         ok_cnt += 1
 
-    pid = conn.execute("INSERT INTO problems (code_label,title,rating,tags,statement,input_spec,output_spec,editorial,starter_code,author,visibility,author_check_status) VALUES (?,?,?,?,?,?,?,?,?,?,'pending',?)",
-                       ("P0", t[:120], safe_int(d.get("rating"), 800, 600, 3500), str(d.get("tags", "custom")), st,
+    rating_val = safe_int(d.get("rating"), 800, 400, 3500)
+    if not plan:
+        plan = f"Reytinq {rating_val} · {str(d.get('tags') or 'Alqoritm').strip()}"
+
+    pid = conn.execute("INSERT INTO problems (code_label,title,plan,rating,tags,statement,input_spec,output_spec,editorial,starter_code,author,visibility,author_check_status) VALUES (?,?,?,?,?,?,?,?,?,?,?,'pending',?)",
+                       (clbl or "P0", t[:120], plan, rating_val, str(d.get("tags", "custom")), st,
                         str(d.get("input_spec", "")), str(d.get("output_spec", "")), str(d.get("editorial", "")), code, me_u,
                         f"{status_txt} ({ok_cnt}/{min(len(tests),4)})")).lastrowid
-    conn.execute("UPDATE problems SET code_label=? WHERE id=?", (f"U{pid}", pid))
+    if not clbl:
+        conn.execute("UPDATE problems SET code_label=? WHERE id=?", (f"U{pid}", pid))
     for tc in tests[:12]:
         if isinstance(tc, dict):
             conn.execute("INSERT INTO test_cases (problem_id, input_data, expected_output, is_sample) VALUES (?, ?, ?, ?)",
@@ -1490,7 +1910,7 @@ def submit_proposal():
 @require_user
 def my_proposals():
     conn = get_db()
-    rows = conn.execute("SELECT id, code_label, title, rating, visibility, awarded_xp, reject_reason FROM problems WHERE LOWER(author)=LOWER(?) ORDER BY id DESC LIMIT 20", (request._u,)).fetchall()
+    rows = conn.execute("SELECT id, code_label, title, plan, rating, visibility, awarded_xp, reject_reason FROM problems WHERE LOWER(author)=LOWER(?) ORDER BY id DESC LIMIT 20", (request._u,)).fetchall()
     conn.close()
     return jsonify(rows)
 
@@ -1501,6 +1921,8 @@ def admin_proposals():
     conn = get_db()
     rows = conn.execute("SELECT * FROM problems WHERE visibility='pending' ORDER BY id ASC").fetchall()
     for r in rows:
+        if not r.get("plan"):
+            r["plan"] = f"Reytinq {r['rating']} · {r.get('tags') or 'Alqoritm'}"
         r["tests"] = conn.execute("SELECT input_data, expected_output, is_sample FROM test_cases WHERE problem_id=?", (r["id"],)).fetchall()
     conn.close()
     return jsonify(rows)
@@ -1514,21 +1936,22 @@ def review_proposal(pid):
     p = conn.execute("SELECT * FROM problems WHERE id=? AND visibility='pending'", (pid,)).fetchone()
     if not p:
         conn.close()
-        return jsonify({"error": "Tapılmadı."}), 404
+        return jsonify({"error": "Sorğu tapılmadı və ya artıq baxılıb."}), 404
     if d.get("action") == "approve":
         xp = safe_int(d.get("xp_reward"), 150, 0, 2000)
         coins = max(25, xp // 2)
         vis = d.get("visibility", "archive") if d.get("visibility") in ("archive", "gym") else "archive"
         clbl = str(d.get("code_label") or p["code_label"] or f"U{pid}").strip().upper()[:10]
-        conn.execute("UPDATE problems SET visibility=?, awarded_xp=?, code_label=? WHERE id=?", (vis, xp, clbl, pid))
+        new_rating = safe_int(d.get("rating"), p["rating"], 400, 3500)
+        conn.execute("UPDATE problems SET visibility=?, awarded_xp=?, code_label=?, rating=? WHERE id=?", (vis, xp, clbl, new_rating, pid))
         award_rewards(conn, p["author"], xp, coins)
         conn.commit()
         conn.close()
-        return jsonify({"message": f"Təsdiqləndi! {clbl} Məsələlərə düşdü, {p['author']} +{xp} XP və +{coins} AzCoin aldı."})
+        return jsonify({"message": f"Təsdiqləndi! '{clbl}. {p['title']}' Məsələlərə əlavə edildi ({p['author']} +{xp} XP, +{coins} AzCoin)."})
     conn.execute("UPDATE problems SET visibility='rejected', reject_reason=? WHERE id=?", (str(d.get("reason") or "Uyğun deyil."), pid))
     conn.commit()
     conn.close()
-    return jsonify({"message": "Təklif rədd edildi və siyahıdan silindi."})
+    return jsonify({"message": "Təklif rədd edildi və siyahıdan çıxarıldı."})
 
 
 # ═══════════════ RUN / SUBMIT (faiz əsaslı) ═══════════════
@@ -1542,7 +1965,6 @@ def run_custom():
     if not str(d.get("code", "")).strip():
         return jsonify({"ok": False, "status": "Validation Error", "stderr": "Kod boş ola bilməz."}), 400
     return jsonify(run_code_sandbox(str(d.get("language", "python")), str(d.get("code", "")), str(d.get("stdin", "")), d.get("time_limit", 3.0)))
-
 
 @app.route("/api/submit", methods=["POST"])
 @require_user
@@ -1631,10 +2053,15 @@ def get_submissions():
 @app.route("/api/leaderboard", methods=["GET"])
 def leaderboard():
     conn = get_db()
-    users = conn.execute("SELECT username, level, xp, total_xp, coins, rating, daily_streak, avatar_url, avatar_color, avatar_frame FROM users ORDER BY level DESC, total_xp DESC LIMIT 50").fetchall()
+    users = conn.execute("SELECT username, level, xp, total_xp, coins, rating, daily_streak, avatar_url, avatar_color, avatar_frame, created_at FROM users ORDER BY rating DESC, level DESC, total_xp DESC LIMIT 50").fetchall()
     solved = {r["username"].lower(): r["cnt"] for r in conn.execute("SELECT LOWER(username) AS username, COUNT(DISTINCT problem_id) AS cnt FROM submissions WHERE verdict='Accepted' GROUP BY LOWER(username)").fetchall()}
     conn.close()
-    return jsonify([u | {"solved_count": solved.get(u["username"].lower(), 0), "needed_xp": needed_xp(u["level"]), "is_admin_user": u["username"] == ADMIN_USERNAME} for u in users])
+    out = []
+    for u in users:
+        is_adm = (u["username"] == ADMIN_USERNAME)
+        rk = get_user_rank(u["rating"], is_adm)
+        out.append(u | {"solved_count": solved.get(u["username"].lower(), 0), "needed_xp": needed_xp(u["level"]), "is_admin_user": is_adm} | rk)
+    return jsonify(out)
 
 
 # ═══════════════ QRUPLAR ═══════════════
@@ -1815,7 +2242,7 @@ def dm_chats():
     for r in rows:
         if r["partner"].lower() not in seen:
             seen.add(r["partner"].lower())
-            pu = conn.execute("SELECT avatar_url, avatar_color, avatar_frame, last_seen_at FROM users WHERE LOWER(username)=LOWER(?)", (r["partner"],)).fetchone()
+            pu = conn.execute("SELECT avatar_url, avatar_color, avatar_frame FROM users WHERE LOWER(username)=LOWER(?)", (r["partner"],)).fetchone()
             chats.append({"username": r["partner"], "last_message": r["message"][:50], "created_at": r["created_at"],
                           "is_admin_user": r["partner"] == ADMIN_USERNAME,
                           "avatar_url": pu["avatar_url"] if pu else "", "avatar_color": pu["avatar_color"] if pu else "#3b82f6",
@@ -1867,34 +2294,108 @@ def dm_thread(other):
     return jsonify({"ok": True})
 
 
-# ═══════════════ MİNİ OYUNLAR ═══════════════
-@app.route("/api/games/sprint/start", methods=["POST"])
+# ═══════════════ MİNİ OYUNLAR (5 Dəqiqəlik Törəmə/İnteqral/Limit + Bulls & Cows) ═══════════════
+@app.route("/api/games/calculus/start", methods=["POST"])
 @require_user
-def sprint_start():
-    tok = secrets.token_urlsafe(16)
-    with _game_lock:
-        _sprint_tokens[tok] = (request._u, time.time())
-    return jsonify({"token": tok})
-
-
-@app.route("/api/games/sprint/finish", methods=["POST"])
-@require_user
-def sprint_finish():
+def calculus_start():
     d = request.get_json(silent=True) or {}
-    tok, score = str(d.get("token") or ""), safe_int(d.get("score"), 0, 0, 40)
+    cat = str(d.get("category") or "all").strip()
+    exclude = str(d.get("exclude_id") or "").strip()
+    pool = [q for q in CALCULUS_BANK if (cat == "all" or q["category"] == cat)]
+    if not pool:
+        pool = CALCULUS_BANK
+    filtered = [q for q in pool if q["id"] != exclude] or pool
+    q_item = random.choice(filtered)
+
+    now = time.time()
+    gid = secrets.token_urlsafe(14)
     with _game_lock:
-        info = _sprint_tokens.pop(tok, None)
-    if not info or info[0] != request._u or (time.time() - info[1]) < 5:
-        return jsonify({"error": "Oyun sessiyası etibarsızdır."}), 400
-    conn = get_db()
-    if not check_daily(conn, request._u, "game", 5):
+        for k in [k for k, v in _calc_games.items() if now - v["started_at"] > 900]:
+            _calc_games.pop(k, None)
+        _calc_games[gid] = {
+            "user": request._u,
+            "question": q_item,
+            "started_at": now,
+            "expires_at": now + CALC_TIME_LIMIT,
+        }
+    return jsonify({
+        "game_id": gid,
+        "question_id": q_item["id"],
+        "category": q_item["category"],
+        "title": q_item["title"],
+        "prompt": q_item["prompt"],
+        "time_limit": CALC_TIME_LIMIT,
+    })
+
+
+@app.route("/api/games/calculus/submit", methods=["POST"])
+@require_user
+def calculus_submit():
+    d = request.get_json(silent=True) or {}
+    gid = str(d.get("game_id") or "").strip()
+    raw_ans = str(d.get("answer") or "").strip()
+    timeout = bool(d.get("timeout"))
+
+    with _game_lock:
+        sess = _calc_games.pop(gid, None)
+
+    if not sess or sess["user"].lower() != request._u.lower():
+        return jsonify({"error": "Oyun sessiyası tapılmadı və ya artıq bitib."}), 404
+
+    q_item = sess["question"]
+    now = time.time()
+    expired = timeout or (now > sess["expires_at"] + 3)
+
+    if expired and not raw_ans:
+        return jsonify({
+            "correct": False,
+            "expired": True,
+            "expected_answer": q_item["answer"],
+            "solution": q_item["solution"],
+            "xp_gained": 0,
+            "coins_gained": 0,
+            "message": "⏱ 5 dəqiqəlik vaxt bitdi!",
+        })
+
+    u_val = parse_math_answer(raw_ans)
+    exp_val = parse_math_answer(q_item["answer"])
+    if u_val is None and not expired:
+        # Səhv formatda yazıbsa sessiyanı geri qaytarmağa ehtiyac yoxdur, aydın mesaj verək ya yenidən cəhd?
+        with _game_lock:
+            _calc_games[gid] = sess
+        return jsonify({"error": "Cavabı tam ədəd, kəsr (məs: -13/5) və ya onluq ədəd kimi yazın."}), 400
+
+    correct = (not expired) and (u_val is not None) and (exp_val is not None) and (abs(u_val - exp_val) <= 1e-4)
+    xp, coins = 0, 0
+    msg = ""
+
+    if correct:
+        rem = max(0, int(sess["expires_at"] - now))
+        bonus = 10 if rem >= 150 else (5 if rem >= 60 else 0)
+        conn = get_db()
+        if check_daily(conn, request._u, "game", 10):
+            xp = 40 + bonus
+            coins = 35 + bonus
+            award_rewards(conn, request._u, xp, coins)
+            msg = f"Möhtəşəm! Doğru cavab: {q_item['answer']} (+{xp} XP, +{coins} AzCoin)"
+        else:
+            msg = f"Doğrudur ({q_item['answer']})! Gündəlik oyun mükafat limitiniz dolub."
+        conn.commit()
         conn.close()
-        return jsonify({"xp_gained": 0, "coins_gained": 0, "message": f"Xal: {score} (Gündəlik mükafat limiti dolub)."})
-    xp, coins = min(30, score * 2), min(25, score * 2)
-    award_rewards(conn, request._u, xp, coins)
-    conn.commit()
-    conn.close()
-    return jsonify({"xp_gained": xp, "coins_gained": coins, "message": f"Əla! {score} doğru cavab: +{xp} XP, +{coins} AzCoin!"})
+    elif expired:
+        msg = f"⏱ Vaxt bitdi! Düzgün cavab: {q_item['answer']}"
+    else:
+        msg = f"✕ Yanlışdır! Düzgün cavab: {q_item['answer']}"
+
+    return jsonify({
+        "correct": correct,
+        "expired": expired,
+        "expected_answer": q_item["answer"],
+        "solution": q_item["solution"],
+        "xp_gained": xp,
+        "coins_gained": coins,
+        "message": msg,
+    })
 
 
 @app.route("/api/games/bulls/start", methods=["POST"])
@@ -1931,7 +2432,7 @@ def bulls_guess():
     xp, coins = 0, 0
     if won:
         conn = get_db()
-        if check_daily(conn, request._u, "game", 5):
+        if check_daily(conn, request._u, "game", 10):
             xp, coins = max(10, 40 - tries * 3), max(10, 35 - tries * 3)
             award_rewards(conn, request._u, xp, coins)
         conn.commit()
@@ -1941,7 +2442,7 @@ def bulls_guess():
                     "xp_gained": xp, "coins_gained": coins})
 
 
-# ═══════════════ DUYURU PANOSU ═══════════════
+# ═══════════════ DUYURU & ANKET PANOSU ═══════════════
 @app.route("/api/posts", methods=["GET", "POST"])
 def posts_handler():
     u, adm, _, _ = get_session()
@@ -1964,27 +2465,33 @@ def posts_handler():
 
     if not adm:
         conn.close()
-        return jsonify({"error": "Duyuru və etkinlikləri yalnız Admin paylaşa bilər."}), 403
+        return jsonify({"error": "Duyuru və anketləri yalnız Admin paylaşa bilər."}), 403
     d = request.get_json(silent=True) or {}
-    t, b = str(d.get("title") or "").strip()[:140], str(d.get("body") or "").strip()[:2000]
-    opts = [str(o).strip()[:80] for o in (d.get("poll_options") or []) if str(o).strip()][:6]
-    if not t or not b:
+    t = str(d.get("title") or "").strip()[:140]
+    b = str(d.get("body") or "").strip()[:2000]
+    raw_opts = d.get("poll_options") or []
+    if isinstance(raw_opts, str):
+        raw_opts = re.split(r"[,;\n]+", raw_opts)
+    opts = [str(o).strip()[:80] for o in raw_opts if str(o).strip()][:6]
+
+    if not t or (not b and len(opts) < 2):
         conn.close()
-        return jsonify({"error": "Başlıq və məzmun yazın."}), 400
+        return jsonify({"error": "Başlıq yazın və ya məzmun, ya da ən azı 2 anket variantı əlavə edin."}), 400
+
     conn.execute("INSERT INTO posts (author, title, body, post_type, is_pinned, poll_options_json) VALUES (?, ?, ?, ?, ?, ?)",
                  (ADMIN_USERNAME, t, b, "poll" if opts else "announcement", 1 if d.get("is_pinned", True) else 0, json.dumps(opts)))
     conn.commit()
     conn.close()
-    return jsonify({"message": "Duyuru paylaşıldı!"})
+    return jsonify({"message": "Anket yayımlandı!" if opts else "Duyuru paylaşıldı!"})
 
 
 @app.route("/api/posts/<int:pid>/vote", methods=["POST"])
 @require_user
 def vote_poll(pid):
-    idx = (request.get_json(silent=True) or {}).get("option_index")
+    idx = safe_int((request.get_json(silent=True) or {}).get("option_index"), -1)
     conn = get_db()
     p = conn.execute("SELECT poll_options_json FROM posts WHERE id=?", (pid,)).fetchone()
-    if not p or not isinstance(idx, int) or not (0 <= idx < len(json.loads(p["poll_options_json"] or "[]"))):
+    if not p or not (0 <= idx < len(json.loads(p["poll_options_json"] or "[]"))):
         conn.close()
         return jsonify({"error": "Yanlış variant."}), 400
     conn.execute("INSERT INTO poll_votes (post_id, username, option_index) VALUES (?, ?, ?) ON CONFLICT (post_id, username) DO UPDATE SET option_index = excluded.option_index", (pid, request._u, idx))
@@ -2075,7 +2582,7 @@ def settings_handler():
     if "base_url" in d:
         conn.execute("INSERT INTO settings (key, value) VALUES ('base_url', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value", (str(d["base_url"]).strip(),))
     if str(d.get("api_key") or "").strip():
-        conn.execute("INSERT INTO settings (key, value) VALUES ('api_key', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value", (str(d["api_key"]).strip(),))
+        conn.execute("INSERT INTO settings (key, value) VALUES ('api_key', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value", (str(d.get("api_key"]).strip(),))
     conn.commit()
     conn.close()
     return jsonify({"message": "Ayarlar yadda saxlanıldı!"})
