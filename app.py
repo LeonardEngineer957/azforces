@@ -1,4 +1,3 @@
-```python
 import base64
 import datetime
 from fractions import Fraction
