@@ -12,7 +12,6 @@
 </head>
 <body>
 
-<!-- ═══════════════════ İNSAN DOĞRULAMASI ═══════════════════ -->
 <div id="humanGate" class="human-gate">
   <div class="human-card">
     <h2 style="margin-bottom:6px;">🛡️ AzForces</h2>
@@ -25,7 +24,6 @@
   </div>
 </div>
 
-<!-- ═══════════════════ HEADER ═══════════════════ -->
 <header>
   <div class="hdr-left">
     <button class="burger-btn" onclick="toggleLeftDrawer()" aria-label="Menyu">☰</button>
@@ -33,15 +31,15 @@
     <span id="hdrGuestPill" class="guest-pill" style="display:none;"></span>
   </div>
   <div class="hdr-right">
+    <button id="hdrPropsBtn" class="btn btn-sm" style="display:none;border-color:var(--warning);color:var(--warning);" onclick="openAdminProposalsModal()">📥 Sorğular <span id="hdrPropCnt" class="nav-pill-cnt">0</span></button>
     <button id="hdrAuthBtn" class="btn btn-primary" onclick="openAuthModal()">Giriş / Qeydiyyat</button>
     <button id="hdrProfileBtn" class="pp-btn" style="display:none;" onclick="openProfileDrawer()">
       <span id="hdrAvatarWrap" class="av-wrap"><img id="hdrAvatarImg" src="" alt="" style="display:none;"><span id="hdrAvatarTxt">A</span></span>
-      <span class="pp-meta"><strong id="hdrUserName">—</strong><span id="hdrUserLvl" class="muted">Lv.1 · 🪙0</span></span>
+      <span class="pp-meta"><strong id="hdrUserName">—</strong><span id="hdrUserRank" class="rank-title"></span><span id="hdrUserLvl" class="muted">Lv.1 · 🪙0</span></span>
     </button>
   </div>
 </header>
 
-<!-- ═══════════════════ SOL DRAWER ═══════════════════ -->
 <div id="leftBackdrop" class="drawer-backdrop" onclick="toggleLeftDrawer(false)"></div>
 <nav id="leftDrawer" class="drawer drawer-left">
   <div class="drawer-head"><strong><span class="brand-badge">AZ</span> AzForces</strong><button class="btn btn-sm" onclick="toggleLeftDrawer(false)">✕</button></div>
@@ -54,19 +52,20 @@
   <button class="drawer-item" data-tab="contests" onclick="switchTab('contests')">🏆 Yarışlar</button>
   <button class="drawer-item" data-tab="chat" onclick="switchTab('chat')">💬 Qruplar & Söhbətlər</button>
   <button class="drawer-item" data-tab="shop" onclick="switchTab('shop')">🛍️ Çərçivə Mağazası</button>
-  <button class="drawer-item" data-tab="games" onclick="switchTab('games')">🎮 Mini Oyunlar</button>
+  <button class="drawer-item" data-tab="games" onclick="switchTab('games')">🎮 Mini Oyunlar (5 Dəq)</button>
   <button class="drawer-item" data-tab="propose" onclick="switchTab('propose')">✨ Sual Təklif Et (+XP)</button>
+  <button class="drawer-item" data-tab="registrations" onclick="switchTab('registrations')">🗓️ Qeydiyyatlar</button>
   <button class="drawer-item" data-tab="submissions" onclick="switchTab('submissions')">📄 Göndərişlər</button>
   <button class="drawer-item" data-tab="leaderboard" onclick="switchTab('leaderboard')">📊 Lider Lövhəsi</button>
   <button class="drawer-item" data-tab="creative" onclick="switchTab('creative')">🎨 Yaradıcı Kodlar</button>
   <button class="drawer-item" data-tab="playground" onclick="switchTab('playground')">⚡ Playground</button>
+  <button id="navAdminPropsBtn" class="drawer-item admin-nav" style="display:none;" onclick="toggleLeftDrawer(false);openAdminProposalsModal()"><span>📥 Sual Sorğuları</span><span id="navPropCnt" class="nav-pill-cnt">0</span></button>
   {% if admin_portal %}
   <button class="drawer-item admin-nav" data-tab="admin" onclick="switchTab('admin')">⚙ Gizli İdarəetmə</button>
   {% endif %}
   <button class="drawer-item" onclick="openProfileDrawer()">👤 Hesabım</button>
 </nav>
 
-<!-- ═══════════════════ SAĞ PROFİL DRAWER ═══════════════════ -->
 <div id="rightBackdrop" class="drawer-backdrop" onclick="toggleProfileDrawer(false)"></div>
 <aside id="profileDrawer" class="drawer drawer-right">
   <div class="drawer-head"><strong>Hesabım</strong><button class="btn btn-sm" onclick="toggleProfileDrawer(false)">✕</button></div>
@@ -74,7 +73,10 @@
     <div class="prof-top">
       <span id="pdAvatarWrap" class="av-wrap av-lg"><img id="pdAvatarImg" src="" alt="" style="display:none;"><span id="pdAvatarTxt">A</span></span>
       <div style="min-width:0;">
-        <div id="pdName" style="font-weight:800;font-size:1.05rem;">—</div>
+        <div class="name-rank-wrap">
+          <div id="pdName" style="font-weight:800;font-size:1.05rem;">—</div>
+          <div id="pdRank" class="rank-title"></div>
+        </div>
         <div id="pdEmail" class="muted" style="font-size:.8rem;overflow:hidden;text-overflow:ellipsis;">—</div>
         <div class="row" style="margin-top:4px;">
           <span id="pdLvlBadge" class="lvl-pill">Lv.1</span>
@@ -82,7 +84,6 @@
         </div>
       </div>
     </div>
-    <!-- ADMİN META: onlayn status + qeydiyyat tarixi (yalnız admin görür) -->
     <div id="pdAdminMeta" class="admin-meta-box" style="display:none;">
       <div class="amr"><span class="muted">Status:</span><span id="pdOnlineStatus">—</span></div>
       <div class="amr"><span class="muted">Qeydiyyat:</span><span id="pdRegDate" style="font-weight:600;">—</span></div>
@@ -100,7 +101,7 @@
     </div>
   </div>
   <div class="pd-menu">
-    <button class="pd-item" onclick="toggleProfileDrawer(false);openFullProfile(me.username)">👤 Tam Profil Səhifəm (Qrafik & Təqvim)</button>
+    <button class="pd-item" onclick="toggleProfileDrawer(false);openFullProfile(me.username)">👤 Tam Profil Səhifəm</button>
     <button class="pd-item" onclick="toggleProfileDrawer(false);switchTab('shop')">🛍️ Çərçivə Mağazası & Envanter</button>
     <button class="pd-item" onclick="toggleProfileDrawer(false);switchTab('chat');switchChatMode('dm')">💬 Qruplarım & Dost Söhbəti</button>
     <button class="pd-item" onclick="togglePdSub('pdCoinSub')">🪙 Dosta AzCoin Göndər</button>
@@ -136,15 +137,13 @@
   </div>
 </aside>
 
-<!-- ═══════════════════ ƏSAS MƏZMUN ═══════════════════ -->
 <main>
 
-<!-- ─────────── WELCOME ─────────── -->
 <section id="tab-welcome" class="section">
   <div class="welcome-hero">
     <span class="welcome-pill">Azərbaycanın Sosial Alqoritm Platforması</span>
     <h1>Kod yaz, dostlarla yarış, <span class="grad-txt">səviyyəni qaldır.</span></h1>
-    <p class="muted" style="max-width:640px;margin:0 auto;">11 yaşdan 3500 reytinqə qədər suallar, 16 rəqəmli kodla 20 nəfərlik qruplar, canlı söhbət, səsli mesaj, XP borusu və AzCoin Çərçivə Mağazası bir məkanda.</p>
+    <p class="muted" style="max-width:640px;margin:0 auto;">Alqoritmik məsələlər, 16 rəqəmli kodla 20 nəfərlik qruplar, səsli mesaj, çətin riyazi oyunlar və AzCoin Çərçivə Mağazası bir məkanda.</p>
     <div class="row" style="justify-content:center;margin-top:18px;">
       <button class="btn btn-primary" onclick="openAuthModal()">✨ Gmail ilə Başla / Daxil Ol</button>
       <button class="btn" onclick="startGuestMode()">⏱ 5 Dəqiqəlik Qonaq Kimi Gəz</button>
@@ -157,9 +156,9 @@
     </div>
   </div>
   <div class="grid-3">
-    <div class="card"><h3>📘 Codeforces Məsələ Sistemi</h3><p class="muted" style="font-size:.86rem;">Geniş sual oxuma, tək kliklə sualı kopyalama, vahid 1A/1B kod göndərmə və faiz əsaslı keyfiyyət skoru.</p></div>
-    <div class="card"><h3>💬 Qruplar & Səsli Mesaj</h3><p class="muted" style="font-size:.86rem;">Qrup profili, bio, mesaj yanıtlama, sual yönləndirmə, 🎤 səsli mesaj və 20 nəfərlik gizli yarış otaqları.</p></div>
-    <div class="card"><h3>🔥 Seriya & Fantastik Çərçivələr</h3><p class="muted" style="font-size:.86rem;">Günün sualını həll et, seriyanı qırma, əjdaha və okean animasiyalı çərçivələr al, dosta coin at.</p></div>
+    <div class="card"><h3>📘 Codeforces Məsələ Sistemi</h3><p class="muted" style="font-size:.86rem;">Geniş sual oxuma, tək kliklə kopyalama, vahid 1A/1B kod göndərmə və faiz əsaslı keyfiyyət skoru.</p></div>
+    <div class="card"><h3>💬 Qruplar & Səsli Mesaj</h3><p class="muted" style="font-size:.86rem;">Qrup profili, cavablama, sual yönləndirmə, 🎤 səsli mesaj və 20 nəfərlik otaqlar.</p></div>
+    <div class="card"><h3>🔥 Seriya & Fantastik Çərçivələr</h3><p class="muted" style="font-size:.86rem;">Günün sualını həll et, Codeforces rankı qazan, animasiyalı SVG çərçivələr al.</p></div>
   </div>
   <div class="card">
     <h3>İstifadəçi Dəyərləndirmələri</h3>
@@ -167,35 +166,24 @@
     <div id="reviewFormBox" style="display:none;margin-top:14px;border-top:1px solid var(--border);padding-top:12px;">
       <div class="row" style="margin-bottom:8px;">
         <select id="revStars" style="width:170px;">
-          <option value="5">★★★★★ (5)</option>
-          <option value="4">★★★★☆ (4)</option>
-          <option value="3">★★★☆☆ (3)</option>
-          <option value="2">★★☆☆☆ (2)</option>
-          <option value="1">★☆☆☆☆ (1)</option>
+          <option value="5">★★★★★ (5)</option><option value="4">★★★★☆ (4)</option><option value="3">★★★☆☆ (3)</option><option value="2">★★☆☆☆ (2)</option><option value="1">★☆☆☆☆ (1)</option>
         </select>
       </div>
-      <div class="row">
-        <input id="revComment" placeholder="Rəyiniz..." style="flex:1;">
-        <button class="btn btn-primary btn-sm" onclick="submitSiteReview()">Göndər</button>
-      </div>
+      <div class="row"><input id="revComment" placeholder="Rəyiniz..." style="flex:1;"><button class="btn btn-primary btn-sm" onclick="submitSiteReview()">Göndər</button></div>
     </div>
   </div>
 </section>
 
-<!-- ─────────── ANNOUNCEMENTS ─────────── -->
 <section id="tab-announcements" class="section">
   <div class="hero-banner">
-    <div>
-      <h2 style="margin:0;">AzForces Duyuru Panosu</h2>
-      <span class="muted" style="font-size:.82rem;">Rəsmi elanlar, etkinliklər və icma anketləri</span>
-    </div>
+    <div><h2 style="margin:0;">AzForces Duyuru Panosu</h2><span class="muted" style="font-size:.82rem;">Rəsmi elanlar, etkinliklər və icma anketləri</span></div>
     <button id="newPostBtn" class="btn btn-primary btn-sm" style="display:none;" onclick="togglePostForm()">+ Duyuru / Anket Paylaş</button>
   </div>
   <div id="postFormBox" class="card" style="display:none;">
-    <input id="postTitle" placeholder="Başlıq" style="margin-bottom:8px;">
-    <textarea id="postBody" rows="3" placeholder="Məzmun..." style="margin-bottom:8px;"></textarea>
+    <input id="postTitle" placeholder="Başlıq və ya Anket sualı *" style="margin-bottom:8px;">
+    <textarea id="postBody" rows="3" placeholder="Məzmun (Anket variantı yazırsınızsa boş qala bilər)..." style="margin-bottom:8px;"></textarea>
     <div class="row" style="margin-bottom:8px;">
-      <input id="postPollOpts" placeholder="Anket variantları (vergüllə ayırın)" style="flex:1;">
+      <input id="postPollOpts" placeholder="Anket variantları (vergüllə ayırın: Bəli, Xeyr)" style="flex:1;">
       <label style="font-size:.82rem;white-space:nowrap;"><input type="checkbox" id="postPin" checked style="width:auto;"> 📌 Başa sabitlə</label>
     </div>
     <button class="btn btn-primary" onclick="createPost()">Yayımla</button>
@@ -203,7 +191,6 @@
   <div id="postsList"></div>
 </section>
 
-<!-- ─────────── PROBLEMS ─────────── -->
 <section id="tab-problems" class="section">
   <div id="problemListView">
     <div class="hero-banner">
@@ -215,10 +202,7 @@
       </div>
     </div>
     <div class="card table-wrap">
-      <table>
-        <thead><tr><th>Kod</th><th>Məsələ</th><th>Teqlər</th><th>Reytinq</th><th>Həll</th><th>At</th></tr></thead>
-        <tbody id="problemsTableBody"></tbody>
-      </table>
+      <table><thead><tr><th>Kod</th><th>Məsələ</th><th>Teqlər</th><th>Reytinq</th><th>Həll</th><th>At</th></tr></thead><tbody id="problemsTableBody"></tbody></table>
     </div>
   </div>
   <div id="problemReadView" style="display:none;">
@@ -239,89 +223,53 @@
         <div id="probAuthorMeta" class="muted" style="font-size:.8rem;margin-top:4px;"></div>
       </div>
       <div id="probStatement" class="statement-body"></div>
-      <h4 style="margin-top:16px;">Input</h4>
-      <div id="probInputSpec" class="statement-body"></div>
-      <h4 style="margin-top:12px;">Output</h4>
-      <div id="probOutputSpec" class="statement-body"></div>
-      <h4 style="margin-top:16px;">Examples</h4>
-      <div id="probSamples"></div>
-      <div id="probNoteWrap" style="display:none;">
-        <h4 style="margin-top:16px;">Note</h4>
-        <div id="probNote" class="statement-body"></div>
-      </div>
-      <div id="probEditorialWrap" style="display:none;">
-        <h4 style="margin-top:16px;">Həll İzahı (Editorial)</h4>
-        <div id="probEditorial" class="statement-body"></div>
-      </div>
+      <h4 style="margin-top:16px;">Input</h4><div id="probInputSpec" class="statement-body"></div>
+      <h4 style="margin-top:12px;">Output</h4><div id="probOutputSpec" class="statement-body"></div>
+      <h4 style="margin-top:16px;">Examples</h4><div id="probSamples"></div>
+      <div id="probNoteWrap" style="display:none;"><h4 style="margin-top:16px;">Note</h4><div id="probNote" class="statement-body"></div></div>
+      <div id="probEditorialWrap" style="display:none;"><h4 style="margin-top:16px;">Həll İzahı (Editorial)</h4><div id="probEditorial" class="statement-body"></div></div>
     </div>
   </div>
 </section>
 
-<!-- ─────────── SUBMIT (FAİZ ƏSASLI) ─────────── -->
 <section id="tab-submit" class="section">
   <div class="card" style="max-width:880px;margin:0 auto;">
     <h2>Kod Göndər (Vahid Yoxlama)</h2>
-    <p class="muted" style="font-size:.86rem;">Hər sual üçün ayrı yer axtarmayın — sadəcə sual kodunu (məs: 1A, 1B) yazın və kodunuzu atın. Nəticə faizlə qiymətləndirilir.</p>
+    <p class="muted" style="font-size:.86rem;">Sual kodunu (məs: 1A, 1B) yazın və kodunuzu atın. Nəticə faizlə qiymətləndirilir.</p>
     <div class="row" style="margin:12px 0;">
-      <input id="subProbCode" placeholder="Məsələ Kodu (məs: 1A, 1B, 1E)" style="width:240px;" oninput="lookupSubmitProblem()">
+      <input id="subProbCode" placeholder="Məsələ Kodu (məs: 1A, 1B)" style="width:240px;" oninput="lookupSubmitProblem()">
       <span id="subProbHint" style="font-size:.82rem;"></span>
     </div>
     <div class="row" style="margin-bottom:10px;">
       <select id="solveLang" onchange="onSolveLangChange()" style="width:180px;">
-        <option value="python">Python 3</option>
-        <option value="cpp">C++ (GCC)</option>
-        <option value="c">C</option>
-        <option value="java">Java</option>
-        <option value="javascript">JavaScript (Node)</option>
+        <option value="python">Python 3</option><option value="cpp">C++ (GCC)</option><option value="c">C</option><option value="java">Java</option><option value="javascript">JavaScript (Node)</option>
       </select>
     </div>
     <textarea id="solveEditorTextarea" class="code-fallback"></textarea>
     <div style="margin-top:10px;">
       <input id="solveStdin" placeholder="Öz testimdə yoxla (Custom Stdin)" style="margin-bottom:8px;">
-      <div class="row">
-        <button class="btn" onclick="runSolveCode()">▶ Test Et</button>
-        <button id="submitSolveBtn" class="btn btn-primary" onclick="submitSolution()">✔ Kodu Göndər (Submit)</button>
-      </div>
+      <div class="row"><button class="btn" onclick="runSolveCode()">▶ Test Et</button><button id="submitSolveBtn" class="btn btn-primary" onclick="submitSolution()">✔ Kodu Göndər (Submit)</button></div>
     </div>
     <div id="solveResultBox" class="console-out" style="display:none;"></div>
     <div id="solvePctWrap" style="display:none;margin-top:10px;">
-      <div class="row" style="justify-content:space-between;font-size:.82rem;margin-bottom:4px;">
-        <span class="muted">Keyfiyyət Skoru</span>
-        <strong id="solvePctTxt" style="color:var(--accent);">0%</strong>
-      </div>
-      <div class="xp-pipe-track" style="height:14px;">
-        <div id="solvePctFill" class="xp-pipe-fill" style="width:0%;"></div>
-      </div>
+      <div class="row" style="justify-content:space-between;font-size:.82rem;margin-bottom:4px;"><span class="muted">Keyfiyyət Skoru</span><strong id="solvePctTxt" style="color:var(--accent);">0%</strong></div>
+      <div class="xp-pipe-track" style="height:14px;"><div id="solvePctFill" class="xp-pipe-fill" style="width:0%;"></div></div>
       <div id="solvePctBreak" class="pct-break"></div>
     </div>
   </div>
 </section>
 
-<!-- ─────────── GÜNLÜK CHALLENGE & SERİYA ─────────── -->
 <section id="tab-daily" class="section">
   <div class="daily-hero">
     <div class="daily-hero-bg"></div>
     <div class="daily-hero-content">
-      <div class="daily-flame-wrap">
-        <span class="daily-flame">🔥</span>
-        <div class="daily-flame-ring"></div>
-        <div class="daily-flame-ring r2"></div>
-      </div>
+      <div class="daily-flame-wrap"><span class="daily-flame">🔥</span><div class="daily-flame-ring"></div><div class="daily-flame-ring r2"></div></div>
       <h2 class="daily-title">Günün Sualı</h2>
       <p class="daily-sub">Hər gün yeni bir çağırış — seriyasını qırma, hər 7 gündə +200 AzCoin sandığı qazan!</p>
       <div class="daily-streak-row">
-        <div class="daily-streak-card">
-          <span class="daily-streak-num" id="dailyStreakNum">0</span>
-          <span class="daily-streak-lbl">Gün Seriyası</span>
-        </div>
-        <div class="daily-streak-card">
-          <span class="daily-streak-num" id="dailyXpMult">×1</span>
-          <span class="daily-streak-lbl">Bonus Səviyyəsi</span>
-        </div>
-        <div class="daily-streak-card">
-          <span class="daily-streak-num" id="dailyTimerTxt" style="font-size:1.4rem;">--:--:--</span>
-          <span class="daily-streak-lbl">Yeni Sual</span>
-        </div>
+        <div class="daily-streak-card"><span class="daily-streak-num" id="dailyStreakNum">0</span><span class="daily-streak-lbl">Gün Seriyası</span></div>
+        <div class="daily-streak-card"><span class="daily-streak-num" id="dailyXpMult">×1</span><span class="daily-streak-lbl">Bonus Səviyyəsi</span></div>
+        <div class="daily-streak-card"><span class="daily-streak-num" id="dailyTimerTxt" style="font-size:1.4rem;">--:--:--</span><span class="daily-streak-lbl">Yeni Sual</span></div>
       </div>
     </div>
   </div>
@@ -329,10 +277,7 @@
     <h3>📅 Seriya Xəritəsi (Son 30 gün)</h3>
     <div id="dailyStreakMap" class="streak-map"></div>
     <div class="streak-legend">
-      <span><span class="dot dot-0"></span> Həll yoxdur</span>
-      <span><span class="dot dot-1"></span> 1 həll</span>
-      <span><span class="dot dot-2"></span> 2-3 həll</span>
-      <span><span class="dot dot-3"></span> 4+ həll</span>
+      <span><span class="dot dot-0"></span> Həll yoxdur</span><span><span class="dot dot-1"></span> 1 həll</span><span><span class="dot dot-2"></span> 2-3 həll</span><span><span class="dot dot-3"></span> 4+ həll</span>
     </div>
   </div>
   <div id="dailyQuestionCard" class="card daily-q-card">
@@ -344,65 +289,63 @@
       </div>
       <div class="row">
         <button id="dailySolveBtn" class="btn btn-primary" onclick="openDailyProblem()">📘 Sualı Aç</button>
-        <button id="dailyPickBtn" class="btn btn-sm" style="display:none;" onclick="adminSetDaily()">⚙ Dəyiş</button>
+        <button id="dailyPickBtn" class="btn btn-sm" style="display:none;" onclick="adminSetDaily()">⚙ Kodla Seç</button>
+        <button id="dailyAdminNewBtn" class="btn btn-sm btn-success" style="display:none;" onclick="togglePdSub('dailyAdminCreateBox')">+ Yeni Sual Göndər</button>
       </div>
     </div>
-    <div id="dailySolvedBanner" class="daily-solved-banner" style="display:none;">
-      ✔ Bugünkü çağırışı tamamladınız! Seriya davam edir.
+    <div id="dailySolvedBanner" class="daily-solved-banner" style="display:none;">✔ Bugünkü çağırışı tamamladınız! Seriya davam edir.</div>
+    <div id="dailyAdminCreateBox" class="pd-sub" style="display:none;margin-top:12px;">
+      <h4 style="margin:0 0 8px;">Admin: Günün Sualını Birbaşa Yarat & Göndər</h4>
+      <div class="grid-2">
+        <div>
+          <input id="dqTitle" placeholder="Başlıq *" style="margin-bottom:6px;">
+          <div class="row" style="margin-bottom:6px;">
+            <input id="dqCodeLbl" placeholder="Kod (məs: D1)" style="flex:1;">
+            <input id="dqRating" type="number" value="1000" placeholder="Reytinq" style="flex:1;">
+          </div>
+          <input id="dqTags" placeholder="Teqlər (daily, math)" style="margin-bottom:6px;">
+          <textarea id="dqStatement" rows="3" placeholder="Məsələ şərti *" style="margin-bottom:6px;"></textarea>
+          <textarea id="dqIn" rows="2" placeholder="Giriş formatı" style="margin-bottom:6px;"></textarea>
+          <textarea id="dqOut" rows="2" placeholder="Çıxış formatı" style="margin-bottom:6px;"></textarea>
+        </div>
+        <div>
+          <label class="muted" style="font-size:.82rem;">Testlər *</label>
+          <div id="dqTestsContainer" style="margin-top:4px;"></div>
+          <button class="btn btn-sm" onclick="addTestRow('dqTestsContainer')">+ Test</button>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-sm" style="margin-top:8px;" onclick="adminSubmitNewDaily()">✔ Yarat & Günün Sualı Et</button>
     </div>
   </div>
   <div class="card">
     <h3>🏆 Ən Uzun Seriyalar</h3>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>#</th><th>İstifadəçi</th><th>Seriya</th><th>Bu gün həll</th></tr></thead>
-        <tbody id="dailyStreakBoard"></tbody>
-      </table>
-    </div>
+    <div class="table-wrap"><table><thead><tr><th>#</th><th>İstifadəçi</th><th>Seriya</th><th>Bu gün həll</th></tr></thead><tbody id="dailyStreakBoard"></tbody></table></div>
   </div>
 </section>
 
-<!-- ─────────── GYM ─────────── -->
 <section id="tab-gym" class="section">
   <div class="hero-banner">
-    <div>
-      <h2 style="margin:0;">Gym (Keçmiş Yarışlar)</h2>
-      <span class="muted" style="font-size:.82rem;">Bitmiş yarışların sualları avtomatik buraya köçür.</span>
-    </div>
+    <div><h2 style="margin:0;">Gym (Keçmiş Yarışlar)</h2><span class="muted" style="font-size:.82rem;">Bitmiş yarışların sualları avtomatik buraya köçür.</span></div>
     <button class="btn btn-sm" onclick="loadGym()">Yenilə</button>
   </div>
-  <div class="card table-wrap">
-    <table>
-      <thead><tr><th>Kod</th><th>Məsələ</th><th>Teqlər</th><th>Reytinq</th><th>Həll</th><th>At</th></tr></thead>
-      <tbody id="gymTableBody"></tbody>
-    </table>
-  </div>
+  <div class="card table-wrap"><table><thead><tr><th>Kod</th><th>Məsələ</th><th>Teqlər</th><th>Reytinq</th><th>Həll</th><th>At</th></tr></thead><tbody id="gymTableBody"></tbody></table></div>
 </section>
 
-<!-- ─────────── CONTESTS ─────────── -->
 <section id="tab-contests" class="section">
-  <div class="hero-banner">
-    <h2 style="margin:0;">Etkinliklər & Yarışlar</h2>
-    <button class="btn btn-sm" onclick="loadContests()">Yenilə</button>
-  </div>
+  <div class="hero-banner"><h2 style="margin:0;">Etkinliklər & Yarışlar</h2><button class="btn btn-sm" onclick="loadContests()">Yenilə</button></div>
   <div id="contestsList"></div>
 </section>
 
-<!-- ─────────── CHAT (QRUP + DM + SƏS) ─────────── -->
 <section id="tab-chat" class="section">
   <div class="row" style="margin-bottom:12px;">
     <button id="subTabGroupsBtn" class="btn btn-primary btn-sm" onclick="switchChatMode('groups')">👥 Qruplar (16-lıq kod)</button>
     <button id="subTabDmBtn" class="btn btn-sm" onclick="switchChatMode('dm')">✈️ Şəxsi Söhbətlər (Telegram)</button>
   </div>
-
   <div id="chatGroupsPane">
     <div id="roomLobbyView" class="grid-2">
       <div class="card">
         <h3>Mənim Qruplarım & Qoşul</h3>
-        <div class="row" style="margin:10px 0;">
-          <input id="joinRoomCode" placeholder="16 rəqəmli kod" style="flex:1;">
-          <button class="btn btn-primary btn-sm" onclick="joinRoom()">Qoşul</button>
-        </div>
+        <div class="row" style="margin:10px 0;"><input id="joinRoomCode" placeholder="16 rəqəmli kod" style="flex:1;"><button class="btn btn-primary btn-sm" onclick="joinRoom()">Qoşul</button></div>
         <div id="myRoomsList">Yüklənir...</div>
       </div>
       <div class="card">
@@ -418,15 +361,11 @@
         <button class="btn btn-success" onclick="createRoom()">Qrup Yarat</button>
       </div>
     </div>
-
     <div id="roomActiveView" class="card" style="display:none;">
       <div class="group-header-bar row" style="justify-content:space-between;" onclick="openGroupProfile()">
         <div class="row">
           <span id="rmAvatarWrap" class="av-wrap"><img id="rmAvatarImg" src="" alt="" style="display:none;"><span id="rmAvatarTxt">Q</span></span>
-          <div>
-            <strong id="rmTitle">—</strong>
-            <div class="muted" style="font-size:.76rem;"><span id="rmBio"></span> · <span id="rmMemCount">0</span>/20 üzv <span id="rmTimerWrap"></span></div>
-          </div>
+          <div><strong id="rmTitle">—</strong><div class="muted" style="font-size:.76rem;"><span id="rmBio"></span> · <span id="rmMemCount">0</span>/20 üzv <span id="rmTimerWrap"></span></div></div>
         </div>
         <div class="row">
           <a id="rmVoiceBtn" href="#" target="_blank" rel="noopener" class="btn btn-sm" style="display:none;">🎧 Səs</a>
@@ -436,71 +375,46 @@
       </div>
       <div id="rmProblemsBar" style="display:none;margin:8px 0;"></div>
       <div id="rmChatBox" class="tg-chat-box"></div>
-      <div id="rmReplyBanner" class="reply-banner" style="display:none;">
-        <span id="rmReplyText"></span>
-        <button class="btn btn-sm" onclick="cancelRoomReply()">✕</button>
-      </div>
+      <div id="rmReplyBanner" class="reply-banner" style="display:none;"><span id="rmReplyText"></span><button class="btn btn-sm" onclick="cancelRoomReply()">✕</button></div>
       <div class="row">
         <input id="rmChatInput" placeholder="Mesaj yaz..." style="flex:1;" onkeydown="if(event.key==='Enter')sendRoomChat()">
-        <button id="rmVoiceBtn2" class="voice-mic-btn" onclick="toggleVoiceRecord('room')" title="Səsli mesaj göndər">🎤</button>
+        <button id="rmVoiceBtn2" class="voice-mic-btn" onclick="toggleVoiceRecord('room')" title="Səsli mesaj">🎤</button>
         <button class="btn btn-primary btn-sm" onclick="sendRoomChat()">Göndər</button>
       </div>
       <div id="rmVoicePanel" class="voice-panel" style="display:none;">
-        <span class="voice-rec-dot"></span>
-        <span id="rmVoiceTimer">0:00</span>
-        <div class="row" style="margin-left:auto;">
-          <button class="btn btn-sm btn-danger" onclick="cancelVoiceRecord('room')">Ləğv et</button>
-          <button class="btn btn-sm btn-success" onclick="sendVoiceRecord('room')">✔ Göndər</button>
-        </div>
+        <span class="voice-rec-dot"></span><span id="rmVoiceTimer">0:00</span>
+        <div class="row" style="margin-left:auto;"><button class="btn btn-sm btn-danger" onclick="cancelVoiceRecord('room')">Ləğv et</button><button class="btn btn-sm btn-success" onclick="sendVoiceRecord('room')">✔ Göndər</button></div>
       </div>
     </div>
   </div>
-
   <div id="chatDmPane" style="display:none;">
     <div class="tg-layout">
       <div class="card">
         <h4>Söhbət Aç</h4>
-        <div class="row" style="margin:8px 0;">
-          <input id="dmPartnerInput" placeholder="İstifadəçi adı" style="flex:1;">
-          <button class="btn btn-sm btn-primary" onclick="openDmWith(document.getElementById('dmPartnerInput').value)">Aç</button>
-        </div>
+        <div class="row" style="margin:8px 0;"><input id="dmPartnerInput" placeholder="İstifadəçi adı" style="flex:1;"><button class="btn btn-sm btn-primary" onclick="openDmWith(document.getElementById('dmPartnerInput').value)">Aç</button></div>
         <div id="dmChatsList">Söhbət seçin</div>
       </div>
       <div class="card">
-        <div class="row" style="justify-content:space-between;margin-bottom:8px;">
-          <strong id="dmPartnerTitle">✈️ —</strong>
-          <button class="btn btn-sm" onclick="closeDm()">✕</button>
-        </div>
+        <div class="row" style="justify-content:space-between;margin-bottom:8px;"><strong id="dmPartnerTitle">✈️ —</strong><button class="btn btn-sm" onclick="closeDm()">✕</button></div>
         <div id="dmChatBox" class="tg-chat-box"></div>
-        <div id="dmReplyBanner" class="reply-banner" style="display:none;">
-          <span id="dmReplyText"></span>
-          <button class="btn btn-sm" onclick="cancelDmReply()">✕</button>
-        </div>
+        <div id="dmReplyBanner" class="reply-banner" style="display:none;"><span id="dmReplyText"></span><button class="btn btn-sm" onclick="cancelDmReply()">✕</button></div>
         <div class="row">
           <input id="dmChatInput" placeholder="Mesaj yaz..." style="flex:1;" onkeydown="if(event.key==='Enter')sendDm()">
-          <button id="dmVoiceBtn" class="voice-mic-btn" onclick="toggleVoiceRecord('dm')" title="Səsli mesaj göndər">🎤</button>
+          <button id="dmVoiceBtn" class="voice-mic-btn" onclick="toggleVoiceRecord('dm')" title="Səsli mesaj">🎤</button>
           <button class="btn btn-primary btn-sm" onclick="sendDm()">Göndər</button>
         </div>
         <div id="dmVoicePanel" class="voice-panel" style="display:none;">
-          <span class="voice-rec-dot"></span>
-          <span id="dmVoiceTimer">0:00</span>
-          <div class="row" style="margin-left:auto;">
-            <button class="btn btn-sm btn-danger" onclick="cancelVoiceRecord('dm')">Ləğv et</button>
-            <button class="btn btn-sm btn-success" onclick="sendVoiceRecord('dm')">✔ Göndər</button>
-          </div>
+          <span class="voice-rec-dot"></span><span id="dmVoiceTimer">0:00</span>
+          <div class="row" style="margin-left:auto;"><button class="btn btn-sm btn-danger" onclick="cancelVoiceRecord('dm')">Ləğv et</button><button class="btn btn-sm btn-success" onclick="sendVoiceRecord('dm')">✔ Göndər</button></div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ─────────── SHOP ─────────── -->
 <section id="tab-shop" class="section">
   <div class="hero-banner">
-    <div>
-      <h2 style="margin:0;">Avatar Çərçivə Mağazası</h2>
-      <span class="muted" style="font-size:.82rem;">Fantastik və təbiət çərçivələri canlı animasiyalıdır!</span>
-    </div>
+    <div><h2 style="margin:0;">Avatar Çərçivə Mağazası</h2><span class="muted" style="font-size:.82rem;">Hərəkətli SVG fantastik obrazlar (12.000 – 50.000 AzCoin)</span></div>
     <span class="badge" style="font-size:.85rem;">🪙 <b id="shopCoins">0</b> AzCoin</span>
   </div>
   <div class="row" style="margin-bottom:12px;">
@@ -509,18 +423,38 @@
     <button class="btn btn-sm shop-filter-btn" onclick="filterShop('fantasy')">🐉 Fantaziya</button>
     <button class="btn btn-sm shop-filter-btn" onclick="filterShop('nature')">🌿 Təbiət</button>
     <button class="btn btn-sm shop-filter-btn" onclick="filterShop('legendary')">👑 Əfsanəvi</button>
+    <button id="shopAddCustomBtn" class="btn btn-sm btn-success" style="display:none;margin-left:auto;" onclick="togglePdSub('shopAddCustomBox')">+ Şəkil/GIF Çərçivə Əlavə Et</button>
+  </div>
+  <div id="shopAddCustomBox" class="card" style="display:none;">
+    <h4 style="margin-bottom:8px;">Admin: Şəkil / GIF / WebP Çərçivə Əlavə Et</h4>
+    <div class="grid-2" style="margin-bottom:8px;">
+      <input id="cfName" placeholder="Çərçivə adı *">
+      <input id="cfUrl" placeholder="Şəffaf PNG/GIF/WebP linki (URL) *">
+      <input id="cfPrice" type="number" value="25000" min="12000" placeholder="Qiymət (min 12000)">
+      <select id="cfTier"><option value="fantasy">Fantaziya</option><option value="nature">Təbiət</option><option value="legendary">Əfsanəvi</option><option value="classic">Klassik</option></select>
+      <select id="cfAnim"><option value="fx-float">Üzən (Float)</option><option value="fx-flap">Qanad çırpan</option><option value="fx-spin">Fırlanan</option><option value="fx-flicker">Alov/İşıq</option><option value="fx-glitch">Glitch</option><option value="fx-pulse">Nəbz</option></select>
+      <input id="cfDesc" placeholder="Qısa təsvir">
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="adminAddCustomFrame()">Mağazaya Əlavə Et</button>
   </div>
   <div id="shopGrid" class="shop-grid"></div>
 </section>
 
-<!-- ─────────── GAMES ─────────── -->
 <section id="tab-games" class="section">
   <div class="grid-2">
     <div class="card">
-      <h3>⚡ 60s Riyaziyyat & Məntiq Sprinti</h3>
-      <p class="muted" style="font-size:.84rem;">60 saniyə ərzində mümkün qədər çox hesablama sualı tapın → XP və AzCoin qazanın!</p>
-      <button class="btn btn-primary" onclick="startSprintGame()">Oyuna Başla</button>
-      <div id="sprintArea" style="margin-top:12px;"></div>
+      <h3>∫ 5 Dəqiqəlik Çətin Riyazi Çağırış</h3>
+      <p class="muted" style="font-size:.84rem;">Yalnız ağır <b>Törəmə, İnteqral və Limit</b> sualları! Hər sual üçün vaxt <b>5 dəqiqədir</b>. Cavabı tam ədəd, kəsr (məs: <code>-13/5</code>) və ya onluq ədəd kimi yazın.</p>
+      <div class="row" style="margin-bottom:10px;">
+        <select id="calcCategory" style="width:170px;">
+          <option value="all">Hamısı (Qarışıq)</option>
+          <option value="Törəmə">Törəmə</option>
+          <option value="İnteqral">İnteqral</option>
+          <option value="Limit">Limit</option>
+        </select>
+        <button class="btn btn-primary" onclick="startCalculusGame()">Sualı Başlat (5:00)</button>
+      </div>
+      <div id="calculusArea"></div>
     </div>
     <div class="card">
       <h3>🎯 Bulls & Cows (4 Rəqəmli Məntiq)</h3>
@@ -531,15 +465,21 @@
   </div>
 </section>
 
-<!-- ─────────── PROPOSE + ADMİN NAZİK BAR ─────────── -->
 <section id="tab-propose" class="section">
   <div class="card">
-    <h2>Sual Təklif Et <span class="muted" style="font-size:.9rem;">(+XP & +AzCoin)</span></h2>
+    <div class="row" style="justify-content:space-between;">
+      <h2 style="margin:0;">Sual Təklif Et <span class="muted" style="font-size:.9rem;">(+XP & +AzCoin)</span></h2>
+      <button id="openPendingModalBtn" class="btn btn-sm" style="display:none;border-color:var(--warning);color:var(--warning);" onclick="openAdminProposalsModal()">📥 Gələn Sorğulara Bax</button>
+    </div>
     <div class="grid-2" style="margin-top:10px;">
       <div>
-        <input id="prTitle" placeholder="Başlıq *" style="margin-bottom:6px;">
         <div class="row" style="margin-bottom:6px;">
-          <input id="prRating" type="number" placeholder="Reytinq (600-3500)" style="flex:1;">
+          <input id="prCodeLbl" placeholder="Sual kodu (məs: 3A, istəyə bağlı)" style="flex:1;">
+          <input id="prTitle" placeholder="Sualın adı (Başlıq) *" style="flex:2;">
+        </div>
+        <input id="prPlan" placeholder="Sualın planı / qısa yanaşma (məs: İki göstərici + DP) *" style="margin-bottom:6px;">
+        <div class="row" style="margin-bottom:6px;">
+          <input id="prRating" type="number" placeholder="Reytinq (400-3500)" style="flex:1;">
           <input id="prTags" placeholder="Teqlər" style="flex:1;">
         </div>
         <textarea id="prStatement" rows="4" placeholder="Məsələnin şərti *" style="margin-bottom:6px;"></textarea>
@@ -550,13 +490,7 @@
       <div>
         <label class="muted" style="font-size:.82rem;">İşləyən həll kodunuz *</label>
         <div class="row" style="margin:6px 0;">
-          <select id="prLang" style="width:130px;">
-            <option value="python">Python</option>
-            <option value="cpp">C++</option>
-            <option value="c">C</option>
-            <option value="java">Java</option>
-            <option value="javascript">JS</option>
-          </select>
+          <select id="prLang" style="width:130px;"><option value="python">Python</option><option value="cpp">C++</option><option value="c">C</option><option value="java">Java</option><option value="javascript">JS</option></select>
         </div>
         <textarea id="prCode" rows="6" class="code-fallback" style="height:140px;margin-bottom:6px;"></textarea>
         <label class="muted" style="font-size:.82rem;">Testlər *</label>
@@ -566,91 +500,75 @@
     </div>
     <button class="btn btn-primary" style="margin-top:12px;" onclick="submitProposal()">Göndər</button>
   </div>
-  <div class="card">
-    <h3>Mənim Təkliflərim</h3>
-    <div id="myProposalsList"></div>
-  </div>
-  <!-- ADMİN: gözləyən təkliflər — nazik yapışqan bar (kod + başlıq + reytinq) -->
+  <div class="card"><h3>Mənim Təkliflərim</h3><div id="myProposalsList"></div></div>
   <div id="adminPendingBar" class="pending-slim-bar" style="display:none;">
     <div class="pending-slim-head" onclick="togglePendingExpand()">
-      <span>📥 Təsdiq Gözləyən Suallar (<b id="pendingCount">0</b>)</span>
+      <span>📥 Təsdiq Gözləyən Suallar (<b id="pendingCount">0</b>) — Açmaq üçün kliklə</span>
       <span id="pendingArrow">▲</span>
     </div>
     <div id="pendingSlimList" class="pending-slim-list"></div>
   </div>
 </section>
 
-<!-- ─────────── SUBMISSIONS ─────────── -->
+<section id="tab-registrations" class="section">
+  <div class="hero-banner">
+    <div><h2 style="margin:0;">Sayta Qeydiyyatdan Keçənlər</h2><span class="muted" style="font-size:.82rem;">Günlük və həftəlik qeydiyyat siyahısı və tarixləri</span></div>
+    <div class="row">
+      <button class="btn btn-sm reg-filter-btn" onclick="loadRegistrations('daily')">Bu gün</button>
+      <button class="btn btn-sm reg-filter-btn active" onclick="loadRegistrations('weekly')">Bu həftə</button>
+      <button class="btn btn-sm reg-filter-btn" onclick="loadRegistrations('all')">Hamısı</button>
+    </div>
+  </div>
+  <div class="reg-stat-row">
+    <div class="reg-stat-chip">📅 Bu gün: <b id="regTodayCnt">0</b></div>
+    <div class="reg-stat-chip">📆 Son 7 gün: <b id="regWeekCnt">0</b></div>
+    <div class="reg-stat-chip">👥 Cəmi: <b id="regTotalCnt">0</b></div>
+    <div id="regOnlineChip" class="reg-stat-chip" style="display:none;border-color:rgba(34,197,94,.4);color:#4ade80;">🟢 Onlayn: <b id="regOnlineCnt">0</b></div>
+  </div>
+  <div class="card table-wrap">
+    <table>
+      <thead><tr><th>İstifadəçi & Ünvan</th><th>Səviyyə / Reytinq</th><th>Qeydiyyat Tarixi</th><th id="regStatusTh" style="display:none;">Status (Admin)</th></tr></thead>
+      <tbody id="registrationsBody"></tbody>
+    </table>
+  </div>
+</section>
+
 <section id="tab-submissions" class="section">
   <div class="hero-banner">
     <h2 style="margin:0;">Son Göndərişlər</h2>
     <div class="row">
-      <select id="subFilter" style="width:130px;" onchange="loadSubmissions()">
-        <option value="all">Hamısı</option>
-        <option value="mine">Mənimkilər</option>
-      </select>
+      <select id="subFilter" style="width:130px;" onchange="loadSubmissions()"><option value="all">Hamısı</option><option value="mine">Mənimkilər</option></select>
       <button class="btn btn-sm" onclick="loadSubmissions()">Yenilə</button>
     </div>
   </div>
-  <div class="card table-wrap">
-    <table>
-      <thead><tr><th>ID</th><th>İstifadəçi</th><th>Məsələ</th><th>Dil</th><th>Nəticə</th><th>Test / %</th><th>Vaxt</th></tr></thead>
-      <tbody id="submissionsTableBody"></tbody>
-    </table>
-  </div>
+  <div class="card table-wrap"><table><thead><tr><th>ID</th><th>İstifadəçi</th><th>Məsələ</th><th>Dil</th><th>Nəticə</th><th>Test / %</th><th>Vaxt</th></tr></thead><tbody id="submissionsTableBody"></tbody></table></div>
 </section>
 
-<!-- ─────────── LEADERBOARD ─────────── -->
 <section id="tab-leaderboard" class="section">
-  <div class="hero-banner">
-    <h2 style="margin:0;">Lider Lövhəsi</h2>
-    <button class="btn btn-sm" onclick="loadLeaderboard()">Yenilə</button>
-  </div>
-  <div class="card table-wrap">
-    <table>
-      <thead><tr><th>#</th><th>İstifadəçi</th><th>Səviyyə</th><th>XP</th><th>Reytinq</th><th>Seriya</th><th>Həll</th></tr></thead>
-      <tbody id="leaderboardBody"></tbody>
-    </table>
-  </div>
+  <div class="hero-banner"><h2 style="margin:0;">Lider Lövhəsi</h2><button class="btn btn-sm" onclick="loadLeaderboard()">Yenilə</button></div>
+  <div class="card table-wrap"><table><thead><tr><th>#</th><th>İstifadəçi & Ünvan</th><th>Səviyyə</th><th>XP</th><th>Reytinq</th><th>Seriya</th><th>Həll</th></tr></thead><tbody id="leaderboardBody"></tbody></table></div>
 </section>
 
-<!-- ─────────── CREATIVE ─────────── -->
 <section id="tab-creative" class="section">
-  <div class="hero-banner">
-    <h2 style="margin:0;">Yaradıcı Kodlar</h2>
-    <button class="btn btn-sm btn-primary" onclick="togglePdSub('crForm')">+ Paylaş</button>
-  </div>
+  <div class="hero-banner"><h2 style="margin:0;">Yaradıcı Kodlar</h2><button class="btn btn-sm btn-primary" onclick="togglePdSub('crForm')">+ Paylaş</button></div>
   <div id="crForm" class="card" style="display:none;">
     <input id="crTitle" placeholder="Başlıq" style="margin-bottom:6px;">
     <div class="row" style="margin-bottom:6px;">
-      <select id="crLang" style="width:130px;">
-        <option value="python">Python</option>
-        <option value="cpp">C++</option>
-        <option value="c">C</option>
-        <option value="java">Java</option>
-        <option value="javascript">JS</option>
-      </select>
+      <select id="crLang" style="width:130px;"><option value="python">Python</option><option value="cpp">C++</option><option value="c">C</option><option value="java">Java</option><option value="javascript">JS</option></select>
       <input id="crDesc" placeholder="Qısa təsvir" style="flex:1;">
     </div>
     <textarea id="crCode" rows="6" class="code-fallback" style="height:140px;margin-bottom:6px;"></textarea>
-    <input id="crStdin" placeholder="Nümunə giriş (istəyə bağlı)" style="margin-bottom:6px;">
+    <input id="crStdin" placeholder="Nümunə giriş" style="margin-bottom:6px;">
     <button class="btn btn-primary btn-sm" onclick="createCreative()">Paylaş</button>
   </div>
   <div id="creativeGrid" class="creative-grid"></div>
 </section>
 
-<!-- ─────────── PLAYGROUND ─────────── -->
 <section id="tab-playground" class="section">
   <div class="card">
     <h2>Playground</h2>
     <div class="row" style="margin:10px 0;">
-      <select id="pgLang" onchange="onPgLangChange()" style="width:150px;">
-        <option value="python">Python 3</option>
-        <option value="cpp">C++</option>
-        <option value="c">C</option>
-        <option value="java">Java</option>
-        <option value="javascript">JS</option>
-      </select>
+      <select id="pgLang" onchange="onPgLangChange()" style="width:150px;"><option value="python">Python 3</option><option value="cpp">C++</option><option value="c">C</option><option value="java">Java</option><option value="javascript">JS</option></select>
       <button class="btn btn-primary" onclick="runPlayground()">▶ İşlət</button>
     </div>
     <textarea id="pgEditorTextarea" class="code-fallback"></textarea>
@@ -659,13 +577,15 @@
   </div>
 </section>
 
-<!-- ─────────── TAM PROFİL ─────────── -->
 <section id="tab-profile" class="section">
   <div class="card" style="max-width:880px;margin:0 auto;">
     <div class="prof-top" style="margin-bottom:14px;">
       <span id="fpAvatarWrap" class="av-wrap av-xl"><img id="fpAvatarImg" src="" alt="" style="display:none;"><span id="fpAvatarTxt">A</span></span>
       <div style="flex:1;min-width:0;">
-        <div id="fpName" style="font-size:1.4rem;font-weight:800;">—</div>
+        <div class="name-rank-wrap">
+          <div id="fpName" style="font-size:1.4rem;font-weight:800;">—</div>
+          <div id="fpRank" class="rank-title"></div>
+        </div>
         <p id="fpBio" class="muted" style="margin:4px 0 8px;font-size:.88rem;">Bio yazılmayıb.</p>
         <div class="row" style="font-size:.8rem;">
           <span id="fpLvlBadge" class="lvl-pill">Səviyyə 1</span>
@@ -673,7 +593,6 @@
           <span id="fpStreakBadge">🔥 0 gün</span>
           <span id="fpSolvedBadge">✔ 0 həll</span>
         </div>
-        <!-- ADMİN META: onlayn status + qeydiyyat (yalnız admin görür) -->
         <div id="fpAdminMeta" class="admin-meta-box" style="display:none;">
           <div class="amr"><span class="muted">Status:</span><span id="fpOnlineStatus">—</span></div>
           <div class="amr"><span class="muted">Qeydiyyat:</span><span id="fpRegDate" style="font-weight:600;">—</span></div>
@@ -682,10 +601,7 @@
     </div>
     <div id="fpActions" class="row" style="margin-bottom:12px;"></div>
     <div class="xp-pipe-wrap" style="margin-bottom:14px;">
-      <div class="row" style="justify-content:space-between;font-size:.78rem;">
-        <span class="muted">Səviyyə XP Borusu</span>
-        <span id="fpXpNums" class="muted">0 / 100</span>
-      </div>
+      <div class="row" style="justify-content:space-between;font-size:.78rem;"><span class="muted">Səviyyə XP Borusu</span><span id="fpXpNums" class="muted">0 / 100</span></div>
       <div class="xp-pipe-track"><div id="fpXpFill" class="xp-pipe-fill"></div></div>
     </div>
     <h3>Reytinq Qrafiki</h3>
@@ -697,77 +613,45 @@
   </div>
 </section>
 
-<!-- ─────────── GİZLİ ADMİN PANEL ─────────── -->
 {% if admin_portal %}
 <section id="tab-admin" class="section">
   <div class="card">
-    <h3>Qeydiyyatdan Keçmiş İstifadəçilər & Coin/XP Göndər</h3>
+    <h3>İstifadəçilər (Onlayn Status & Qeydiyyat & Coin/XP)</h3>
     <div class="row" style="margin:8px 0;">
-      <input id="adUserSearch" placeholder="Axtar..." style="width:200px;" oninput="loadAdminUsers()">
+      <input id="adUserSearch" placeholder="Axtar..." style="width:180px;" oninput="loadAdminUsers()">
+      <select id="adUserPeriod" style="width:150px;" onchange="loadAdminUsers()">
+        <option value="all">Hamısı</option><option value="daily">Bu gün</option><option value="weekly">Bu həftə</option>
+      </select>
       <button class="btn btn-sm" onclick="loadAdminUsers()">Yenilə</button>
     </div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Ad / Status</th><th>Gmail / Qeydiyyat</th><th>Səv / XP</th><th>Coin</th><th>Həll</th><th>Coin/XP At</th><th>Sil</th></tr></thead>
-        <tbody id="adminUsersBody"></tbody>
-      </table>
-    </div>
+    <div class="table-wrap"><table><thead><tr><th>Ad / Status</th><th>Gmail / Qeydiyyat</th><th>Səv / XP</th><th>Coin</th><th>Həll</th><th>Coin/XP At</th><th>Sil</th></tr></thead><tbody id="adminUsersBody"></tbody></table></div>
   </div>
-  <div class="card">
-    <h3>Təsdiq Gözləyən Suallar</h3>
-    <div id="adminProposalsBox"></div>
-  </div>
-  <div class="card">
-    <h3>Günün Sualını Təyin Et</h3>
-    <div class="row" style="margin:8px 0;">
-      <input id="adDailyCode" placeholder="Məsələ kodu (məs: 1A)" style="width:180px;">
-      <button class="btn btn-primary btn-sm" onclick="adminSetDailyFromInput()">Təyin Et</button>
-    </div>
-  </div>
-  <div class="card">
-    <h3>Yarış Yarat (Bitdikdə Gym-ə düşür)</h3>
-    <div class="row" style="margin:8px 0;">
-      <input id="adConTitle" placeholder="Yarış adı" style="flex:1;">
-      <input id="adConDur" type="number" value="90" placeholder="Dəq" style="width:80px;">
-      <input id="adConPids" placeholder="Problem ID-ləri (1,2,3)" style="flex:1;">
-      <button class="btn btn-primary btn-sm" onclick="adminCreateContest()">Başlat</button>
-    </div>
-  </div>
+  <div class="card"><h3>Təsdiq Gözləyən Suallar</h3><div id="adminProposalsBox"></div></div>
+  <div class="card"><h3>Günün Sualını Təyin Et</h3><div class="row" style="margin:8px 0;"><input id="adDailyCode" placeholder="Məsələ kodu (məs: 1A)" style="width:180px;"><button class="btn btn-primary btn-sm" onclick="adminSetDailyFromInput()">Təyin Et</button></div></div>
+  <div class="card"><h3>Yarış Yarat</h3><div class="row" style="margin:8px 0;"><input id="adConTitle" placeholder="Yarış adı" style="flex:1;"><input id="adConDur" type="number" value="90" style="width:80px;"><input id="adConPids" placeholder="Problem ID-ləri (1,2,3)" style="flex:1;"><button class="btn btn-primary btn-sm" onclick="adminCreateContest()">Başlat</button></div></div>
   <div class="card">
     <h3>Kod İcra API Ayarları</h3>
     <div class="row" style="margin:8px 0;">
-      <select id="cfgProvider" style="width:170px;">
-        <option value="judge0">Judge0 CE (Açarsız)</option>
-        <option value="wandbox">Wandbox (Açarsız)</option>
-        <option value="piston">Piston</option>
-        <option value="local">Local</option>
-      </select>
+      <select id="cfgProvider" style="width:170px;"><option value="judge0">Judge0 CE</option><option value="wandbox">Wandbox</option><option value="piston">Piston</option><option value="local">Local</option></select>
       <input id="cfgBaseUrl" placeholder="Base URL" style="flex:1;">
-      <input id="cfgApiKey" type="password" placeholder="API Key (istəyə bağlı)" style="flex:1;">
+      <div class="pw-wrap" style="flex:1;margin-bottom:0;"><input id="cfgApiKey" type="password" placeholder="API Key"><button type="button" class="pw-eye" onclick="togglePw('cfgApiKey',this)">👁️</button></div>
       <button class="btn btn-sm btn-primary" onclick="saveSettings()">Saxla</button>
       <button class="btn btn-sm" onclick="testConnection()">Yoxla</button>
     </div>
     <div id="testConnOut" class="console-out" style="display:none;"></div>
   </div>
   <div class="card">
-    <h3>Yeni Məsələ Yarat (birbaşa Məsələlərə düşür)</h3>
+    <h3>Yeni Məsələ Yarat</h3>
     <div class="grid-2" style="margin-top:8px;">
       <div>
         <input id="npTitle" placeholder="Başlıq *" style="margin-bottom:6px;">
-        <div class="row" style="margin-bottom:6px;">
-          <input id="npCodeLbl" placeholder="Kod (məs: 2A)" style="flex:1;">
-          <input id="npRating" type="number" placeholder="Reytinq" style="flex:1;">
-        </div>
+        <div class="row" style="margin-bottom:6px;"><input id="npCodeLbl" placeholder="Kod (məs: 2A)" style="flex:1;"><input id="npRating" type="number" placeholder="Reytinq" style="flex:1;"></div>
         <input id="npTags" placeholder="Teqlər" style="margin-bottom:6px;">
         <textarea id="npStatement" rows="4" placeholder="Məsələ şərti *" style="margin-bottom:6px;"></textarea>
         <textarea id="npIn" rows="2" placeholder="Giriş" style="margin-bottom:6px;"></textarea>
         <textarea id="npOut" rows="2" placeholder="Çıxış" style="margin-bottom:6px;"></textarea>
       </div>
-      <div>
-        <label class="muted" style="font-size:.82rem;">Testlər *</label>
-        <div id="npTestsContainer" style="margin-top:4px;"></div>
-        <button class="btn btn-sm" onclick="addTestRow('npTestsContainer')">+ Test</button>
-      </div>
+      <div><label class="muted" style="font-size:.82rem;">Testlər *</label><div id="npTestsContainer" style="margin-top:4px;"></div><button class="btn btn-sm" onclick="addTestRow('npTestsContainer')">+ Test</button></div>
     </div>
     <button class="btn btn-primary" style="margin-top:10px;" onclick="adminCreateProblem()">Yarat</button>
   </div>
@@ -776,35 +660,50 @@
 
 </main>
 
-<!-- ═══════════════════ MODALS ═══════════════════ -->
 <div id="authModal" class="modal-backdrop">
   <div class="modal-card">
     <div class="modal-head">
-      <div class="row">
-        <button id="tabLoginBtn" class="btn btn-sm btn-primary" onclick="switchAuthTab('login')">Daxil Ol</button>
-        <button id="tabRegBtn" class="btn btn-sm" onclick="switchAuthTab('register')">Gmail ilə Qeydiyyat</button>
-      </div>
+      <div class="row"><button id="tabLoginBtn" class="btn btn-sm btn-primary" onclick="switchAuthTab('login')">Daxil Ol</button><button id="tabRegBtn" class="btn btn-sm" onclick="switchAuthTab('register')">Gmail ilə Qeydiyyat</button></div>
       <button class="btn btn-sm" onclick="closeModal('authModal')">✕</button>
     </div>
     <div class="modal-body">
       <div id="loginPane">
         <input id="liIdent" placeholder="Gmail və ya istifadəçi adı" style="margin-bottom:8px;" autocomplete="username">
-        <input id="liPass" type="password" placeholder="Parol" style="margin-bottom:10px;" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+        <div class="pw-wrap">
+          <input id="liPass" type="password" placeholder="Parol" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+          <button type="button" class="pw-eye" onclick="togglePw('liPass',this)" aria-label="Parolu göstər">👁️</button>
+        </div>
         <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="doLogin()">Daxil Ol</button>
       </div>
       <div id="registerPane" style="display:none;">
         <input id="rgUser" placeholder="İstifadəçi adı (3-22 simvol)" style="margin-bottom:8px;">
         <input id="rgEmail" placeholder="Gmail ünvanınız" style="margin-bottom:8px;">
-        <input id="rgPass" type="password" placeholder="Parol (min 6 simvol)" style="margin-bottom:8px;">
-        <input id="rgPassConfirm" type="password" placeholder="Parolu təkrar daxil edin" style="margin-bottom:8px;">
+        <div class="pw-wrap">
+          <input id="rgPass" type="password" placeholder="Parol (min 6 simvol)">
+          <button type="button" class="pw-eye" onclick="togglePw('rgPass',this)" aria-label="Parolu göstər">👁️</button>
+        </div>
+        <div class="pw-wrap">
+          <input id="rgPassConfirm" type="password" placeholder="Parolu təkrar daxil edin">
+          <button type="button" class="pw-eye" onclick="togglePw('rgPassConfirm',this)" aria-label="Parolu göstər">👁️</button>
+        </div>
         <div id="rgPassMatch" style="display:none;font-size:.78rem;color:#fca5a5;margin-bottom:8px;">⚠ Parollar uyğun gəlmir!</div>
         <button id="sendCodeBtn" class="btn btn-sm" style="margin-bottom:8px;" onclick="sendRegCode()">Gmail-ə Kod Göndər</button>
         <div id="regCodeWrap" style="display:none;">
-          <input id="rgCode" placeholder="6 rəqəmli kod" style="margin-bottom:10px;" inputmode="numeric">
+          <div class="pw-wrap">
+            <input id="rgCode" type="password" placeholder="6 rəqəmli təsdiq kodu" inputmode="numeric">
+            <button type="button" class="pw-eye" onclick="togglePw('rgCode',this)" aria-label="Kodu göstər">👁️</button>
+          </div>
           <button class="btn btn-success" style="width:100%;justify-content:center;" onclick="doRegister()">Təsdiqlə & Hesab Aç</button>
         </div>
       </div>
     </div>
+  </div>
+</div>
+
+<div id="adminProposalsModal" class="modal-backdrop">
+  <div class="modal-card" style="max-width:660px;">
+    <div class="modal-head"><strong>📥 Gələn Sual Sorğuları (Təsdiq / Rədd)</strong><button class="btn btn-sm" onclick="closeModal('adminProposalsModal')">✕</button></div>
+    <div id="adminProposalsModalBody" class="modal-body">Yüklənir...</div>
   </div>
 </div>
 
@@ -820,10 +719,7 @@
     <div class="modal-head"><strong>Məsələni Yönləndir</strong><button class="btn btn-sm" onclick="closeModal('forwardModal')">✕</button></div>
     <div class="modal-body">
       <div id="fwdGroupsBox"></div>
-      <div class="row" style="margin-top:10px;">
-        <input id="fwdDmUser" placeholder="Dost istifadəçi adı" style="flex:1;">
-        <button class="btn btn-sm btn-primary" onclick="forwardProblemToDm()">Göndər</button>
-      </div>
+      <div class="row" style="margin-top:10px;"><input id="fwdDmUser" placeholder="Dost istifadəçi adı" style="flex:1;"><button class="btn btn-sm btn-primary" onclick="forwardProblemToDm()">Göndər</button></div>
     </div>
   </div>
 </div>
@@ -831,16 +727,12 @@
 <div id="detailModal" class="modal-backdrop">
   <div class="modal-card">
     <div class="modal-head"><strong id="modalTitle">Detallar</strong><button class="btn btn-sm" onclick="closeModal('detailModal')">✕</button></div>
-    <div class="modal-body">
-      <div id="modalMeta" class="muted" style="font-size:.82rem;margin-bottom:8px;"></div>
-      <pre id="modalPre" class="console-out" style="margin-top:0;"></pre>
-    </div>
+    <div class="modal-body"><div id="modalMeta" class="muted" style="font-size:.82rem;margin-bottom:8px;"></div><pre id="modalPre" class="console-out" style="margin-top:0;"></pre></div>
   </div>
 </div>
 
 <div id="toast" class="toast"></div>
 
-<!-- ═══════════════════ SCRIPTS ═══════════════════ -->
 <script>window.ADMIN_PORTAL = {% if admin_portal %}true{% else %}false{% endif %};</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
@@ -850,4 +742,4 @@
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
-   </html>
+        </html>
