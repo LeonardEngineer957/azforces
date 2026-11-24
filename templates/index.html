@@ -2,659 +2,1782 @@
 <html lang="az">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AzForces — Alqoritm, Yarış və İcma</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#06090f">
+<title>AzForces — Alqoritm Arenası</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-<link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
 <style>
-/* ═══ YENİ BLOKLAR — app.css-ə toxunmadan işləyir ═══ */
-.online-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
-.online-dot.on{background:#22c55e;box-shadow:0 0 8px rgba(34,197,94,.8);animation:onPulse 2s ease-in-out infinite}
-.online-dot.off{background:#6b7280}
-@keyframes onPulse{0%,100%{opacity:1}50%{opacity:.45}}
-.admin-meta-box{margin-top:10px;padding:8px 10px;background:rgba(34,197,94,.07);border:1px dashed rgba(34,197,94,.32);border-radius:9px;font-size:.76rem}
-.admin-meta-box .amr{display:flex;justify-content:space-between;gap:8px;padding:2px 0}
-#pdOnlineStatus.online,#fpOnlineStatus.online{color:#4ade80;font-weight:700}
-#pdOnlineStatus.offline,#fpOnlineStatus.offline{color:#9ca3af;font-weight:600}
-
-/* Parol təsdiqi */
-#rgPassMatch{padding:6px 10px;background:rgba(239,68,68,.09);border:1px solid rgba(239,68,68,.35);border-radius:8px;animation:pwShake .35s ease}
-@keyframes pwShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
-#rgPassConfirm.valid{border-color:#22c55e;box-shadow:0 0 0 2px rgba(34,197,94,.18)}
-#rgPassConfirm.invalid{border-color:#ef4444;box-shadow:0 0 0 2px rgba(239,68,68,.18)}
-
-/* Faiz barı */
-#solvePctWrap{animation:pctIn .35s ease}
-@keyframes pctIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-#solvePctFill{transition:width .85s cubic-bezier(.34,1.4,.64,1)}
-.pct-break{display:flex;gap:10px;font-size:.72rem;color:var(--muted);margin-top:5px;flex-wrap:wrap}
-
-/* ═══ ÇƏRÇİVƏLƏR — köhnə DB adları da daxil ═══ */
-.frame-dragon-flame,.frame-forest-vine,.frame-ocean-leviathan,.frame-storm-simurgh,.frame-cosmic-portal{border:3px solid transparent}
-.frame-dragon-flame{background:linear-gradient(#0e1420,#0e1420) padding-box,linear-gradient(45deg,#ff4d4d,#ff9a3d,#ffd93d,#ff4d4d) border-box;background-size:100% 100%,300% 300%;animation:frShift 3s linear infinite;box-shadow:0 0 20px rgba(255,77,77,.6)}
-.frame-forest-vine{background:linear-gradient(#0e1420,#0e1420) padding-box,linear-gradient(120deg,#4ade80,#16a34a,#a3e635,#4ade80) border-box;background-size:100% 100%,300% 300%;animation:frShift 5s linear infinite;box-shadow:0 0 18px rgba(74,222,128,.6)}
-.frame-ocean-leviathan{background:linear-gradient(#0e1420,#0e1420) padding-box,linear-gradient(120deg,#38bdf8,#0ea5e9,#22d3ee,#38bdf8) border-box;background-size:100% 100%,300% 300%;animation:frShift 4s linear infinite;box-shadow:0 0 20px rgba(56,189,248,.65)}
-.frame-storm-simurgh{background:linear-gradient(#0e1420,#0e1420) padding-box,conic-gradient(from 0deg,#fbbf24,#f97316,#fef3c7,#fbbf24) border-box;animation:frSpin 4s linear infinite;box-shadow:0 0 22px rgba(251,191,36,.6)}
-.frame-cosmic-portal{background:linear-gradient(#0e1420,#0e1420) padding-box,conic-gradient(from 0deg,#8b5cf6,#3b82f6,#06b6d4,#a855f7,#8b5cf6) border-box;animation:frSpin 5s linear infinite;box-shadow:0 0 24px rgba(139,92,246,.7)}
-@keyframes frShift{0%{background-position:0 0,0% 50%}50%{background-position:0 0,100% 50%}100%{background-position:0 0,0% 50%}}
-@keyframes frSpin{to{filter:hue-rotate(360deg)}}
-
-/* ═══ GÜNLÜK SERİYA ═══ */
-.daily-hero{position:relative;border-radius:22px;overflow:hidden;padding:40px 22px;background:linear-gradient(160deg,#1a0f2e,#0f172a 55%,#0c1220);border:1px solid rgba(249,115,22,.28);text-align:center;margin-bottom:14px}
-.daily-hero-bg{position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(249,115,22,.2),transparent),radial-gradient(ellipse 40% 40% at 20% 85%,rgba(239,68,68,.12),transparent),radial-gradient(ellipse 40% 40% at 82% 80%,rgba(251,191,36,.1),transparent);animation:dBg 5s ease-in-out infinite alternate}
-@keyframes dBg{from{opacity:.7;transform:scale(1)}to{opacity:1;transform:scale(1.06)}}
-.daily-hero-content{position:relative;z-index:2}
-.daily-flame-wrap{position:relative;display:inline-block;margin-bottom:10px}
-.daily-flame{font-size:4.2rem;display:inline-block;animation:flDance 1.8s ease-in-out infinite;filter:drop-shadow(0 0 20px rgba(249,115,22,.85))}
-@keyframes flDance{0%,100%{transform:scale(1) rotate(-2deg)}25%{transform:scale(1.08) rotate(2deg)}50%{transform:scale(.96) rotate(-1deg)}75%{transform:scale(1.05) rotate(1deg)}}
-.daily-flame-ring{position:absolute;inset:-16px;border-radius:50%;border:2px solid rgba(249,115,22,.45);animation:ringEx 2.4s ease-out infinite}
-.daily-flame-ring.r2{animation-delay:1.2s}
-@keyframes ringEx{0%{transform:scale(.6);opacity:1}100%{transform:scale(1.7);opacity:0}}
-.daily-title{font-size:clamp(1.8rem,5vw,2.7rem);margin:0 0 6px;background:linear-gradient(90deg,#fbbf24,#f97316,#ef4444,#fbbf24);background-size:300% auto;-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:900;letter-spacing:-1px;animation:dTitle 4s linear infinite}
-@keyframes dTitle{to{background-position:300% center}}
-.daily-sub{color:var(--muted);font-size:.95rem;max-width:470px;margin:0 auto 22px}
-.daily-streak-row{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
-.daily-streak-card{background:rgba(15,23,42,.82);border:1px solid rgba(249,115,22,.32);border-radius:16px;padding:14px 26px;min-width:126px;backdrop-filter:blur(8px);transition:transform .25s,box-shadow .25s}
-.daily-streak-card:hover{transform:translateY(-4px);box-shadow:0 12px 30px rgba(249,115,22,.25)}
-.daily-streak-num{display:block;font-size:1.8rem;font-weight:900;color:#fbbf24;text-shadow:0 0 16px rgba(251,191,36,.5)}
-.daily-streak-lbl{display:block;font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.1px;margin-top:4px}
-.streak-map{display:grid;grid-template-columns:repeat(30,1fr);gap:4px;margin:12px 0}
-.streak-day{aspect-ratio:1;border-radius:4px;background:rgba(255,255,255,.05);border:1px solid var(--border);transition:transform .15s}
-.streak-day:hover{transform:scale(1.25)}
-.streak-day.s1{background:rgba(34,197,94,.4)}
-.streak-day.s2{background:rgba(34,197,94,.65)}
-.streak-day.s3{background:#22c55e;box-shadow:0 0 8px rgba(34,197,94,.55)}
-.streak-day.today{border:2px solid #fbbf24;animation:tdPulse 1.5s ease-in-out infinite}
-@keyframes tdPulse{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.5)}50%{box-shadow:0 0 0 6px rgba(251,191,36,0)}}
-.streak-legend{display:flex;gap:14px;font-size:.74rem;color:var(--muted);flex-wrap:wrap}
-.streak-legend .dot{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:middle}
-.dot-0{background:rgba(255,255,255,.08)}.dot-1{background:rgba(34,197,94,.4)}.dot-2{background:rgba(34,197,94,.65)}.dot-3{background:#22c55e}
-.daily-q-card{background:linear-gradient(135deg,rgba(249,115,22,.09),var(--surface));border:1px solid rgba(249,115,22,.35);position:relative;overflow:hidden}
-.daily-q-card::before{content:"";position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);animation:dShine 4.5s ease-in-out infinite}
-@keyframes dShine{0%,70%{left:-100%}100%{left:150%}}
-.daily-solved-banner{margin-top:12px;padding:10px 14px;background:rgba(34,197,94,.13);border:1px solid rgba(34,197,94,.42);border-radius:10px;color:#86efac;font-weight:600;font-size:.88rem;animation:sPop .4s ease}
-@keyframes sPop{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
-
-/* ═══ SƏS MESAJI ═══ */
-.voice-mic-btn{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#ef4444,#dc2626);border:none;color:#fff;font-size:1rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:transform .2s,box-shadow .2s;flex-shrink:0}
-.voice-mic-btn:hover{transform:scale(1.1);box-shadow:0 0 16px rgba(239,68,68,.6)}
-.voice-mic-btn.recording{animation:micP 1s ease-in-out infinite}
-@keyframes micP{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.6)}50%{box-shadow:0 0 0 10px rgba(239,68,68,0)}}
-.voice-panel{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.32);border-radius:12px;padding:10px 13px;margin-top:8px;display:flex;align-items:center;gap:11px;animation:vpIn .25s ease}
-@keyframes vpIn{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
-.voice-rec-dot{width:11px;height:11px;border-radius:50%;background:#ef4444;animation:recB .8s ease-in-out infinite;flex-shrink:0}
-@keyframes recB{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.8)}}
-.voice-bubble{display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);border-radius:20px;margin-top:4px}
-.voice-wave{display:flex;align-items:center;gap:2px;height:18px}
-.voice-wave span{width:3px;background:#fca5a5;border-radius:2px;animation:wv 1s ease-in-out infinite}
-.voice-wave span:nth-child(1){height:7px}.voice-wave span:nth-child(2){height:13px;animation-delay:.1s}.voice-wave span:nth-child(3){height:17px;animation-delay:.2s}.voice-wave span:nth-child(4){height:11px;animation-delay:.3s}.voice-wave span:nth-child(5){height:15px;animation-delay:.4s}
-@keyframes wv{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.45)}}
-.voice-bubble audio{height:32px;max-width:210px}
-
-/* ═══ CHAT TƏKMİL ═══ */
-.group-header-bar{cursor:pointer;padding:10px;border-radius:10px;transition:all .2s}
-.group-header-bar:hover{background:rgba(59,130,246,.07);box-shadow:0 0 0 1px rgba(59,130,246,.22)}
-.tg-chat-box{background:linear-gradient(180deg,rgba(7,10,16,.92),rgba(7,10,16,.76));border-radius:14px;height:380px;gap:10px;position:relative}
-.chat-bubble{padding:10px 14px;border-radius:16px;animation:bIn .25s ease;box-shadow:0 2px 8px rgba(0,0,0,.22)}
-@keyframes bIn{from{transform:translateY(9px);opacity:0}to{transform:translateY(0);opacity:1}}
-.chat-bubble.theirs{background:linear-gradient(135deg,var(--bg-elev),rgba(14,20,32,.9));border-left:3px solid var(--accent)}
-.chat-bubble.mine{background:linear-gradient(135deg,rgba(37,99,235,.3),rgba(59,130,246,.18));border-right:3px solid var(--primary)}
-
-/* ═══ MAĞAZA ═══ */
-.shop-filter-btn.active{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:0 0 12px rgba(59,130,246,.4)}
-.shop-card{transition:transform .25s,box-shadow .25s}
-.shop-card:hover{transform:translateY(-4px);box-shadow:0 12px 28px rgba(0,0,0,.35)}
-.shop-card.fantasy-card{border-color:rgba(168,85,247,.42)}
-.shop-card.nature-card{border-color:rgba(34,197,94,.42)}
-.shop-card.legendary-card{border-color:rgba(251,191,36,.5);background:linear-gradient(160deg,rgba(251,191,36,.06),var(--surface))}
-
-/* ═══ ADMIN NAZİK TƏSDİQ BARI ═══ */
-.pending-slim-bar{position:sticky;bottom:0;background:rgba(14,20,32,.97);backdrop-filter:blur(14px);border:1px solid var(--border-strong);border-radius:12px 12px 0 0;overflow:hidden;margin-top:14px;box-shadow:0 -8px 32px rgba(0,0,0,.45)}
-.pending-slim-head{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;cursor:pointer;font-size:.85rem;font-weight:600;color:var(--warning)}
-.pending-slim-head:hover{background:rgba(245,158,11,.07)}
-.pending-slim-list{max-height:0;overflow:hidden;transition:max-height .35s ease}
-.pending-slim-list.expanded{max-height:420px;overflow-y:auto}
-.pending-slim-item{display:flex;align-items:center;gap:10px;padding:9px 16px;border-top:1px solid var(--border);font-size:.84rem;cursor:pointer}
-.pending-slim-item:hover{background:var(--surface-2)}
-.psi-code{background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.35);color:#93c5fd;padding:2px 8px;border-radius:6px;font-size:.74rem;font-weight:700;font-family:monospace}
-.psi-title{flex:1;font-weight:600}
-.psi-rating{color:var(--warning);font-weight:700;font-size:.8rem}
-.pending-detail-expand{background:rgba(7,10,16,.8);border-top:1px dashed var(--border);padding:13px 16px;font-size:.84rem;animation:pdIn .3s ease}
-@keyframes pdIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
-
-/* Scrollbar */
-::-webkit-scrollbar{width:9px;height:9px}
-::-webkit-scrollbar-track{background:rgba(7,10,16,.6)}
-::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#3b82f6,#06b6d4);border-radius:8px}
+/* ══════════════════════════════════════════════════════════════
+   AZFORCES · Kritik stillər faylın içindədir — 404 riski yoxdur
+   ══════════════════════════════════════════════════════════════ */
+:root{
+  --bg:#06090f; --bg2:#0a0f18; --elev:#0d1420;
+  --surf:rgba(16,23,38,.88); --surf2:rgba(26,36,56,.94);
+  --bd:rgba(148,180,255,.11); --bd2:rgba(148,180,255,.24);
+  --tx:#edf2fb; --mu:#8b98b3; --dim:#5d6a85;
+  --pri:#3b82f6; --pri2:#2563eb; --cy:#06b6d4; --vi:#a855f7;
+  --mg:#ec4899; --ok:#22c55e; --no:#ef4444; --wa:#f59e0b; --gd:#fbbf24;
+  --r:13px; --mono:"JetBrains Mono","Fira Code",Consolas,monospace;
+  --hh:58px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  background:var(--bg);color:var(--tx);line-height:1.55;min-height:100vh;overflow-x:hidden;position:relative}
+body::before{content:"";position:fixed;inset:0;z-index:-2;
+  background:radial-gradient(circle at 12% 8%,rgba(59,130,246,.26),transparent 42%),
+    radial-gradient(circle at 88% 14%,rgba(168,85,247,.19),transparent 40%),
+    radial-gradient(circle at 50% 96%,rgba(6,182,212,.17),transparent 46%),
+    radial-gradient(circle at 76% 66%,rgba(236,72,153,.07),transparent 38%),var(--bg);
+  animation:bgB 17s ease-in-out infinite alternate}
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background-image:linear-gradient(rgba(148,180,255,.032) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(148,180,255,.032) 1px,transparent 1px);
+  background-size:44px 44px;
+  -webkit-mask-image:radial-gradient(ellipse 88% 76% at 50% 30%,#000 36%,transparent 100%);
+  mask-image:radial-gradient(ellipse 88% 76% at 50% 30%,#000 36%,transparent 100%)}
+@keyframes bgB{0%{filter:hue-rotate(0) brightness(1)}100%{filter:hue-rotate(15deg) brightness(1.08)}}
+::selection{background:rgba(59,130,246,.45);color:#fff}
+:focus-visible{outline:2px solid var(--cy);outline-offset:2px;border-radius:5px}
+*{scrollbar-width:thin;scrollbar-color:#2f6fd8 rgba(9,13,22,.72)}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:rgba(9,13,22,.72);border-radius:8px}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--pri),var(--cy));border-radius:8px;border:2px solid rgba(9,13,22,.72)}
 ::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,#60a5fa,#22d3ee)}
 
-@media(max-width:820px){
-.daily-streak-card{min-width:100px;padding:12px 16px}
-.streak-map{grid-template-columns:repeat(15,1fr)}
-.voice-bubble audio{max-width:150px}
+/* ── Admin chroma adı ── */
+.adm{background:linear-gradient(90deg,#ff4d6d,#f59e0b,#22c55e,#06b6d4,#a855f7,#ec4899,#ff4d6d);
+  background-size:300% auto;-webkit-background-clip:text;background-clip:text;color:transparent!important;
+  font-weight:800;animation:chr 3.2s linear infinite;display:inline-flex;align-items:center;gap:3px}
+.adm::before{content:"👑";-webkit-text-fill-color:initial;font-size:.88em}
+@keyframes chr{to{background-position:300% center}}
+
+/* ── Human gate ── */
+.gate{position:fixed;inset:0;z-index:500;background:rgba(4,7,12,.94);backdrop-filter:blur(15px);
+  display:flex;align-items:center;justify-content:center;padding:16px}
+.gate-card{background:var(--elev);border:1px solid var(--bd2);border-radius:19px;padding:30px 26px;
+  width:100%;max-width:382px;text-align:center;box-shadow:0 26px 72px rgba(0,0,0,.7),0 0 46px rgba(59,130,246,.12);
+  animation:mIn .38s cubic-bezier(.34,1.3,.64,1)}
+.gate-logo{font-size:2.4rem;margin-bottom:2px;filter:drop-shadow(0 0 18px rgba(59,130,246,.7))}
+.gate-btn{width:100%;display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surf2);
+  border:1px solid var(--bd2);border-radius:11px;color:var(--tx);font-size:.94rem;font-weight:600;cursor:pointer;
+  transition:border-color .2s,box-shadow .2s,transform .12s;font-family:inherit}
+.gate-btn:hover{border-color:var(--pri);box-shadow:0 0 18px rgba(59,130,246,.28)}
+.gate-btn:active{transform:scale(.985)}
+.gsq{width:22px;height:22px;border-radius:6px;border:2px solid var(--mu);display:inline-flex;
+  align-items:center;justify-content:center;flex-shrink:0;font-size:.8rem}
+.gsq.spin{border-color:var(--pri);border-top-color:transparent;border-radius:50%;animation:sp .7s linear infinite}
+.gsq.done{background:var(--ok);border-color:var(--ok);color:#fff;box-shadow:0 0 13px rgba(34,197,94,.65)}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ── Header ── */
+header{background:rgba(9,14,24,.86);backdrop-filter:blur(17px);border-bottom:1px solid var(--bd);
+  padding:9px 14px;position:sticky;top:0;z-index:60;display:flex;align-items:center;
+  justify-content:space-between;gap:8px;min-height:var(--hh)}
+.hl,.hr,.row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.burger{background:var(--surf2);border:1px solid var(--bd);color:var(--tx);width:38px;height:38px;
+  border-radius:9px;font-size:1.15rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;
+  transition:border-color .2s,box-shadow .2s;flex-shrink:0}
+.burger:hover{border-color:var(--pri);box-shadow:0 0 13px rgba(59,130,246,.32)}
+.brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:1.1rem;letter-spacing:-.4px;cursor:pointer;white-space:nowrap}
+.bbadge{background:linear-gradient(135deg,#2563eb,#06b6d4);color:#fff;padding:3px 8px;border-radius:7px;
+  font-size:.78rem;box-shadow:0 0 15px rgba(6,182,212,.45)}
+.gpill{background:rgba(245,158,11,.17);border:1px solid rgba(245,158,11,.48);color:#fcd34d;
+  padding:4px 10px;border-radius:999px;font-size:.76rem;font-weight:700;animation:blk 2s ease-in-out infinite}
+@keyframes blk{0%,100%{opacity:1}50%{opacity:.68}}
+.pp{background:var(--surf2);border:1px solid var(--bd);color:var(--tx);padding:4px 11px 4px 5px;
+  border-radius:999px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;
+  transition:border-color .2s,box-shadow .2s;font-family:inherit}
+.pp:hover{border-color:var(--pri);box-shadow:0 0 15px rgba(59,130,246,.3)}
+.ppm{display:flex;flex-direction:column;text-align:left;line-height:1.16;font-size:.79rem}
+
+/* ── Avatar + çərçivələr ── */
+.av{width:34px;height:34px;border-radius:50%;background:var(--pri);color:#fff;font-weight:800;font-size:.9rem;
+  display:inline-flex;align-items:center;justify-content:center;text-transform:uppercase;flex-shrink:0;
+  overflow:hidden;position:relative;border:2px solid transparent;box-sizing:border-box}
+.av img{width:100%;height:100%;object-fit:cover;display:block;border-radius:50%}
+.av-lg{width:56px;height:56px;font-size:1.35rem}
+.av-xl{width:80px;height:80px;font-size:1.95rem}
+.av-sm{width:26px;height:26px;font-size:.72rem}
+.f-none{border-color:rgba(255,255,255,.16)}
+.f-neon-blue{border:3px solid #38bdf8;box-shadow:0 0 13px rgba(56,189,248,.8)}
+.f-aqua-frost{border:3px solid #67e8f9;box-shadow:0 0 15px rgba(103,232,249,.8),inset 0 0 7px #a5f3fc}
+.f-emerald-matrix{border:3px solid #22c55e;box-shadow:0 0 15px rgba(34,197,94,.75);animation:aura 2.6s ease-in-out infinite alternate}
+.f-cyber-purple{border:3px solid #c084fc;box-shadow:0 0 16px rgba(192,132,252,.85);animation:aura 2s ease-in-out infinite alternate}
+.f-fire-phoenix{border:3px solid #f97316;box-shadow:0 0 17px rgba(239,68,68,.9);animation:aura 1.5s ease-in-out infinite alternate}
+.f-gold-crown{border:3px solid #fbbf24;animation:gpul 2.4s ease-in-out infinite alternate}
+@keyframes aura{from{filter:brightness(1)}to{filter:brightness(1.3)}}
+@keyframes gpul{from{box-shadow:0 0 14px rgba(251,191,36,.65)}to{box-shadow:0 0 27px rgba(251,191,36,1),0 0 46px rgba(251,191,36,.36)}}
+/* Fantastik / təbiət — gradient border */
+.f-dragon-flame,.f-forest-vine,.f-ocean-leviathan,.f-storm-simurgh,.f-cosmic-portal,
+.f-unicorn-rainbow,.f-aurora-night{border:3px solid transparent;background-origin:padding-box,border-box!important;
+  background-clip:padding-box,border-box!important}
+.f-dragon-flame{background-image:linear-gradient(#0d1420,#0d1420),linear-gradient(45deg,#ff4d4d,#ff9a3d,#ffd93d,#ff6b3d,#ff4d4d)!important;
+  background-size:100% 100%,300% 300%!important;animation:flow 3s linear infinite,dglow 1.6s ease-in-out infinite alternate}
+@keyframes dglow{from{box-shadow:0 0 14px rgba(255,77,77,.6),0 0 30px rgba(255,154,61,.26)}
+  to{box-shadow:0 0 25px rgba(255,77,77,.98),0 0 54px rgba(255,154,61,.52)}}
+.f-forest-vine{background-image:linear-gradient(#0d1420,#0d1420),linear-gradient(120deg,#4ade80,#16a34a,#a3e635,#22c55e,#4ade80)!important;
+  background-size:100% 100%,300% 300%!important;animation:flow 5s linear infinite,fglow 3.4s ease-in-out infinite}
+@keyframes fglow{0%,100%{box-shadow:0 0 14px rgba(74,222,128,.58)}50%{box-shadow:0 0 27px rgba(74,222,128,.98),0 0 50px rgba(163,230,53,.42)}}
+.f-ocean-leviathan{background-image:linear-gradient(#0d1420,#0d1420),linear-gradient(120deg,#38bdf8,#0ea5e9,#22d3ee,#67e8f9,#38bdf8)!important;
+  background-size:100% 100%,300% 300%!important;animation:flow 4s linear infinite,oglow 3s ease-in-out infinite}
+@keyframes oglow{0%,100%{box-shadow:0 0 16px rgba(56,189,248,.62),0 4px 14px rgba(6,182,212,.42)}
+  50%{box-shadow:0 0 29px rgba(56,189,248,.98),0 7px 25px rgba(6,182,212,.68)}}
+.f-storm-simurgh{background-image:linear-gradient(#0d1420,#0d1420),conic-gradient(from 0deg,#fbbf24,#f97316,#fef3c7,#fde047,#fbbf24)!important;
+  animation:hue 4s linear infinite,sglow 2s ease-in-out infinite alternate}
+@keyframes sglow{from{box-shadow:0 0 16px rgba(251,191,36,.62),0 0 34px rgba(249,115,22,.32)}
+  to{box-shadow:0 0 29px rgba(251,191,36,1),0 0 58px rgba(249,115,22,.56)}}
+.f-cosmic-portal{background-image:linear-gradient(#0d1420,#0d1420),conic-gradient(from 0deg,#8b5cf6,#3b82f6,#06b6d4,#ec4899,#a855f7,#8b5cf6)!important;
+  animation:hue 6s linear infinite,cglow 2.6s ease-in-out infinite alternate}
+@keyframes cglow{from{box-shadow:0 0 18px rgba(139,92,246,.68),0 0 38px rgba(59,130,246,.32)}
+  to{box-shadow:0 0 31px rgba(139,92,246,1),0 0 64px rgba(236,72,153,.46)}}
+.f-unicorn-rainbow{background-image:linear-gradient(#0d1420,#0d1420),conic-gradient(from 0deg,#ff6b9d,#c44dff,#4d9dff,#4dffc3,#ffe94d,#ff6b9d)!important;
+  animation:hue 4s linear infinite;box-shadow:0 0 18px rgba(196,77,255,.58)}
+.f-aurora-night{background-image:linear-gradient(#0d1420,#0d1420),linear-gradient(120deg,#22d3ee,#a78bfa,#34d399,#22d3ee)!important;
+  background-size:100% 100%,400% 400%!important;animation:flow 6s ease infinite;box-shadow:0 0 20px rgba(167,139,250,.52)}
+@keyframes flow{0%{background-position:0 0,0% 50%}50%{background-position:0 0,100% 50%}100%{background-position:0 0,0% 50%}}
+@keyframes hue{to{filter:hue-rotate(360deg)}}
+.f-dragon-flame::after,.f-forest-vine::after,.f-ocean-leviathan::after,.f-storm-simurgh::after,
+.f-cosmic-portal::after,.f-unicorn-rainbow::after,.f-aurora-night::after{
+  content:"";position:absolute;inset:0;border-radius:50%;pointer-events:none;
+  background:linear-gradient(120deg,transparent 32%,rgba(255,255,255,.3) 50%,transparent 68%);
+  background-size:250% 250%;animation:sheen 3.2s linear infinite}
+@keyframes sheen{0%{background-position:120% 120%}60%,100%{background-position:-40% -40%}}
+
+/* ── Drawer ── */
+.bd{position:fixed;inset:0;background:rgba(0,0,0,.68);backdrop-filter:blur(3px);z-index:90;display:none}
+.bd.open{display:block}
+.dw{position:fixed;top:0;height:100%;background:var(--elev);z-index:100;padding:14px;overflow-y:auto;
+  display:flex;flex-direction:column;transition:transform .25s cubic-bezier(.32,.72,.28,1)}
+.dw-l{left:0;width:274px;max-width:86vw;border-right:1px solid var(--bd);transform:translateX(-101%)}
+.dw-l.open{transform:translateX(0);box-shadow:24px 0 62px rgba(0,0,0,.55)}
+.dw-r{right:0;width:346px;max-width:93vw;border-left:1px solid var(--bd);transform:translateX(101%)}
+.dw-r.open{transform:translateX(0);box-shadow:-24px 0 62px rgba(0,0,0,.55)}
+.dwh{display:flex;justify-content:space-between;align-items:center;padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid var(--bd)}
+.dwi{background:transparent;border:1px solid transparent;color:var(--mu);padding:9px 12px;border-radius:9px;
+  text-align:left;font-size:.89rem;font-weight:600;cursor:pointer;width:100%;margin-bottom:3px;font-family:inherit;
+  transition:background .18s,color .18s,transform .12s}
+.dwi:hover{background:var(--surf2);color:var(--tx);transform:translateX(2px)}
+.dwi.active{background:linear-gradient(90deg,var(--pri),#2f6fd8);color:#fff;box-shadow:0 4px 16px rgba(59,130,246,.36)}
+.dwi.admnav{color:var(--ok);border-color:rgba(34,197,94,.26);margin-top:6px}
+.dwi.admnav:hover{background:rgba(34,197,94,.11)}
+
+/* ── Profil paneli ── */
+.phc{background:var(--surf);border:1px solid var(--bd);border-radius:12px;padding:12px;margin-bottom:12px}
+.ptop{display:flex;align-items:center;gap:12px}
+.pbox{background:rgba(6,9,15,.74);border:1px solid var(--bd);border-radius:10px;padding:11px}
+.lvl{background:rgba(250,204,21,.17);color:#fde047;border:1px solid rgba(250,204,21,.42);
+  padding:1px 7px;border-radius:999px;font-size:.72rem;font-weight:700;white-space:nowrap}
+.xpw{margin-top:10px}
+.xpt{height:11px;background:#05080d;border:1px solid var(--bd);border-radius:999px;overflow:hidden;margin-top:5px}
+.xpf{height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,var(--pri),var(--cy),var(--ok));
+  box-shadow:0 0 13px rgba(6,182,212,.52);transition:width .55s cubic-bezier(.34,1.3,.64,1)}
+.pdm{display:flex;flex-direction:column;gap:4px;margin-bottom:14px}
+.pdi{background:var(--surf);border:1px solid var(--bd);color:var(--tx);padding:10px 12px;border-radius:9px;
+  text-align:left;font-size:.87rem;font-weight:600;cursor:pointer;font-family:inherit;transition:border-color .18s,background .18s}
+.pdi:hover{border-color:var(--pri);background:var(--surf2)}
+.pds{background:rgba(6,9,15,.66);border:1px solid var(--bd);border-radius:9px;padding:10px;margin:4px 0 6px;animation:sld .25s ease}
+.ameta{margin-top:10px;padding:8px 10px;background:rgba(34,197,94,.075);border:1px dashed rgba(34,197,94,.34);
+  border-radius:9px;font-size:.75rem;animation:sld .3s ease}
+.ameta .amr{display:flex;justify-content:space-between;gap:8px;padding:2px 0}
+.odot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
+.odot.on{background:var(--ok);box-shadow:0 0 9px rgba(34,197,94,.9);animation:blk 2s ease-in-out infinite}
+.odot.off{background:#6b7280}
+.on-t{color:#4ade80;font-weight:700}.off-t{color:#9ca3af;font-weight:600}
+
+/* ── Layout ── */
+main{max-width:1240px;margin:0 auto;padding:16px 14px 60px}
+.sec{display:none}
+.sec.active{display:block;animation:sIn .35s ease}
+@keyframes sIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.card{background:var(--surf);backdrop-filter:blur(12px);border:1px solid var(--bd);border-radius:var(--r);
+  padding:16px;margin-bottom:14px;min-width:0}
+h2,h3,h4{margin-top:0}
+.mu{color:var(--mu)}
+.hero{background:radial-gradient(ellipse 70% 90% at 20% 0%,rgba(59,130,246,.2),transparent),
+  radial-gradient(ellipse 60% 80% at 85% 100%,rgba(168,85,247,.15),transparent),
+  linear-gradient(145deg,rgba(37,99,235,.13),rgba(6,182,212,.05));
+  border:1px solid var(--bd2);border-radius:20px;padding:34px 20px;text-align:center;margin-bottom:16px;animation:hIn .6s ease}
+@keyframes hIn{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
+.hero h1{font-size:clamp(1.6rem,4.4vw,2.5rem);margin:10px 0;line-height:1.2}
+.hpill{display:inline-block;padding:4px 12px;border-radius:999px;font-size:.77rem;font-weight:700;
+  background:rgba(59,130,246,.17);color:#93c5fd;border:1px solid rgba(59,130,246,.36)}
+.grad{background:linear-gradient(90deg,#60a5fa,#22d3ee,#4ade80);-webkit-background-clip:text;background-clip:text;color:transparent}
+.wst{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-width:720px;margin:22px auto 0}
+.ws{background:rgba(9,13,21,.74);border:1px solid var(--bd);border-radius:10px;padding:10px;transition:border-color .2s,transform .2s}
+.ws:hover{border-color:var(--pri);transform:translateY(-2px)}
+.ws strong{display:block;font-size:1.2rem}
+.ws span{font-size:.75rem;color:var(--mu)}
+.hban{background:linear-gradient(135deg,rgba(37,99,235,.15),rgba(6,182,212,.06));border:1px solid var(--bd);
+  border-radius:var(--r);padding:15px 18px;margin-bottom:14px;display:flex;justify-content:space-between;
+  align-items:center;flex-wrap:wrap;gap:10px}
+
+/* ── Form ── */
+input,select,textarea{background:rgba(6,9,15,.87);color:var(--tx);border:1px solid var(--bd);border-radius:8px;
+  padding:8px 11px;font-size:.9rem;font-family:inherit;width:100%;transition:border-color .18s,box-shadow .18s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px rgba(59,130,246,.17)}
+input[type=checkbox]{width:auto;accent-color:var(--pri)}
+input[type=color]{padding:2px;cursor:pointer}
+input::placeholder,textarea::placeholder{color:var(--dim)}
+.btn{background:var(--surf2);color:var(--tx);border:1px solid var(--bd);padding:7px 12px;border-radius:8px;
+  cursor:pointer;font-weight:600;font-size:.85rem;font-family:inherit;display:inline-flex;align-items:center;gap:6px;
+  text-decoration:none;white-space:nowrap;transition:border-color .18s,box-shadow .18s,transform .12s,filter .18s}
+.btn:hover{border-color:var(--bd2)}
+.btn:active{transform:translateY(1px)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-p{background:var(--pri);border-color:var(--pri);color:#fff}
+.btn-p:hover{filter:brightness(1.13);box-shadow:0 4px 16px rgba(59,130,246,.42)}
+.btn-s{background:#16a34a;border-color:#16a34a;color:#fff}
+.btn-s:hover{filter:brightness(1.13);box-shadow:0 4px 16px rgba(34,197,94,.42)}
+.btn-d{background:rgba(239,68,68,.16);border-color:rgba(239,68,68,.46);color:#fca5a5}
+.btn-d:hover{background:rgba(239,68,68,.27)}
+.btn-sm{padding:4px 9px;font-size:.77rem}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.87rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--bd)}
+th{color:var(--mu);font-size:.73rem;text-transform:uppercase;background:rgba(9,13,21,.72)}
+tr.cl{transition:background .15s}
+tr.cl:hover{background:var(--surf2);cursor:pointer}
+tr.solved{background:rgba(34,197,94,.085)}
+tr.solved:hover{background:rgba(34,197,94,.15)}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.74rem;font-weight:600;border:1px solid var(--bd)}
+.tag{background:rgba(148,180,255,.055);border:1px solid var(--bd);color:var(--mu);padding:1px 6px;
+  border-radius:5px;font-size:.72rem;margin-right:4px;display:inline-block}
+
+/* ── Məsələ ── */
+.pfull{max-width:920px;margin:0 auto 14px}
+.cftop{max-width:920px;margin:0 auto 12px;padding:10px 14px}
+.cfh{text-align:center;border-bottom:1px solid var(--bd);padding-bottom:12px;margin-bottom:16px}
+.cfh h2{margin:0 0 4px}
+.stmt{white-space:pre-wrap;font-size:.95rem;line-height:1.65;word-break:break-word}
+.stmt code{background:rgba(0,0,0,.46);border:1px solid var(--bd);padding:1px 5px;border-radius:4px;
+  font-family:var(--mono);font-size:.86em;color:#93c5fd}
+.sbox{background:rgba(6,9,15,.87);border:1px solid var(--bd);border-radius:8px;margin-top:8px;overflow:hidden}
+.shead{background:var(--surf2);padding:5px 10px;font-size:.77rem;color:var(--mu);display:flex;justify-content:space-between;align-items:center}
+.sgrid{display:grid;grid-template-columns:1fr 1fr}
+.sgrid pre{margin:0;padding:8px 10px;font-family:var(--mono);font-size:.82rem;white-space:pre-wrap;word-break:break-word}
+.sgrid pre:first-child{border-right:1px solid var(--bd)}
+.CodeMirror{height:330px;border:1px solid var(--bd);border-radius:8px;font-size:13.5px;font-family:var(--mono)}
+.CodeMirror-gutters{background:#0a0f18!important;border-right:1px solid var(--bd)!important}
+textarea.code{height:300px;font-family:var(--mono);font-size:13.5px}
+.out{background:#05080d;border:1px solid var(--bd);border-radius:8px;padding:10px;font-family:var(--mono);
+  font-size:.82rem;white-space:pre-wrap;word-break:break-word;max-height:230px;overflow-y:auto;margin-top:10px}
+
+/* ── Faiz barı ── */
+#pctW{animation:sld .4s ease}
+#pctF{transition:width .85s cubic-bezier(.34,1.4,.64,1);filter:drop-shadow(0 0 6px rgba(34,197,94,.45))}
+.pctb{display:flex;gap:12px;font-size:.72rem;color:var(--mu);margin-top:6px;flex-wrap:wrap}
+.pctb b{color:var(--tx)}
+
+/* ── Daily ── */
+.dhero{position:relative;border-radius:22px;overflow:hidden;padding:42px 22px;
+  background:linear-gradient(160deg,#1c0f2e,#0f172a 55%,#0c1220);border:1px solid rgba(249,115,22,.32);
+  text-align:center;margin-bottom:14px;animation:hIn .6s ease}
+.dhb{position:absolute;inset:0;background:radial-gradient(ellipse 60% 50% at 50% 0%,rgba(249,115,22,.24),transparent),
+  radial-gradient(ellipse 40% 40% at 18% 85%,rgba(239,68,68,.14),transparent),
+  radial-gradient(ellipse 40% 40% at 84% 80%,rgba(251,191,36,.12),transparent);animation:dpul 5s ease-in-out infinite alternate}
+.dhb::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.8;
+  background-image:radial-gradient(2px 2px at 22% 34%,rgba(251,191,36,.9),transparent),
+    radial-gradient(1.5px 1.5px at 64% 72%,rgba(249,115,22,.8),transparent),
+    radial-gradient(2px 2px at 82% 22%,rgba(254,215,170,.7),transparent),
+    radial-gradient(1.5px 1.5px at 38% 88%,rgba(239,68,68,.7),transparent);
+  background-size:220px 220px;animation:emb 11s linear infinite}
+@keyframes emb{to{background-position:0 -220px}}
+@keyframes dpul{from{opacity:.72;transform:scale(1)}to{opacity:1;transform:scale(1.06)}}
+.dhc{position:relative;z-index:2}
+.dfw{position:relative;display:inline-block;margin-bottom:10px}
+.dfl{font-size:4.2rem;display:inline-block;animation:fdan 1.8s ease-in-out infinite;filter:drop-shadow(0 0 22px rgba(249,115,22,.9))}
+@keyframes fdan{0%,100%{transform:scale(1) rotate(-2deg)}25%{transform:scale(1.08) rotate(2deg)}
+  50%{transform:scale(.96) rotate(-1deg)}75%{transform:scale(1.05) rotate(1deg)}}
+.dfr{position:absolute;inset:-16px;border-radius:50%;border:2px solid rgba(249,115,22,.46);animation:ring 2.4s ease-out infinite}
+.dfr.r2{animation-delay:1.2s}
+@keyframes ring{0%{transform:scale(.6);opacity:1}100%{transform:scale(1.75);opacity:0}}
+.dtit{font-size:clamp(1.8rem,5vw,2.7rem);margin:0 0 6px;background:linear-gradient(90deg,#fbbf24,#f97316,#ef4444,#fbbf24);
+  background-size:300% auto;-webkit-background-clip:text;background-clip:text;color:transparent;font-weight:900;
+  letter-spacing:-1px;animation:chr 4s linear infinite}
+.dsub{color:var(--mu);font-size:.94rem;max-width:480px;margin:0 auto 22px}
+.dsr{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+.dsc{background:rgba(15,23,42,.84);border:1px solid rgba(249,115,22,.34);border-radius:16px;padding:14px 26px;
+  min-width:126px;backdrop-filter:blur(8px);transition:transform .25s,box-shadow .25s,border-color .25s}
+.dsc:hover{transform:translateY(-4px);border-color:rgba(251,191,36,.62);box-shadow:0 12px 32px rgba(249,115,22,.3)}
+.dsn{display:block;font-size:1.8rem;font-weight:900;color:#fbbf24;text-shadow:0 0 16px rgba(251,191,36,.56)}
+.dsl{display:block;font-size:.69rem;color:var(--mu);text-transform:uppercase;letter-spacing:1.1px;margin-top:4px}
+.smap{display:grid;grid-template-columns:repeat(30,1fr);gap:4px;margin:12px 0}
+.sd{aspect-ratio:1;border-radius:4px;background:rgba(148,180,255,.055);border:1px solid var(--bd);transition:transform .15s}
+.sd:hover{transform:scale(1.3)}
+.sd.s1{background:rgba(34,197,94,.42)}.sd.s2{background:rgba(34,197,94,.68)}
+.sd.s3{background:var(--ok);box-shadow:0 0 8px rgba(34,197,94,.58)}
+.sd.today{border:2px solid var(--gd);animation:tpul 1.5s ease-in-out infinite}
+@keyframes tpul{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.5)}50%{box-shadow:0 0 0 6px rgba(251,191,36,0)}}
+.sleg{display:flex;gap:14px;font-size:.73rem;color:var(--mu);flex-wrap:wrap}
+.sleg i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:middle}
+.dq{background:linear-gradient(135deg,rgba(249,115,22,.1),var(--surf));border:1px solid rgba(249,115,22,.36);position:relative;overflow:hidden}
+.dq::before{content:"";position:absolute;top:0;left:-100%;width:60%;height:100%;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.055),transparent);animation:shine 4.5s ease-in-out infinite}
+@keyframes shine{0%,70%{left:-100%}100%{left:150%}}
+.dok{margin-top:12px;padding:10px 14px;background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.44);
+  border-radius:10px;color:#86efac;font-weight:600;font-size:.87rem;animation:pop .4s ease}
+@keyframes pop{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* ── Chat ── */
+.ghb{cursor:pointer;padding:10px;border-radius:10px;transition:background .2s,box-shadow .2s}
+.ghb:hover{background:rgba(59,130,246,.075);box-shadow:0 0 0 1px rgba(59,130,246,.24)}
+.tgl{display:grid;grid-template-columns:280px 1fr;gap:12px;align-items:start}
+.tgbox{background:radial-gradient(rgba(148,180,255,.05) 1px,transparent 1px),
+  linear-gradient(180deg,rgba(6,9,15,.93),rgba(6,9,15,.79));background-size:22px 22px,100% 100%;
+  border:1px solid var(--bd);border-radius:14px;height:380px;overflow-y:auto;padding:14px;margin-bottom:8px;
+  display:flex;flex-direction:column;gap:10px}
+.bub{max-width:82%;padding:10px 14px;border-radius:16px;font-size:.87rem;border:1px solid var(--bd);
+  word-break:break-word;position:relative;animation:bIn .25s ease;box-shadow:0 2px 10px rgba(0,0,0,.26)}
+@keyframes bIn{from{transform:translateY(9px);opacity:0}to{transform:none;opacity:1}}
+.bub.they{align-self:flex-start;background:linear-gradient(135deg,var(--elev),rgba(13,20,32,.92));
+  border-bottom-left-radius:4px;border-left:3px solid var(--cy)}
+.bub.me{align-self:flex-end;background:linear-gradient(135deg,rgba(37,99,235,.32),rgba(59,130,246,.19));
+  border-color:rgba(59,130,246,.46);border-bottom-right-radius:4px;border-right:3px solid var(--pri)}
+.rq{border-left:3px solid var(--cy);background:rgba(148,180,255,.065);padding:3px 7px;border-radius:4px;
+  font-size:.76rem;color:var(--mu);margin-bottom:4px}
+.bmeta{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.72rem;color:var(--mu);margin-top:4px}
+.rban{background:var(--surf2);border-left:3px solid var(--pri);padding:6px 10px;border-radius:6px;margin-bottom:6px;
+  font-size:.81rem;display:flex;justify-content:space-between;align-items:center;animation:sld .2s ease}
+.mic{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#ef4444,#dc2626);border:none;
+  color:#fff;font-size:1rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;
+  transition:transform .2s,box-shadow .2s;flex-shrink:0}
+.mic:hover{transform:scale(1.1);box-shadow:0 0 16px rgba(239,68,68,.62)}
+.mic.rec{background:linear-gradient(135deg,#dc2626,#991b1b);animation:mpul 1s ease-in-out infinite}
+@keyframes mpul{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.62)}50%{box-shadow:0 0 0 10px rgba(239,68,68,0)}}
+.vpan{background:rgba(239,68,68,.085);border:1px solid rgba(239,68,68,.34);border-radius:12px;padding:10px 13px;
+  margin-top:8px;display:flex;align-items:center;gap:11px;animation:sld .25s ease}
+.vdot{width:11px;height:11px;border-radius:50%;background:var(--no);flex-shrink:0;animation:blink .8s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.8)}}
+.vbub{display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(239,68,68,.13);
+  border:1px solid rgba(239,68,68,.32);border-radius:20px;margin-top:4px}
+.vbub audio{height:32px;max-width:210px;border-radius:999px}
+.vwave{display:flex;align-items:center;gap:2px;height:18px}
+.vwave i{width:3px;background:#fca5a5;border-radius:2px;animation:wv 1s ease-in-out infinite}
+.vwave i:nth-child(1){height:7px}.vwave i:nth-child(2){height:13px;animation-delay:.1s}
+.vwave i:nth-child(3){height:17px;animation-delay:.2s}.vwave i:nth-child(4){height:11px;animation-delay:.3s}
+.vwave i:nth-child(5){height:15px;animation-delay:.4s}
+@keyframes wv{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.45)}}
+
+/* ── Mağaza ── */
+.sfb.active{background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:0 0 13px rgba(59,130,246,.42)}
+.sgrid2,.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:12px}
+.sc{text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px;
+  transition:transform .25s,box-shadow .25s,border-color .25s}
+.sc:hover{transform:translateY(-4px);box-shadow:0 12px 28px rgba(0,0,0,.4)}
+.sc.fantasy{border-color:rgba(168,85,247,.44)}
+.sc.fantasy:hover{box-shadow:0 12px 30px rgba(168,85,247,.3);border-color:rgba(168,85,247,.72)}
+.sc.nature{border-color:rgba(34,197,94,.44)}
+.sc.nature:hover{box-shadow:0 12px 30px rgba(34,197,94,.3);border-color:rgba(34,197,94,.72)}
+
+/* ── Admin nazik panel ── */
+.pbar{position:sticky;bottom:0;z-index:40;background:rgba(13,20,32,.98);backdrop-filter:blur(14px);
+  border:1px solid var(--bd2);border-radius:12px 12px 0 0;overflow:hidden;margin-top:14px;box-shadow:0 -8px 32px rgba(0,0,0,.48)}
+.pbh{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;cursor:pointer;
+  font-size:.85rem;font-weight:600;color:var(--wa);transition:background .2s}
+.pbh:hover{background:rgba(245,158,11,.075)}
+.pbl{max-height:0;overflow:hidden;transition:max-height .35s ease}
+.pbl.open{max-height:420px;overflow-y:auto}
+.pbi{display:flex;align-items:center;gap:10px;padding:9px 16px;border-top:1px solid var(--bd);
+  font-size:.83rem;cursor:pointer;transition:background .15s}
+.pbi:hover{background:var(--surf2)}
+.pbc{background:rgba(59,130,246,.16);border:1px solid rgba(59,130,246,.36);color:#93c5fd;padding:2px 8px;
+  border-radius:6px;font-size:.73rem;font-weight:700;font-family:var(--mono)}
+.pbt{flex:1;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pbr{color:var(--wa);font-weight:700;font-size:.79rem;white-space:nowrap}
+.pbd{background:rgba(6,9,15,.82);border-top:1px dashed var(--bd);padding:13px 16px;font-size:.83rem;animation:sld .3s ease}
+@keyframes sld{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+
+/* ── Parol ── */
+#pwMsg{padding:6px 10px;background:rgba(239,68,68,.09);border:1px solid rgba(239,68,68,.36);border-radius:8px;animation:shake .35s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+#rgPass2.ok{border-color:var(--ok);box-shadow:0 0 0 2px rgba(34,197,94,.2)}
+#rgPass2.bad{border-color:var(--no);box-shadow:0 0 0 2px rgba(239,68,68,.2)}
+
+/* ── Heatmap / poll / modal ── */
+.hm{display:grid;grid-template-columns:repeat(24,1fr);gap:3px}
+.hmc{aspect-ratio:1;border-radius:3px;background:rgba(148,180,255,.06);transition:transform .12s}
+.hmc:hover{transform:scale(1.28)}
+.h1{background:#14532d}.h2{background:#16a34a}.h3{background:#22c55e}.h4{background:#4ade80;box-shadow:0 0 6px rgba(74,222,128,.5)}
+.post.pin{border-color:rgba(59,130,246,.5);background:linear-gradient(180deg,rgba(59,130,246,.09),var(--surf))}
+.popt{background:rgba(6,9,15,.82);border:1px solid var(--bd);border-radius:8px;padding:8px 10px;margin-top:6px;
+  cursor:pointer;position:relative;overflow:hidden;transition:border-color .18s}
+.popt:hover{border-color:var(--bd2)}
+.popt.voted{border-color:var(--pri)}
+.pbar2{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,rgba(59,130,246,.3),rgba(6,182,212,.2));z-index:0;transition:width .5s ease}
+.ptxt{position:relative;z-index:1;display:flex;justify-content:space-between;font-size:.86rem;gap:8px}
+.rx{background:rgba(6,9,15,.82);border:1px solid var(--bd);color:var(--tx);padding:3px 9px;border-radius:999px;
+  cursor:pointer;font-size:.81rem;font-family:inherit;transition:border-color .18s,transform .12s}
+.rx:hover{transform:scale(1.08)}
+.rx.mine{border-color:var(--pri);background:rgba(59,130,246,.19)}
+.cmt{border-left:2px solid var(--bd);padding-left:10px;margin-top:8px;font-size:.86rem}
+.cmt.rep{margin-left:18px;border-left-color:var(--pri)}
+.mb{position:fixed;inset:0;background:rgba(0,0,0,.76);backdrop-filter:blur(5px);display:none;
+  align-items:center;justify-content:center;z-index:250;padding:14px}
+.mb.open{display:flex}
+.mc{background:var(--elev);border:1px solid var(--bd2);border-radius:var(--r);max-width:520px;width:100%;
+  max-height:86vh;display:flex;flex-direction:column;animation:mIn .28s cubic-bezier(.34,1.3,.64,1);box-shadow:0 30px 80px rgba(0,0,0,.62)}
+@keyframes mIn{from{transform:scale(.94) translateY(14px);opacity:0}to{transform:none;opacity:1}}
+.mh{padding:12px 16px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.mbody{padding:14px 16px;overflow-y:auto}
+.toast{position:fixed;bottom:18px;right:18px;left:auto;background:var(--elev);border:1px solid var(--pri);
+  color:var(--tx);padding:11px 15px;border-radius:10px;z-index:400;display:none;max-width:min(340px,90vw);
+  box-shadow:0 10px 34px rgba(0,0,0,.58);animation:tIn .3s cubic-bezier(.34,1.3,.64,1);font-size:.88rem}
+@keyframes tIn{from{transform:translateY(20px);opacity:0}to{transform:none;opacity:1}}
+.spin-i{display:inline-block;width:14px;height:14px;border:2px solid var(--bd2);border-top-color:var(--pri);
+  border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle}
+
+@media(max-width:860px){
+  .g2,.g3,.tgl{grid-template-columns:1fr}
+  .wst{grid-template-columns:repeat(2,1fr)}
+  .sgrid{grid-template-columns:1fr}
+  .sgrid pre:first-child{border-right:none;border-bottom:1px solid var(--bd)}
+  .dsc{min-width:98px;padding:12px 15px}.dfl{font-size:3.3rem}
+  .smap{grid-template-columns:repeat(15,1fr)}
+  .hm{grid-template-columns:repeat(16,1fr)}
+  .vbub audio{max-width:148px}
+  .tgbox{height:320px}
+  .ppm{display:none}
+  .hban{flex-direction:column;align-items:flex-start}
+  .toast{right:12px;left:12px;bottom:12px;max-width:none}
+}
+@media(max-width:480px){
+  main{padding:12px 10px 50px}.card{padding:13px}
+  .dhero{padding:28px 14px}.dsn{font-size:1.4rem}
+  .bub{max-width:93%}.smap{grid-template-columns:repeat(10,1fr)}
+  .hero{padding:26px 15px}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
 </style>
 </head>
 <body>
 
-<div id="humanGate" class="human-gate">
-  <div class="human-card">
-    <h2 style="margin-bottom:6px;">🛡️ AzForces</h2>
-    <p class="muted" style="margin-bottom:18px;font-size:.9rem;">Sayta keçid üçün insan olduğunuzu təsdiqləyin</p>
-    <button class="human-check-box" onclick="verifyHuman()">
-      <span id="humanBoxIcon" class="human-square"></span>
-      <span>Mən robot deyiləm — Təsdiqlə</span>
+<div id="gate" class="gate">
+  <div class="gate-card">
+    <div class="gate-logo">🛡️</div>
+    <h2 style="margin:0 0 4px">AzForces</h2>
+    <p class="mu" style="margin:0 0 18px;font-size:.89rem">Davam etmək üçün insan olduğunuzu təsdiqləyin</p>
+    <button class="gate-btn" onclick="verifyHuman()">
+      <span id="gsq" class="gsq"></span><span>Mən robot deyiləm</span>
     </button>
-    <p id="humanStatusText" class="muted" style="margin-top:12px;font-size:.8rem;">Təhlükəsizlik yoxlaması</p>
+    <p id="gst" class="mu" style="margin:12px 0 0;font-size:.79rem">Təhlükəsizlik yoxlaması</p>
   </div>
 </div>
 
 <header>
-  <div class="hdr-left">
-    <button class="burger-btn" onclick="toggleLeftDrawer()">☰</button>
-    <div class="brand" onclick="switchTab('welcome')"><span class="brand-badge">AZ</span> AzForces</div>
-    <span id="hdrGuestPill" class="guest-pill" style="display:none;"></span>
+  <div class="hl">
+    <button class="burger" onclick="dwL()" aria-label="Menyu">☰</button>
+    <div class="brand" onclick="go('welcome')"><span class="bbadge">AZ</span><span>AzForces</span></div>
+    <span id="gpill" class="gpill" style="display:none"></span>
   </div>
-  <div class="hdr-right">
-    <button id="hdrAuthBtn" class="btn btn-primary" onclick="openAuthModal()">A Giriş / Qeydiyyat</button>
-    <button id="hdrProfileBtn" class="pp-btn" style="display:none;" onclick="openProfileDrawer()">
-      <div id="hdrAvatarWrap" class="av-wrap"><img id="hdrAvatarImg" src="" alt="" style="display:none;"><span id="hdrAvatarTxt">A</span></div>
-      <div class="pp-meta"><strong id="hdrUserName">—</strong><span id="hdrUserLvl" class="muted">Lv.1 · 🪙0</span></div>
+  <div class="hr">
+    <button id="hAuth" class="btn btn-p btn-sm" onclick="openM('authM')">Giriş / Qeydiyyat</button>
+    <button id="hProf" class="pp" style="display:none" onclick="openPD()">
+      <span id="hAvW" class="av"><img id="hAvI" src="" alt="" style="display:none"><span id="hAvT">A</span></span>
+      <span class="ppm"><strong id="hName">—</strong><span id="hLvl" class="mu">Lv.1 · 🪙0</span></span>
     </button>
   </div>
 </header>
 
-<div id="leftBackdrop" class="drawer-backdrop" onclick="toggleLeftDrawer(false)"></div>
-<nav id="leftDrawer" class="drawer drawer-left">
-  <div class="drawer-head"><strong>AZ AzForces</strong><button class="btn btn-sm" onclick="toggleLeftDrawer(false)">✕</button></div>
-  <button class="drawer-item" data-tab="welcome" onclick="switchTab('welcome')">🏠 Açılış & Rəylər</button>
-  <button class="drawer-item" data-tab="announcements" onclick="switchTab('announcements')">📢 Duyuru Panosu</button>
-  <button class="drawer-item" data-tab="problems" onclick="switchTab('problems')">📘 Məsələlər</button>
-  <button class="drawer-item" data-tab="submit" onclick="switchTab('submit')">🚀 Kod Göndər (1A/1B)</button>
-  <button class="drawer-item" data-tab="daily" onclick="switchTab('daily')">🔥 Günün Sualı & Seriya</button>
-  <button class="drawer-item" data-tab="gym" onclick="switchTab('gym')">🏋️ Gym (Keçmiş Yarışlar)</button>
-  <button class="drawer-item" data-tab="contests" onclick="switchTab('contests')">🏆 Yarışlar</button>
-  <button class="drawer-item" data-tab="chat" onclick="switchTab('chat')">💬 Qruplar & Söhbətlər</button>
-  <button class="drawer-item" data-tab="shop" onclick="switchTab('shop')">🛍️ Çərçivə Mağazası</button>
-  <button class="drawer-item" data-tab="games" onclick="switchTab('games')">🎮 Mini Oyunlar</button>
-  <button class="drawer-item" data-tab="propose" onclick="switchTab('propose')">✨ Sual Təklif Et (+XP)</button>
-  <button class="drawer-item" data-tab="submissions" onclick="switchTab('submissions')">📄 Göndərişlər</button>
-  <button class="drawer-item" data-tab="leaderboard" onclick="switchTab('leaderboard')">📊 Lider Lövhəsi</button>
-  <button class="drawer-item" data-tab="creative" onclick="switchTab('creative')">🎨 Yaradıcı Kodlar</button>
-  <button class="drawer-item" data-tab="playground" onclick="switchTab('playground')">⚡ Playground</button>
-  {% if admin_portal %}<button class="drawer-item admin-nav" data-tab="admin" onclick="switchTab('admin')">⚙ Gizli İdarəetmə</button>{% endif %}
-  <button class="drawer-item" onclick="openProfileDrawer()">👤 Hesabım</button>
+<div id="bdL" class="bd" onclick="dwL(false)"></div>
+<nav id="dwLeft" class="dw dw-l">
+  <div class="dwh"><strong><span class="bbadge">AZ</span> Menyu</strong><button class="btn btn-sm" onclick="dwL(false)">✕</button></div>
+  <button class="dwi" data-tab="welcome" onclick="go('welcome')">🏠 Açılış & Rəylər</button>
+  <button class="dwi" data-tab="announcements" onclick="go('announcements')">📢 Duyuru Panosu</button>
+  <button class="dwi" data-tab="problems" onclick="go('problems')">📘 Məsələlər</button>
+  <button class="dwi" data-tab="submit" onclick="go('submit')">🚀 Kod Göndər</button>
+  <button class="dwi" data-tab="daily" onclick="go('daily')">🔥 Günün Sualı & Seriya</button>
+  <button class="dwi" data-tab="gym" onclick="go('gym')">🏋️ Gym</button>
+  <button class="dwi" data-tab="contests" onclick="go('contests')">🏆 Yarışlar</button>
+  <button class="dwi" data-tab="chat" onclick="go('chat')">💬 Qruplar & Söhbətlər</button>
+  <button class="dwi" data-tab="shop" onclick="go('shop')">🛍️ Çərçivə Mağazası</button>
+  <button class="dwi" data-tab="games" onclick="go('games')">🎮 Mini Oyunlar</button>
+  <button class="dwi" data-tab="propose" onclick="go('propose')">✨ Sual Təklif Et</button>
+  <button class="dwi" data-tab="submissions" onclick="go('submissions')">📄 Göndərişlər</button>
+  <button class="dwi" data-tab="leaderboard" onclick="go('leaderboard')">📊 Lider Lövhəsi</button>
+  <button class="dwi" data-tab="creative" onclick="go('creative')">🎨 Yaradıcı Kodlar</button>
+  <button class="dwi" data-tab="playground" onclick="go('playground')">⚡ Playground</button>
+  {% if admin_portal %}<button class="dwi admnav" data-tab="admin" onclick="go('admin')">⚙ Gizli İdarəetmə</button>{% endif %}
+  <button class="dwi" onclick="openPD()">👤 Hesabım</button>
 </nav>
 
-<div id="rightBackdrop" class="drawer-backdrop" onclick="toggleProfileDrawer(false)"></div>
-<aside id="profileDrawer" class="drawer drawer-right">
-  <div class="drawer-head"><strong>Hesabım</strong><button class="btn btn-sm" onclick="toggleProfileDrawer(false)">✕</button></div>
-  <div class="prof-hero-card">
-    <div class="prof-top">
-      <div id="pdAvatarWrap" class="av-wrap av-lg"><img id="pdAvatarImg" src="" alt="" style="display:none;"><span id="pdAvatarTxt">A</span></div>
-      <div>
-        <div id="pdName" style="font-weight:800;font-size:1.05rem;">—</div>
-        <div id="pdEmail" class="muted" style="font-size:.8rem;">—</div>
-        <div class="row" style="margin-top:4px;"><span id="pdLvlBadge" class="lvl-pill">Lv.1</span><span class="muted" style="font-size:.78rem;">🪙 <b id="pdCoins">0</b></span></div>
+<div id="bdR" class="bd" onclick="dwR(false)"></div>
+<aside id="dwRight" class="dw dw-r">
+  <div class="dwh"><strong>Hesabım</strong><button class="btn btn-sm" onclick="dwR(false)">✕</button></div>
+  <div class="phc">
+    <div class="ptop">
+      <span id="pdAvW" class="av av-lg"><img id="pdAvI" src="" alt="" style="display:none"><span id="pdAvT">A</span></span>
+      <div style="min-width:0">
+        <div id="pdName" style="font-weight:800;font-size:1.03rem">—</div>
+        <div id="pdMail" class="mu" style="font-size:.78rem;overflow:hidden;text-overflow:ellipsis">—</div>
+        <div class="row" style="margin-top:4px"><span id="pdLvl" class="lvl">Lv.1</span><span class="mu" style="font-size:.77rem">🪙 <b id="pdCoin">0</b></span></div>
       </div>
     </div>
-    <div id="pdAdminMeta" class="admin-meta-box" style="display:none;">
-      <div class="amr"><span class="muted">Status:</span><span id="pdOnlineStatus">—</span></div>
-      <div class="amr"><span class="muted">Qeydiyyat:</span><span id="pdRegDate" style="font-weight:600;">—</span></div>
+    <div id="pdMeta" class="ameta" style="display:none">
+      <div class="amr"><span class="mu">Status:</span><span id="pdOn">—</span></div>
+      <div class="amr"><span class="mu">Qeydiyyat:</span><span id="pdReg" style="font-weight:600">—</span></div>
     </div>
-    <div style="display:flex;gap:10px;margin-top:10px;font-size:.8rem;"><span>⭐ <b id="pdRating">800</b></span><span>🔥 <b id="pdStreak">0</b></span></div>
-    <div class="xp-pipe-wrap">
-      <div class="row" style="justify-content:space-between;font-size:.76rem;"><span class="muted">Növbəti səviyyəyə</span><span id="pdXpNums" class="muted">0 / 100 XP</span></div>
-      <div class="xp-pipe-track"><div id="pdXpFill" class="xp-pipe-fill"></div></div>
+    <div style="display:flex;gap:10px;margin-top:10px;font-size:.79rem"><span>⭐ <b id="pdRate">800</b></span><span>🔥 <b id="pdStr">0</b></span></div>
+    <div class="xpw">
+      <div class="row" style="justify-content:space-between;font-size:.75rem"><span class="mu">Növbəti səviyyə</span><span id="pdXpN" class="mu">0 / 100 XP</span></div>
+      <div class="xpt"><div id="pdXpF" class="xpf"></div></div>
     </div>
   </div>
-  <div class="pd-menu">
-    <button class="pd-item" onclick="toggleProfileDrawer(false);openFullProfile(me.username)">👤 Tam Profil Səhifəm</button>
-    <button class="pd-item" onclick="toggleProfileDrawer(false);switchTab('shop')">🛍️ Çərçivə Mağazası & Envanter</button>
-    <button class="pd-item" onclick="toggleProfileDrawer(false);switchTab('chat');switchChatMode('dm')">💬 Qruplarım & Dost Söhbəti</button>
-    <button class="pd-item" onclick="togglePdSub('pdCoinSub')">🪙 Dosta AzCoin Göndər</button>
-    <div id="pdCoinSub" class="pd-sub" style="display:none;">
-      <input id="coinTargetInput" placeholder="İstifadəçi adı" style="margin-bottom:6px;">
-      <div class="row"><input id="coinAmtInput" type="number" min="1" placeholder="Miqdar" style="flex:1;"><button class="btn btn-primary btn-sm" onclick="sendCoinsToUser()">Göndər</button></div>
+  <div class="pdm">
+    <button class="pdi" onclick="dwR(false);openFP(me.username)">👤 Tam Profil Səhifəm</button>
+    <button class="pdi" onclick="dwR(false);go('shop')">🛍️ Mağaza & Envanter</button>
+    <button class="pdi" onclick="dwR(false);go('chat');chatMode('dm')">💬 Dost Söhbətləri</button>
+    <button class="pdi" onclick="sub('pdCoinS')">🪙 Dosta AzCoin Göndər</button>
+    <div id="pdCoinS" class="pds" style="display:none">
+      <input id="coinTo" placeholder="İstifadəçi adı" style="margin-bottom:6px">
+      <div class="row"><input id="coinAmt" type="number" min="1" placeholder="Miqdar" style="flex:1"><button class="btn btn-p btn-sm" onclick="sendCoins()">Göndər</button></div>
     </div>
-    <button class="pd-item" onclick="togglePdSub('pdAvatarSub')">📷 Profil Şəkli & Bio Düzəlişi</button>
-    <div id="pdAvatarSub" class="pd-sub" style="display:none;">
-      <textarea id="profBioInput" rows="2" placeholder="Bio yazın..." style="margin-bottom:6px;"></textarea>
-      <div class="row" style="margin-bottom:6px;"><input id="profColorInput" type="color" value="#3b82f6" style="width:46px;height:34px;padding:2px;"><input id="avatarFileInput" type="file" accept="image/*" style="flex:1;font-size:.78rem;"></div>
-      <div class="row"><button id="uploadAvBtn" class="btn btn-sm" onclick="uploadAvatar()">Yüklə</button><button class="btn btn-sm btn-primary" onclick="saveProfileBio()">Yadda saxla</button></div>
+    <button class="pdi" onclick="sub('pdAvS')">📷 Profil Şəkli & Bio</button>
+    <div id="pdAvS" class="pds" style="display:none">
+      <textarea id="bioIn" rows="2" placeholder="Bio yazın..." style="margin-bottom:6px"></textarea>
+      <div class="row" style="margin-bottom:6px"><input id="colIn" type="color" value="#3b82f6" style="width:46px;height:34px"><input id="avFile" type="file" accept="image/*" style="flex:1;font-size:.76rem"></div>
+      <div class="row"><button id="avBtn" class="btn btn-sm" onclick="upAvatar()">Yüklə</button><button class="btn btn-sm btn-p" onclick="saveBio()">Yadda saxla</button></div>
     </div>
-    <button class="pd-item" onclick="togglePdSub('pdFriendSub')">👥 Dostlar & Sorğular</button>
-    <div id="pdFriendSub" class="pd-sub" style="display:none;">
-      <div id="pdIncomingReqs" style="margin-bottom:8px;"></div>
-      <div id="pdFriendsList"></div>
-      <div class="row" style="margin-top:8px;"><input id="addFriendInput" placeholder="Dost adı əlavə et" style="flex:1;"><button class="btn btn-sm btn-success" onclick="sendFriendRequest()">+</button></div>
+    <button class="pdi" onclick="sub('pdFrS')">👥 Dostlar & Sorğular</button>
+    <div id="pdFrS" class="pds" style="display:none">
+      <div id="pdReqs" style="margin-bottom:8px"></div><div id="pdFriends"></div>
+      <div class="row" style="margin-top:8px"><input id="frIn" placeholder="Dost adı" style="flex:1"><button class="btn btn-sm btn-s" onclick="frReq()">+</button></div>
     </div>
-    <button class="pd-item" style="color:#fca5a5;" onclick="logoutAll()">🚪 Hesabdan Çıx</button>
+    <button class="pdi" style="color:#fca5a5" onclick="logout()">🚪 Hesabdan Çıx</button>
   </div>
 </aside>
 
 <main>
 
-<section id="tab-welcome" class="section">
-  <div class="welcome-hero">
-    <span class="welcome-pill">Azərbaycanın Sosial Alqoritm Platforması</span>
-    <h1>Kod yaz, dostlarla yarış, <span class="grad-txt">səviyyəni qaldır.</span></h1>
-    <p class="muted" style="max-width:640px;margin:0 auto;">11 yaşdan 3500 reytinqə qədər suallar, 16 rəqəmli kodla 20 nəfərlik qruplar, canlı söhbət, XP borusu və AzCoin Çərçivə Mağazası bir məkanda.</p>
-    <div class="row" style="justify-content:center;margin-top:18px;">
-      <button class="btn btn-primary" onclick="openAuthModal()">✨ Gmail ilə Başla / Daxil Ol</button>
-      <button class="btn" onclick="startGuestMode()">⏱ 5 Dəqiqəlik Qonaq Kimi Gəz</button>
+<section id="t-welcome" class="sec">
+  <div class="hero">
+    <span class="hpill">Azərbaycanın Sosial Alqoritm Arenası</span>
+    <h1>Kod yaz, dostlarla yarış, <span class="grad">səviyyəni qaldır.</span></h1>
+    <p class="mu" style="max-width:640px;margin:0 auto">650-dən 3500 reytinqə qədər məsələlər, 16 rəqəmli kodla 20 nəfərlik qruplar, səsli mesaj, XP sistemi və animasiyalı çərçivə mağazası — hamısı bir məkanda.</p>
+    <div class="row" style="justify-content:center;margin-top:18px">
+      <button class="btn btn-p" onclick="openM('authM')">✨ Gmail ilə Başla</button>
+      <button class="btn" onclick="guest()">⏱ 5 Dəqiqəlik Qonaq</button>
     </div>
-    <div class="welcome-stats">
-      <div class="w-stat"><strong id="wStatUsers">0</strong><span>İstifadəçi</span></div>
-      <div class="w-stat"><strong id="wStatProbs">0</strong><span>Məsələ</span></div>
-      <div class="w-stat"><strong id="wStatSubs">0</strong><span>Göndəriş</span></div>
-      <div class="w-stat"><strong id="wStatRating">5.0 ★</strong><span>Orta Reytinq</span></div>
+    <div class="wst">
+      <div class="ws"><strong id="stU">0</strong><span>İstifadəçi</span></div>
+      <div class="ws"><strong id="stP">0</strong><span>Məsələ</span></div>
+      <div class="ws"><strong id="stS">0</strong><span>Göndəriş</span></div>
+      <div class="ws"><strong id="stR">5.0 ★</strong><span>Orta Reytinq</span></div>
     </div>
   </div>
-  <div class="grid-3">
-    <div class="card"><h3>📘 Codeforces Məsələ Sistemi</h3><p class="muted" style="font-size:.86rem;">Geniş sual oxuma, tək kliklə kopyalama, vahid 1A/1B kod göndərmə və faiz əsaslı keyfiyyət skoru.</p></div>
-    <div class="card"><h3>💬 Qruplar & Səsli Mesaj</h3><p class="muted" style="font-size:.86rem;">Qrup profili, mesaj yanıtlama, sual yönləndirmə, 🎤 səsli mesaj və 20 nəfərlik gizli otaqlar.</p></div>
-    <div class="card"><h3>🔥 Seriya & Fantastik Çərçivələr</h3><p class="muted" style="font-size:.86rem;">Günün sualını həll et, seriyanı qırma, əjdaha və okean animasiyalı çərçivələr al.</p></div>
+  <div class="g3">
+    <div class="card"><h3>📘 Codeforces Sistemi</h3><p class="mu" style="font-size:.85rem">Geniş şərt oxunuşu, tək kliklə kopyalama, vahid 1A/1B göndərmə və faiz əsaslı keyfiyyət skoru.</p></div>
+    <div class="card"><h3>💬 Qrup & Səsli Mesaj</h3><p class="mu" style="font-size:.85rem">Qrup profili, mesaj yanıtlama, sual yönləndirmə və 🎤 səsli mesaj göndərmə.</p></div>
+    <div class="card"><h3>🔥 Seriya & Çərçivələr</h3><p class="mu" style="font-size:.85rem">Günün sualını həll et, seriyanı qırma, əjdaha və okean animasiyalı çərçivələr topla.</p></div>
   </div>
   <div class="card">
     <h3>İstifadəçi Dəyərləndirmələri</h3>
-    <div id="siteReviewsList"></div>
-    <div id="reviewFormBox" style="display:none;margin-top:14px;border-top:1px solid var(--border);padding-top:12px;">
-      <div class="row" style="margin-bottom:8px;">
-        <select id="revStars" style="width:160px;"><option value="5">★★★★★ (5)</option><option value="4">★★★★☆ (4)</option><option value="3">★★★☆☆ (3)</option><option value="2">★★☆☆☆ (2)</option><option value="1">★☆☆☆☆ (1)</option></select>
+    <div id="revList"></div>
+    <div id="revForm" style="display:none;margin-top:14px;border-top:1px solid var(--bd);padding-top:12px">
+      <div class="row" style="margin-bottom:8px">
+        <select id="revStar" style="width:170px"><option value="5">★★★★★ (5)</option><option value="4">★★★★☆ (4)</option><option value="3">★★★☆☆ (3)</option><option value="2">★★☆☆☆ (2)</option><option value="1">★☆☆☆☆ (1)</option></select>
       </div>
-      <div class="row"><input id="revComment" placeholder="Rəyiniz..." style="flex:1;"><button class="btn btn-primary btn-sm" onclick="submitSiteReview()">Göndər</button></div>
+      <div class="row"><input id="revTxt" placeholder="Rəyiniz..." style="flex:1"><button class="btn btn-p btn-sm" onclick="sendRev()">Göndər</button></div>
     </div>
   </div>
 </section>
 
-<section id="tab-announcements" class="section">
-  <div class="hero-banner">
-    <div><h2 style="margin:0;">AzForces Duyuru Panosu</h2><span class="muted" style="font-size:.82rem;">Rəsmi elanlar, etkinliklər və icma anketləri</span></div>
-    <button id="newPostBtn" class="btn btn-primary btn-sm" style="display:none;" onclick="togglePostForm()">+ Duyuru / Anket Paylaş</button>
+<section id="t-announcements" class="sec">
+  <div class="hban">
+    <div><h2 style="margin:0">Duyuru Panosu</h2><span class="mu" style="font-size:.81rem">Rəsmi elanlar, etkinliklər və icma anketləri</span></div>
+    <button id="newPostBtn" class="btn btn-p btn-sm" style="display:none" onclick="sub('postForm')">+ Duyuru / Anket</button>
   </div>
-  <div id="postFormBox" class="card" style="display:none;">
-    <input id="postTitle" placeholder="Başlıq" style="margin-bottom:8px;">
-    <textarea id="postBody" rows="3" placeholder="Məzmun..." style="margin-bottom:8px;"></textarea>
-    <div class="row" style="margin-bottom:8px;">
-      <input id="postPollOpts" placeholder="Anket variantları (vergüllə ayırın)" style="flex:1;">
-      <label style="font-size:.82rem;white-space:nowrap;"><input type="checkbox" id="postPin" checked style="width:auto;"> 📌 Başa sabitlə</label>
+  <div id="postForm" class="card" style="display:none">
+    <input id="pTitle" placeholder="Başlıq" style="margin-bottom:8px">
+    <textarea id="pBody" rows="3" placeholder="Məzmun..." style="margin-bottom:8px"></textarea>
+    <div class="row" style="margin-bottom:8px">
+      <input id="pPoll" placeholder="Anket variantları (vergüllə)" style="flex:1">
+      <label style="font-size:.81rem;white-space:nowrap"><input type="checkbox" id="pPin" checked> 📌 Sabitlə</label>
     </div>
-    <button class="btn btn-primary" onclick="createPost()">Yayımla</button>
+    <button class="btn btn-p" onclick="mkPost()">Yayımla</button>
   </div>
-  <div id="postsList"></div>
+  <div id="postList"></div>
 </section>
 
-<section id="tab-problems" class="section">
-  <div id="problemListView">
-    <div class="hero-banner">
-      <h2 style="margin:0;">Məsələlər</h2>
+<section id="t-problems" class="sec">
+  <div id="pListView">
+    <div class="hban">
+      <h2 style="margin:0">Məsələlər</h2>
       <div class="row">
-        <input id="problemSearch" placeholder="Axtar..." style="width:180px;" oninput="renderProblemsTable()">
-        <label style="font-size:.82rem;"><input type="checkbox" id="hideTagsToggle" onchange="renderProblemsTable()" style="width:auto;"> Teqləri gizlət</label>
-        <button class="btn btn-sm" onclick="loadProblems('archive')">Yenilə</button>
+        <input id="pSearch" placeholder="Axtar..." style="width:170px" oninput="renderProblems()">
+        <label style="font-size:.81rem;white-space:nowrap"><input type="checkbox" id="hideTags" onchange="renderProblems()"> Teqləri gizlət</label>
+        <button class="btn btn-sm" onclick="loadProblems()">Yenilə</button>
       </div>
     </div>
-    <div class="card table-wrap"><table><thead><tr><th>Kod</th><th>Məsələ</th><th>Teqlər</th><th>Reytinq</th><th>Həll</th><th>At</th></tr></thead><tbody id="problemsTableBody"></tbody></table></div>
+    <div class="card tw"><table><thead><tr><th>Kod</th><th>Məsələ</th><th>Teqlər</th><th>Reytinq</th><th>Həll</th><th>🔗</th></tr></thead><tbody id="pBody"></tbody></table></div>
   </div>
-  <div id="problemReadView" style="display:none;">
-    <div class="cf-topbar card row" style="justify-content:space-between;">
-      <button class="btn btn-sm" onclick="backToProblemList()">← Siyahı</button>
+  <div id="pReadView" style="display:none">
+    <div class="cftop card row" style="justify-content:space-between">
+      <button class="btn btn-sm" onclick="backList()">← Siyahı</button>
       <div class="row">
-        <button class="btn btn-sm btn-primary" onclick="goSubmitForCurrent()">🚀 Kod Göndər</button>
-        <button class="btn btn-sm" onclick="copyWholeProblem()">📋 Sualı Kopyala</button>
-        <button class="btn btn-sm" onclick="shareProblemLink(currentProblem.id,currentProblem.title)">🔗 Link</button>
-        <button class="btn btn-sm" onclick="openForwardModal(currentProblem.id)">↗ Qrupa/Dosta At</button>
-        <button id="deleteProblemBtn" class="btn btn-sm btn-danger" style="display:none;" onclick="deleteCurrentProblem()">Sil</button>
+        <button class="btn btn-sm btn-p" onclick="goSubmit()">🚀 Kod Göndər</button>
+        <button class="btn btn-sm" onclick="copyProblem()">📋 Kopyala</button>
+        <button class="btn btn-sm" onclick="shareP(cur.id,cur.title)">🔗 Link</button>
+        <button class="btn btn-sm" onclick="openFwd(cur.id)">↗ Yönləndir</button>
+        <button id="delPBtn" class="btn btn-sm btn-d" style="display:none" onclick="delProblem()">Sil</button>
       </div>
     </div>
-    <div class="card prob-full-card">
-      <div class="cf-header"><h2 id="probTitle">—</h2><div id="probLimits" class="muted" style="font-size:.8rem;"></div><div id="probAuthorMeta" class="muted" style="font-size:.8rem;margin-top:4px;"></div></div>
-      <div id="probStatement" class="statement-body"></div>
-      <h4 style="margin-top:16px;">Input</h4><div id="probInputSpec" class="statement-body"></div>
-      <h4 style="margin-top:12px;">Output</h4><div id="probOutputSpec" class="statement-body"></div>
-      <h4 style="margin-top:16px;">Examples</h4><div id="probSamples"></div>
-      <div id="probNoteWrap" style="display:none;"><h4 style="margin-top:16px;">Note</h4><div id="probNote" class="statement-body"></div></div>
-      <div id="probEditorialWrap" style="display:none;"><h4 style="margin-top:16px;">Həll İzahı</h4><div id="probEditorial" class="statement-body"></div></div>
+    <div class="card pfull">
+      <div class="cfh"><h2 id="rTitle">—</h2><div id="rLim" class="mu" style="font-size:.79rem"></div><div id="rAuth" class="mu" style="font-size:.79rem;margin-top:4px"></div></div>
+      <div id="rStmt" class="stmt"></div>
+      <h4 style="margin-top:16px">Input</h4><div id="rIn" class="stmt"></div>
+      <h4 style="margin-top:12px">Output</h4><div id="rOut" class="stmt"></div>
+      <h4 style="margin-top:16px">Examples</h4><div id="rSmp"></div>
+      <div id="rNoteW" style="display:none"><h4 style="margin-top:16px">Note</h4><div id="rNote" class="stmt"></div></div>
+      <div id="rEdW" style="display:none"><h4 style="margin-top:16px">Həll İzahı</h4><div id="rEd" class="stmt"></div></div>
     </div>
   </div>
 </section>
 
-<section id="tab-submit" class="section">
-  <div class="card" style="max-width:860px;margin:0 auto;">
-    <h2>Kod Göndər (Vahid Yoxlama)</h2>
-    <p class="muted" style="font-size:.86rem;">Sual kodunu (məs: 1A, 1B) yazın və kodunuzu atın — nəticə faizlə göstərilir.</p>
-    <div class="row" style="margin:12px 0;"><input id="subProbCode" placeholder="Məsələ Kodu (1A, 1B, 1E)" style="width:240px;" oninput="lookupSubmitProblem()"><span id="subProbHint" style="font-size:.82rem;"></span></div>
-    <div class="row" style="margin-bottom:10px;">
-      <select id="solveLang" onchange="onSolveLangChange()" style="width:180px;"><option value="python">Python 3</option><option value="cpp">C++ (GCC)</option><option value="c">C</option><option value="java">Java</option><option value="javascript">JavaScript (Node)</option></select>
+<section id="t-submit" class="sec">
+  <div class="card" style="max-width:880px;margin:0 auto">
+    <h2>Kod Göndər</h2>
+    <p class="mu" style="font-size:.85rem">Məsələ kodunu yazın (1A, 1B...) — nəticə faizlə qiymətləndirilir.</p>
+    <div class="row" style="margin:12px 0"><input id="subCode" placeholder="Məsələ kodu (1A)" style="width:230px" oninput="lookup()"><span id="subHint" style="font-size:.81rem"></span></div>
+    <div class="row" style="margin-bottom:10px">
+      <select id="sLang" onchange="sMode()" style="width:180px"><option value="python">Python 3</option><option value="cpp">C++ (GCC)</option><option value="c">C</option><option value="java">Java</option><option value="javascript">JavaScript</option></select>
     </div>
-    <textarea id="solveEditorTextarea" class="code-fallback"></textarea>
-    <div style="margin-top:10px;">
-      <input id="solveStdin" placeholder="Öz testimdə yoxla (Custom Stdin)" style="margin-bottom:8px;">
-      <div class="row"><button class="btn" onclick="runSolveCode()">▶ Test Et</button><button id="submitSolveBtn" class="btn btn-primary" onclick="submitSolution()">✔ Kodu Göndər (Submit)</button></div>
+    <textarea id="sTa" class="code"></textarea>
+    <div style="margin-top:10px">
+      <input id="sStdin" placeholder="Öz testim (Custom Stdin)" style="margin-bottom:8px">
+      <div class="row"><button class="btn" onclick="runS()">▶ Test Et</button><button id="subBtn" class="btn btn-p" onclick="submitS()">✔ Kodu Göndər</button></div>
     </div>
-    <div id="solveResultBox" class="console-out" style="display:none;"></div>
-    <div id="solvePctWrap" style="display:none;margin-top:10px;">
-      <div class="row" style="justify-content:space-between;font-size:.82rem;margin-bottom:4px;"><span class="muted">Keyfiyyət Skoru</span><strong id="solvePctTxt" style="color:var(--accent);">0%</strong></div>
-      <div class="xp-pipe-track" style="height:14px;"><div id="solvePctFill" class="xp-pipe-fill" style="width:0%;"></div></div>
-      <div id="solvePctBreak" class="pct-break"></div>
+    <div id="sOut" class="out" style="display:none"></div>
+    <div id="pctW" style="display:none;margin-top:12px">
+      <div class="row" style="justify-content:space-between;font-size:.82rem;margin-bottom:4px"><span class="mu">Keyfiyyət Skoru</span><strong id="pctT" style="color:var(--cy);font-size:1rem">0%</strong></div>
+      <div class="xpt" style="height:14px"><div id="pctF" class="xpf" style="width:0"></div></div>
+      <div id="pctB" class="pctb"></div>
     </div>
   </div>
 </section>
 
-<section id="tab-daily" class="section">
-  <div class="daily-hero">
-    <div class="daily-hero-bg"></div>
-    <div class="daily-hero-content">
-      <div class="daily-flame-wrap"><span class="daily-flame">🔥</span><div class="daily-flame-ring"></div><div class="daily-flame-ring r2"></div></div>
-      <h2 class="daily-title">Günün Sualı</h2>
-      <p class="daily-sub">Hər gün yeni çağırış — seriyanı qırma, hər 7 gündə +200 AzCoin sandığı qazan!</p>
-      <div class="daily-streak-row">
-        <div class="daily-streak-card"><span class="daily-streak-num" id="dailyStreakNum">0</span><span class="daily-streak-lbl">Gün Seriyası</span></div>
-        <div class="daily-streak-card"><span class="daily-streak-num" id="dailyXpMult">×1</span><span class="daily-streak-lbl">Bonus Səviyyəsi</span></div>
-        <div class="daily-streak-card"><span class="daily-streak-num" id="dailyTimerTxt">--:--:--</span><span class="daily-streak-lbl">Yeni Sual</span></div>
+<section id="t-daily" class="sec">
+  <div class="dhero">
+    <div class="dhb"></div>
+    <div class="dhc">
+      <div class="dfw"><span class="dfl">🔥</span><span class="dfr"></span><span class="dfr r2"></span></div>
+      <h2 class="dtit">Günün Sualı</h2>
+      <p class="dsub">Hər gün yeni çağırış — seriyanı qırma, hər 7 gündə +200 AzCoin sandığı!</p>
+      <div class="dsr">
+        <div class="dsc"><span class="dsn" id="dStr">0</span><span class="dsl">Gün Seriyası</span></div>
+        <div class="dsc"><span class="dsn" id="dMult">×1</span><span class="dsl">Bonus</span></div>
+        <div class="dsc"><span class="dsn" id="dTime" style="font-size:1.4rem">--:--:--</span><span class="dsl">Yeni Sual</span></div>
       </div>
     </div>
   </div>
   <div class="card">
-    <h3>📅 Seriya Xəritəsi (Son 30 gün)</h3>
-    <div id="dailyStreakMap" class="streak-map"></div>
-    <div class="streak-legend"><span><span class="dot dot-0"></span>Həll yoxdur</span><span><span class="dot dot-1"></span>1 həll</span><span><span class="dot dot-2"></span>2-3 həll</span><span><span class="dot dot-3"></span>4+ həll</span></div>
+    <h3>📅 Seriya Xəritəsi (30 gün)</h3>
+    <div id="dMap" class="smap"></div>
+    <div class="sleg"><span><i style="background:rgba(148,180,255,.08)"></i>Yoxdur</span><span><i style="background:rgba(34,197,94,.42)"></i>1</span><span><i style="background:rgba(34,197,94,.68)"></i>2-3</span><span><i style="background:#22c55e"></i>4+</span></div>
   </div>
-  <div id="dailyQuestionCard" class="card daily-q-card">
-    <div class="row" style="justify-content:space-between;align-items:center;">
-      <div><span class="badge" style="border-color:var(--warning);color:var(--warning);">⭐ Günün Çağırışı</span><h3 id="dailyQTitle" style="margin:8px 0 4px;">Yüklənir...</h3><span id="dailyQMeta" class="muted" style="font-size:.82rem;"></span></div>
-      <div class="row"><button id="dailySolveBtn" class="btn btn-primary" onclick="openDailyProblem()">📘 Sualı Aç</button><button id="dailyPickBtn" class="btn btn-sm" style="display:none;" onclick="adminSetDaily()">⚙ Dəyiş</button></div>
+  <div class="card dq">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <div style="min-width:0">
+        <span class="badge" style="border-color:var(--wa);color:var(--wa)">⭐ Günün Çağırışı</span>
+        <h3 id="dQTitle" style="margin:8px 0 4px">Yüklənir...</h3>
+        <span id="dQMeta" class="mu" style="font-size:.81rem"></span>
+      </div>
+      <div class="row"><button id="dSolve" class="btn btn-p" onclick="openDaily()">📘 Sualı Aç</button><button id="dPick" class="btn btn-sm" style="display:none" onclick="pickDaily()">⚙ Dəyiş</button></div>
     </div>
-    <div id="dailySolvedBanner" class="daily-solved-banner" style="display:none;">✔ Bugünkü çağırışı tamamladınız! Seriya davam edir.</div>
+    <div id="dDone" class="dok" style="display:none">✔ Bugünkü çağırışı tamamladınız! Seriya davam edir.</div>
   </div>
   <div class="card">
     <h3>🏆 Ən Uzun Seriyalar</h3>
-    <div class="table-wrap"><table><thead><tr><th>#</th><th>İstifadəçi</th><th>Seriya</th><th>Bu gün həll</th></tr></thead><tbody id="dailyStreakBoard"></tbody></table></div>
+    <div class="tw"><table><thead><tr><th>#</th><th>İstifadəçi</th><th>Seriya</th><th>Bu gün</th></tr></thead><tbody id="dBoard"></tbody></table></div>
   </div>
 </section>
 
-<section id="tab-gym" class="section">
-  <div class="hero-banner"><div><h2 style="margin:0;">Gym (Keçmiş Yarışlar)</h2><span class="muted" style="font-size:.82rem;">Bitmiş yarışların sualları avtomatik buraya köçür.</span></div><button class="btn btn-sm" onclick="loadGym()">Yenilə</button></div>
-  <div class="card table-wrap"><table><thead><tr><th>Kod</th><th>Məsələ</th><th>Teqlər</th><th>Reytinq</th><th>Həll</th><th>At</th></tr></thead><tbody id="gymTableBody"></tbody></table></div>
+<section id="t-gym" class="sec">
+  <div class="hban"><div><h2 style="margin:0">Gym</h2><span class="mu" style="font-size:.81rem">Bitmiş yarışların sualları avtomatik buraya köçür</span></div><button class="btn btn-sm" onclick="loadGym()">Yenilə</button></div>
+  <div class="card tw"><table><thead><tr><th>Kod</th><th>Məsələ</th><th>Teqlər</th><th>Reytinq</th><th>Həll</th></tr></thead><tbody id="gymBody"></tbody></table></div>
 </section>
 
-<section id="tab-contests" class="section">
-  <div class="hero-banner"><h2 style="margin:0;">Etkinliklər & Yarışlar</h2><button class="btn btn-sm" onclick="loadContests()">Yenilə</button></div>
-  <div id="contestsList"></div>
+<section id="t-contests" class="sec">
+  <div class="hban"><h2 style="margin:0">Etkinliklər & Yarışlar</h2><button class="btn btn-sm" onclick="loadContests()">Yenilə</button></div>
+  <div id="cList"></div>
 </section>
 
-<section id="tab-chat" class="section">
-  <div class="row" style="margin-bottom:12px;">
-    <button id="subTabGroupsBtn" class="btn btn-primary btn-sm" onclick="switchChatMode('groups')">👥 Qruplar (16-lıq kod)</button>
-    <button id="subTabDmBtn" class="btn btn-sm" onclick="switchChatMode('dm')">✈️ Şəxsi Söhbətlər</button>
+<section id="t-chat" class="sec">
+  <div class="row" style="margin-bottom:12px">
+    <button id="chG" class="btn btn-p btn-sm" onclick="chatMode('groups')">👥 Qruplar</button>
+    <button id="chD" class="btn btn-sm" onclick="chatMode('dm')">✈️ Şəxsi Söhbətlər</button>
   </div>
-  <div id="chatGroupsPane">
-    <div id="roomLobbyView" class="grid-2">
+  <div id="paneG">
+    <div id="roomLobby" class="g2">
       <div class="card">
-        <h3>Mənim Qruplarım & Qoşul</h3>
-        <div class="row" style="margin:10px 0;"><input id="joinRoomCode" placeholder="16 rəqəmli kod" style="flex:1;"><button class="btn btn-primary btn-sm" onclick="joinRoom()">Qoşul</button></div>
-        <div id="myRoomsList">Yüklənir...</div>
+        <h3>Qruplarım & Qoşul</h3>
+        <div class="row" style="margin:10px 0"><input id="joinCode" placeholder="16 rəqəmli kod" style="flex:1"><button class="btn btn-p btn-sm" onclick="joinRoom()">Qoşul</button></div>
+        <div id="myRooms">Yüklənir...</div>
       </div>
       <div class="card">
-        <h3>Yeni Qrup Yarat (Maks. 20)</h3>
-        <input id="crRoomTitle" placeholder="Qrup adı" style="margin-bottom:6px;">
-        <textarea id="crRoomBio" rows="2" placeholder="Bio..." style="margin-bottom:6px;"></textarea>
-        <div class="row" style="margin-bottom:6px;"><input id="crRoomColor" type="color" value="#0ea5e9" style="width:46px;height:34px;padding:2px;"><input id="crRoomDur" type="number" placeholder="Dəq (0=limitsiz)" style="flex:1;"><input id="crRoomVoice" placeholder="Səs linki" style="flex:2;"></div>
-        <div id="crRoomProblemsList" style="max-height:140px;overflow-y:auto;margin-bottom:8px;"></div>
-        <button class="btn btn-success" onclick="createRoom()">Qrup Yarat</button>
+        <h3>Yeni Qrup (maks. 20)</h3>
+        <input id="crTitle" placeholder="Qrup adı" style="margin-bottom:6px">
+        <textarea id="crBio" rows="2" placeholder="Bio..." style="margin-bottom:6px"></textarea>
+        <div class="row" style="margin-bottom:6px"><input id="crCol" type="color" value="#0ea5e9" style="width:46px;height:34px"><input id="crDur" type="number" placeholder="Dəq (0=limitsiz)" style="flex:1"><input id="crVoice" placeholder="Səs linki" style="flex:2"></div>
+        <div id="crProbs" style="max-height:140px;overflow-y:auto;margin-bottom:8px"></div>
+        <button class="btn btn-s" onclick="mkRoom()">Qrup Yarat</button>
       </div>
     </div>
-    <div id="roomActiveView" class="card" style="display:none;">
-      <div class="group-header-bar row" style="justify-content:space-between;" onclick="openGroupProfile()">
+    <div id="roomActive" class="card" style="display:none">
+      <div class="ghb row" style="justify-content:space-between" onclick="groupProfile()">
         <div class="row">
-          <div id="rmAvatarWrap" class="av-wrap"><img id="rmAvatarImg" src="" alt="" style="display:none;"><span id="rmAvatarTxt">Q</span></div>
-          <div><strong id="rmTitle">—</strong><div class="muted" style="font-size:.76rem;"><span id="rmBio"></span> · <span id="rmMemCount">0</span>/20 üzv <span id="rmTimerWrap"></span></div></div>
+          <span id="rmAvW" class="av"><img id="rmAvI" src="" alt="" style="display:none"><span id="rmAvT">Q</span></span>
+          <div><strong id="rmTitle">—</strong><div class="mu" style="font-size:.75rem"><span id="rmBio"></span> · <span id="rmCnt">0</span>/20 <span id="rmTimer"></span></div></div>
         </div>
         <div class="row">
-          <a id="rmVoiceBtn" href="#" target="_blank" class="btn btn-sm" style="display:none;">🎧 Səs</a>
-          <button class="btn btn-sm" onclick="event.stopPropagation();copyRoomCode()">📋 Kod</button>
-          <button class="btn btn-sm" onclick="event.stopPropagation();leaveRoomView()">Geri</button>
+          <a id="rmVoice" href="#" target="_blank" rel="noopener" class="btn btn-sm" style="display:none">🎧 Səs</a>
+          <button class="btn btn-sm" onclick="event.stopPropagation();copyTxt(roomCode,'Kod kopyalandı!')">📋</button>
+          <button class="btn btn-sm" onclick="event.stopPropagation();leaveRoom()">Geri</button>
         </div>
       </div>
-      <div id="rmProblemsBar" style="display:none;margin:8px 0;"></div>
-      <div id="rmChatBox" class="tg-chat-box"></div>
-      <div id="rmReplyBanner" class="reply-banner" style="display:none;"><span id="rmReplyText"></span><button class="btn btn-sm" onclick="cancelRoomReply()">✕</button></div>
+      <div id="rmProbs" style="display:none;margin:8px 0"></div>
+      <div id="rmBox" class="tgbox"></div>
+      <div id="rmReply" class="rban" style="display:none"><span id="rmReplyT"></span><button class="btn btn-sm" onclick="rmReplyId=null;$('rmReply').style.display='none'">✕</button></div>
       <div class="row">
-        <input id="rmChatInput" placeholder="Mesaj yaz..." style="flex:1;" onkeydown="if(event.key==='Enter')sendRoomChat()">
-        <button id="rmVoiceBtn2" class="voice-mic-btn" onclick="toggleVoiceRecord('room')" title="Səsli mesaj">🎤</button>
-        <button class="btn btn-primary btn-sm" onclick="sendRoomChat()">Göndər</button>
+        <input id="rmIn" placeholder="Mesaj yaz..." style="flex:1" onkeydown="if(event.key==='Enter')sendRoom()">
+        <button id="rmMic" class="mic" onclick="voiceToggle('room')" title="Səsli mesaj">🎤</button>
+        <button class="btn btn-p btn-sm" onclick="sendRoom()">Göndər</button>
       </div>
-      <div id="rmVoicePanel" class="voice-panel" style="display:none;">
-        <span class="voice-rec-dot"></span><span id="rmVoiceTimer">0:00</span>
-        <div class="row" style="margin-left:auto;"><button class="btn btn-sm btn-danger" onclick="cancelVoiceRecord('room')">Ləğv</button><button class="btn btn-sm btn-success" onclick="sendVoiceRecord('room')">✔ Göndər</button></div>
-      </div>
+      <div id="rmVP" class="vpan" style="display:none"><span class="vdot"></span><span id="rmVT">0:00</span><div class="row" style="margin-left:auto"><button class="btn btn-sm btn-d" onclick="voiceCancel('room')">Ləğv</button><button class="btn btn-sm btn-s" onclick="voiceSend('room')">✔ Göndər</button></div></div>
     </div>
   </div>
-  <div id="chatDmPane" style="display:none;">
-    <div class="tg-layout">
+  <div id="paneD" style="display:none">
+    <div class="tgl">
       <div class="card">
         <h4>Söhbət Aç</h4>
-        <div class="row" style="margin:8px 0;"><input id="dmPartnerInput" placeholder="İstifadəçi adı" style="flex:1;"><button class="btn btn-sm btn-primary" onclick="openDmWith(document.getElementById('dmPartnerInput').value)">Aç</button></div>
-        <div id="dmChatsList">Söhbət seçin</div>
+        <div class="row" style="margin:8px 0"><input id="dmIn" placeholder="İstifadəçi adı" style="flex:1"><button class="btn btn-sm btn-p" onclick="openDM($('dmIn').value)">Aç</button></div>
+        <div id="dmList">Söhbət seçin</div>
       </div>
       <div class="card">
-        <div class="row" style="justify-content:space-between;margin-bottom:8px;"><strong id="dmPartnerTitle">✈️ —</strong><button class="btn btn-sm" onclick="closeDm()">✕</button></div>
-        <div id="dmChatBox" class="tg-chat-box"></div>
-        <div id="dmReplyBanner" class="reply-banner" style="display:none;"><span id="dmReplyText"></span><button class="btn btn-sm" onclick="cancelDmReply()">✕</button></div>
+        <div class="row" style="justify-content:space-between;margin-bottom:8px"><strong id="dmTitle">✈️ —</strong><button class="btn btn-sm" onclick="closeDM()">✕</button></div>
+        <div id="dmBox" class="tgbox"></div>
+        <div id="dmReply" class="rban" style="display:none"><span id="dmReplyT"></span><button class="btn btn-sm" onclick="dmReplyId=null;$('dmReply').style.display='none'">✕</button></div>
         <div class="row">
-          <input id="dmChatInput" placeholder="Mesaj yaz..." style="flex:1;" onkeydown="if(event.key==='Enter')sendDm()">
-          <button id="dmVoiceBtn" class="voice-mic-btn" onclick="toggleVoiceRecord('dm')" title="Səsli mesaj">🎤</button>
-          <button class="btn btn-primary btn-sm" onclick="sendDm()">Göndər</button>
+          <input id="dmMsg" placeholder="Mesaj yaz..." style="flex:1" onkeydown="if(event.key==='Enter')sendDM()">
+          <button id="dmMic" class="mic" onclick="voiceToggle('dm')" title="Səsli mesaj">🎤</button>
+          <button class="btn btn-p btn-sm" onclick="sendDM()">Göndər</button>
         </div>
-        <div id="dmVoicePanel" class="voice-panel" style="display:none;">
-          <span class="voice-rec-dot"></span><span id="dmVoiceTimer">0:00</span>
-          <div class="row" style="margin-left:auto;"><button class="btn btn-sm btn-danger" onclick="cancelVoiceRecord('dm')">Ləğv</button><button class="btn btn-sm btn-success" onclick="sendVoiceRecord('dm')">✔ Göndər</button></div>
-        </div>
+        <div id="dmVP" class="vpan" style="display:none"><span class="vdot"></span><span id="dmVT">0:00</span><div class="row" style="margin-left:auto"><button class="btn btn-sm btn-d" onclick="voiceCancel('dm')">Ləğv</button><button class="btn btn-sm btn-s" onclick="voiceSend('dm')">✔ Göndər</button></div></div>
       </div>
     </div>
   </div>
 </section>
 
-<section id="tab-shop" class="section">
-  <div class="hero-banner">
-    <div><h2 style="margin:0;">Avatar Çərçivə Mağazası</h2><span class="muted" style="font-size:.82rem;">Fantastik və təbiət çərçivələri canlı animasiyalıdır!</span></div>
-    <span class="badge">🪙 <b id="shopCoins">0</b> AzCoin</span>
+<section id="t-shop" class="sec">
+  <div class="hban">
+    <div><h2 style="margin:0">Çərçivə Mağazası</h2><span class="mu" style="font-size:.81rem">Fantastik və təbiət çərçivələri canlı animasiyalıdır</span></div>
+    <span class="badge" style="font-size:.85rem">🪙 <b id="shopCoin">0</b></span>
   </div>
-  <div class="row" style="margin-bottom:12px;">
-    <button class="btn btn-sm shop-filter-btn active" onclick="filterShop('all')">Hamısı</button>
-    <button class="btn btn-sm shop-filter-btn" onclick="filterShop('classic')">🎨 Klassik</button>
-    <button class="btn btn-sm shop-filter-btn" onclick="filterShop('fantasy')">🐉 Fantaziya</button>
-    <button class="btn btn-sm shop-filter-btn" onclick="filterShop('nature')">🌿 Təbiət</button>
+  <div class="row" style="margin-bottom:12px">
+    <button class="btn btn-sm sfb active" data-f="all" onclick="shopFilter('all')">Hamısı</button>
+    <button class="btn btn-sm sfb" data-f="classic" onclick="shopFilter('classic')">🎨 Klassik</button>
+    <button class="btn btn-sm sfb" data-f="fantasy" onclick="shopFilter('fantasy')">🐉 Fantaziya</button>
+    <button class="btn btn-sm sfb" data-f="nature" onclick="shopFilter('nature')">🌿 Təbiət</button>
   </div>
-  <div id="shopGrid" class="shop-grid"></div>
+  <div id="shopGrid" class="sgrid2"></div>
 </section>
 
-<section id="tab-games" class="section">
-  <div class="grid-2">
-    <div class="card"><h3>⚡ 60s Riyaziyyat Sprinti</h3><p class="muted" style="font-size:.84rem;">60 saniyədə maksimum hesablama → XP və AzCoin!</p><button class="btn btn-primary" onclick="startSprintGame()">Oyuna Başla</button><div id="sprintArea" style="margin-top:12px;"></div></div>
-    <div class="card"><h3>🎯 Bulls & Cows</h3><p class="muted" style="font-size:.84rem;">4 fərqli rəqəmli gizli ədədi 10 cəhddə tap.</p><button class="btn btn-success" onclick="startBullsGame()">Yeni Oyun</button><div id="bullsArea" style="margin-top:12px;"></div></div>
+<section id="t-games" class="sec">
+  <div class="g2">
+    <div class="card"><h3>⚡ 60s Riyaziyyat Sprinti</h3><p class="mu" style="font-size:.83rem">60 saniyədə maksimum hesablama → XP və AzCoin!</p><button class="btn btn-p" onclick="sprintStart()">Oyuna Başla</button><div id="sprintArea" style="margin-top:12px"></div></div>
+    <div class="card"><h3>🎯 Bulls & Cows</h3><p class="mu" style="font-size:.83rem">4 fərqli rəqəmli gizli ədədi 10 cəhddə tap. 🐂 düz yer, 🐄 səhv yer.</p><button class="btn btn-s" onclick="bullsStart()">Yeni Oyun</button><div id="bullsArea" style="margin-top:12px"></div></div>
   </div>
 </section>
 
-<section id="tab-propose" class="section">
+<section id="t-propose" class="sec">
   <div class="card">
-    <h2>Sual Təklif Et (+XP & +AzCoin)</h2>
-    <div class="grid-2" style="margin-top:10px;">
+    <h2>Sual Təklif Et <span class="mu" style="font-size:.85rem">(+XP & AzCoin)</span></h2>
+    <div class="g2" style="margin-top:10px">
       <div>
-        <input id="prTitle" placeholder="Başlıq *" style="margin-bottom:6px;">
-        <div class="row" style="margin-bottom:6px;"><input id="prRating" type="number" placeholder="Reytinq (600-3500)" style="flex:1;"><input id="prTags" placeholder="Teqlər" style="flex:1;"></div>
-        <textarea id="prStatement" rows="4" placeholder="Məsələnin şərti *" style="margin-bottom:6px;"></textarea>
-        <textarea id="prInputSpec" rows="2" placeholder="Giriş formatı" style="margin-bottom:6px;"></textarea>
-        <textarea id="prOutputSpec" rows="2" placeholder="Çıxış formatı" style="margin-bottom:6px;"></textarea>
-        <textarea id="prEditorial" rows="2" placeholder="Həll izahı" style="margin-bottom:6px;"></textarea>
+        <input id="prTitle" placeholder="Başlıq *" style="margin-bottom:6px">
+        <div class="row" style="margin-bottom:6px"><input id="prRate" type="number" placeholder="Reytinq 600-3500" style="flex:1"><input id="prTags" placeholder="Teqlər" style="flex:1"></div>
+        <textarea id="prStmt" rows="4" placeholder="Məsələnin şərti *" style="margin-bottom:6px"></textarea>
+        <textarea id="prIn" rows="2" placeholder="Giriş formatı" style="margin-bottom:6px"></textarea>
+        <textarea id="prOut" rows="2" placeholder="Çıxış formatı" style="margin-bottom:6px"></textarea>
+        <textarea id="prEd" rows="2" placeholder="Həll izahı" style="margin-bottom:6px"></textarea>
       </div>
       <div>
-        <label class="muted" style="font-size:.82rem;">İşləyən həll kodunuz *</label>
-        <div class="row" style="margin:6px 0;"><select id="prLang" style="width:130px;"><option value="python">Python</option><option value="cpp">C++</option><option value="c">C</option><option value="java">Java</option><option value="javascript">JS</option></select></div>
-        <textarea id="prCode" rows="6" class="code-fallback" style="height:140px;margin-bottom:6px;"></textarea>
-        <label class="muted" style="font-size:.82rem;">Testlər *</label>
-        <div id="prTestsContainer" style="margin-top:4px;"></div>
-        <button class="btn btn-sm" onclick="addTestRow('prTestsContainer')">+ Test</button>
+        <label class="mu" style="font-size:.81rem">İşləyən həll kodunuz *</label>
+        <select id="prLang" style="width:130px;margin:6px 0"><option value="python">Python</option><option value="cpp">C++</option><option value="c">C</option><option value="java">Java</option><option value="javascript">JS</option></select>
+        <textarea id="prCode" class="code" style="height:135px;margin-bottom:6px" placeholder="print(sum(map(int,input().split())))"></textarea>
+        <label class="mu" style="font-size:.81rem">Testlər *</label>
+        <div id="prTests" style="margin-top:4px"></div>
+        <button class="btn btn-sm" onclick="addTest('prTests')">+ Test</button>
       </div>
     </div>
-    <button class="btn btn-primary" style="margin-top:12px;" onclick="submitProposal()">Göndər</button>
+    <button class="btn btn-p" style="margin-top:12px" onclick="sendProp()">Göndər</button>
   </div>
-  <div class="card"><h3>Mənim Təkliflərim</h3><div id="myProposalsList"></div></div>
-  <div id="adminPendingBar" class="pending-slim-bar" style="display:none;">
-    <div class="pending-slim-head" onclick="togglePendingExpand()"><span>📥 Təsdiq Gözləyən Suallar (<b id="pendingCount">0</b>)</span><span id="pendingArrow">▲</span></div>
-    <div id="pendingSlimList" class="pending-slim-list"></div>
+  <div class="card"><h3>Mənim Təkliflərim</h3><div id="myProps"></div></div>
+  <div id="pendBar" class="pbar" style="display:none">
+    <div class="pbh" onclick="pendToggle()"><span>📥 Təsdiq Gözləyən (<b id="pendN">0</b>)</span><span id="pendArw">▲</span></div>
+    <div id="pendList" class="pbl"></div>
   </div>
 </section>
 
-<section id="tab-submissions" class="section">
-  <div class="hero-banner"><h2 style="margin:0;">Son Göndərişlər</h2><div class="row"><select id="subFilter" style="width:130px;"><option value="all">Hamısı</option><option value="mine">Mənimkilər</option></select><button class="btn btn-sm" onclick="loadSubmissions()">Yenilə</button></div></div>
-  <div class="card table-wrap"><table><thead><tr><th>ID</th><th>İstifadəçi</th><th>Məsələ</th><th>Dil</th><th>Nəticə</th><th>Test / %</th><th>Vaxt</th></tr></thead><tbody id="submissionsTableBody"></tbody></table></div>
+<section id="t-submissions" class="sec">
+  <div class="hban"><h2 style="margin:0">Son Göndərişlər</h2><div class="row"><select id="subF" style="width:130px" onchange="loadSubs()"><option value="all">Hamısı</option><option value="mine">Mənimkilər</option></select><button class="btn btn-sm" onclick="loadSubs()">Yenilə</button></div></div>
+  <div class="card tw"><table><thead><tr><th>ID</th><th>İstifadəçi</th><th>Məsələ</th><th>Dil</th><th>Nəticə</th><th>Test / %</th><th>Vaxt</th></tr></thead><tbody id="subBody"></tbody></table></div>
 </section>
 
-<section id="tab-leaderboard" class="section">
-  <div class="hero-banner"><h2 style="margin:0;">Lider Lövhəsi</h2><button class="btn btn-sm" onclick="loadLeaderboard()">Yenilə</button></div>
-  <div class="card table-wrap"><table><thead><tr><th>#</th><th>İstifadəçi</th><th>Səviyyə</th><th>XP</th><th>Reytinq</th><th>Seriya</th><th>Həll</th></tr></thead><tbody id="leaderboardBody"></tbody></table></div>
+<section id="t-leaderboard" class="sec">
+  <div class="hban"><h2 style="margin:0">Lider Lövhəsi</h2><button class="btn btn-sm" onclick="loadLB()">Yenilə</button></div>
+  <div class="card tw"><table><thead><tr><th>#</th><th>İstifadəçi</th><th>Səviyyə</th><th>XP</th><th>Reytinq</th><th>Seriya</th><th>Həll</th></tr></thead><tbody id="lbBody"></tbody></table></div>
 </section>
 
-<section id="tab-creative" class="section">
-  <div class="hero-banner"><h2 style="margin:0;">Yaradıcı Kodlar</h2><button class="btn btn-sm btn-primary" onclick="togglePdSub('crForm')">+ Paylaş</button></div>
-  <div id="crForm" class="card" style="display:none;">
-    <input id="crTitle" placeholder="Başlıq" style="margin-bottom:6px;">
-    <div class="row" style="margin-bottom:6px;"><select id="crLang" style="width:130px;"><option value="python">Python</option><option value="cpp">C++</option><option value="c">C</option><option value="java">Java</option><option value="javascript">JS</option></select><input id="crDesc" placeholder="Qısa təsvir" style="flex:1;"></div>
-    <textarea id="crCode" rows="6" class="code-fallback" style="height:140px;margin-bottom:6px;"></textarea>
-    <input id="crStdin" placeholder="Nümunə giriş" style="margin-bottom:6px;">
-    <button class="btn btn-primary btn-sm" onclick="createCreative()">Paylaş</button>
+<section id="t-creative" class="sec">
+  <div class="hban"><h2 style="margin:0">Yaradıcı Kodlar</h2><button class="btn btn-sm btn-p" onclick="sub('crForm')">+ Paylaş</button></div>
+  <div id="crForm" class="card" style="display:none">
+    <input id="ccTitle" placeholder="Başlıq" style="margin-bottom:6px">
+    <div class="row" style="margin-bottom:6px"><select id="ccLang" style="width:130px"><option value="python">Python</option><option value="cpp">C++</option><option value="c">C</option><option value="java">Java</option><option value="javascript">JS</option></select><input id="ccDesc" placeholder="Qısa təsvir" style="flex:1"></div>
+    <textarea id="ccCode" class="code" style="height:135px;margin-bottom:6px"></textarea>
+    <input id="ccStdin" placeholder="Nümunə giriş" style="margin-bottom:6px">
+    <button class="btn btn-p btn-sm" onclick="mkCreative()">Paylaş</button>
   </div>
-  <div id="creativeGrid" class="creative-grid"></div>
+  <div id="ccGrid" class="cgrid"></div>
 </section>
 
-<section id="tab-playground" class="section">
+<section id="t-playground" class="sec">
   <div class="card">
     <h2>Playground</h2>
-    <div class="row" style="margin:10px 0;"><select id="pgLang" onchange="onPgLangChange()" style="width:150px;"><option value="python">Python 3</option><option value="cpp">C++</option><option value="c">C</option><option value="java">Java</option><option value="javascript">JS</option></select><button class="btn btn-primary" onclick="runPlayground()">▶ İşlət</button></div>
-    <textarea id="pgEditorTextarea" class="code-fallback"></textarea>
-    <input id="pgStdin" placeholder="Giriş (stdin)" style="margin-top:8px;">
-    <div id="pgOutput" class="console-out">Nəticə...</div>
+    <div class="row" style="margin:10px 0"><select id="pgLang" onchange="pgMode()" style="width:150px"><option value="python">Python 3</option><option value="cpp">C++</option><option value="c">C</option><option value="java">Java</option><option value="javascript">JS</option></select><button class="btn btn-p" onclick="runPG()">▶ İşlət</button></div>
+    <textarea id="pgTa" class="code"></textarea>
+    <input id="pgStdin" placeholder="Giriş (stdin)" style="margin-top:8px">
+    <div id="pgOut" class="out">Nəticə burada görünəcək...</div>
   </div>
 </section>
 
-<section id="tab-profile" class="section">
-  <div class="card" style="max-width:860px;margin:0 auto;">
-    <div class="prof-top" style="margin-bottom:14px;">
-      <div id="fpAvatarWrap" class="av-wrap av-xl"><img id="fpAvatarImg" src="" alt="" style="display:none;"><span id="fpAvatarTxt">A</span></div>
-      <div style="flex:1;">
-        <div id="fpName" style="font-size:1.4rem;font-weight:800;">—</div>
-        <p id="fpBio" class="muted" style="margin:4px 0 8px;font-size:.88rem;">Bio yazılmayıb.</p>
-        <div class="row" style="font-size:.8rem;"><span id="fpLvlBadge" class="lvl-pill">Səviyyə 1</span><span id="fpRatingBadge" class="badge">Reytinq: 800</span><span id="fpStreakBadge">🔥 0 gün</span><span id="fpSolvedBadge">✔ 0 həll</span></div>
-        <div id="fpAdminMeta" class="admin-meta-box" style="display:none;">
-          <div class="amr"><span class="muted">Status:</span><span id="fpOnlineStatus">—</span></div>
-          <div class="amr"><span class="muted">Qeydiyyat:</span><span id="fpRegDate" style="font-weight:600;">—</span></div>
+<section id="t-profile" class="sec">
+  <div class="card" style="max-width:880px;margin:0 auto">
+    <div class="ptop" style="margin-bottom:14px">
+      <span id="fpAvW" class="av av-xl"><img id="fpAvI" src="" alt="" style="display:none"><span id="fpAvT">A</span></span>
+      <div style="flex:1;min-width:0">
+        <div id="fpName" style="font-size:1.35rem;font-weight:800">—</div>
+        <p id="fpBio" class="mu" style="margin:4px 0 8px;font-size:.87rem">Bio yazılmayıb.</p>
+        <div class="row" style="font-size:.79rem"><span id="fpLvl" class="lvl">Lv.1</span><span id="fpRate" class="badge">Reytinq 800</span><span id="fpStr">🔥 0 gün</span><span id="fpSolved">✔ 0 həll</span></div>
+        <div id="fpMeta" class="ameta" style="display:none">
+          <div class="amr"><span class="mu">Status:</span><span id="fpOn">—</span></div>
+          <div class="amr"><span class="mu">Qeydiyyat:</span><span id="fpReg" style="font-weight:600">—</span></div>
         </div>
       </div>
     </div>
-    <div id="fpActions" class="row" style="margin-bottom:12px;"></div>
-    <div class="xp-pipe-wrap" style="margin-bottom:14px;">
-      <div class="row" style="justify-content:space-between;font-size:.78rem;"><span class="muted">Səviyyə XP Borusu</span><span id="fpXpNums" class="muted">0 / 100</span></div>
-      <div class="xp-pipe-track"><div id="fpXpFill" class="xp-pipe-fill"></div></div>
+    <div id="fpAct" class="row" style="margin-bottom:12px"></div>
+    <div class="xpw" style="margin-bottom:14px">
+      <div class="row" style="justify-content:space-between;font-size:.77rem"><span class="mu">Səviyyə XP</span><span id="fpXpN" class="mu">0 / 100</span></div>
+      <div class="xpt"><div id="fpXpF" class="xpf"></div></div>
     </div>
     <h3>Reytinq Qrafiki</h3>
-    <canvas id="ratingChartCanvas" width="800" height="200" style="width:100%;border:1px solid var(--border);border-radius:8px;margin-bottom:14px;"></canvas>
-    <h3>Aktivlik Təqvimi (Son 24 həftə)</h3>
-    <div id="profileHeatmap" class="heatmap-grid" style="margin-bottom:14px;"></div>
-    <h3>Son Həll Etdiyi Məsələlər</h3>
-    <div id="fpRecentSolved"></div>
+    <canvas id="rateCanvas" width="800" height="200" style="width:100%;height:auto;border:1px solid var(--bd);border-radius:8px;margin-bottom:14px"></canvas>
+    <h3>Aktivlik Təqvimi</h3><div id="fpHeat" class="hm" style="margin-bottom:14px"></div>
+    <h3>Son Həll Etdikləri</h3><div id="fpRecent"></div>
   </div>
 </section>
 
 {% if admin_portal %}
-<section id="tab-admin" class="section">
+<section id="t-admin" class="sec">
   <div class="card">
-    <h3>Qeydiyyatdan Keçmiş İstifadəçilər</h3>
-    <div class="row" style="margin:8px 0;"><input id="adUserSearch" placeholder="Axtar..." style="width:200px;" oninput="loadAdminUsers()"><button class="btn btn-sm" onclick="loadAdminUsers()">Yenilə</button></div>
-    <div class="table-wrap"><table><thead><tr><th>Ad / Status</th><th>Gmail / Qeydiyyat</th><th>Səv / XP</th><th>Coin</th><th>Həll</th><th>Coin/XP At</th><th>Sil</th></tr></thead><tbody id="adminUsersBody"></tbody></table></div>
+    <h3>İstifadəçilər · Coin/XP</h3>
+    <div class="row" style="margin:8px 0"><input id="adSearch" placeholder="Axtar..." style="width:190px" oninput="adUsers()"><button class="btn btn-sm" onclick="adUsers()">Yenilə</button></div>
+    <div class="tw"><table><thead><tr><th>Ad / Status</th><th>Gmail / Qeydiyyat</th><th>Səv/XP</th><th>Coin</th><th>Həll</th><th>Hədiyyə</th><th>Sil</th></tr></thead><tbody id="adBody"></tbody></table></div>
   </div>
-  <div class="card"><h3>Təsdiq Gözləyən Suallar</h3><div id="adminProposalsBox"></div></div>
+  <div class="card"><h3>Təsdiq Gözləyən Suallar</h3><div id="adProps"></div></div>
+  <div class="card"><h3>Günün Sualını Təyin Et</h3><div class="row" style="margin:8px 0"><input id="adDaily" placeholder="Məsələ kodu (1A)" style="width:170px"><button class="btn btn-p btn-sm" onclick="setDaily($('adDaily').value)">Təyin Et</button></div></div>
+  <div class="card"><h3>Yarış Yarat</h3><div class="row" style="margin:8px 0"><input id="adCTitle" placeholder="Yarış adı" style="flex:1"><input id="adCDur" type="number" value="90" style="width:80px"><input id="adCPids" placeholder="ID-lər 1,2,3" style="flex:1"><button class="btn btn-p btn-sm" onclick="mkContest()">Başlat</button></div></div>
   <div class="card">
-    <h3>Günün Sualını Təyin Et</h3>
-    <div class="row" style="margin:8px 0;"><input id="adDailyCode" placeholder="Məsələ kodu (1A)" style="width:180px;"><button class="btn btn-primary btn-sm" onclick="adminSetDailyFromInput()">Təyin Et</button></div>
-  </div>
-  <div class="card">
-    <h3>Yarış Yarat</h3>
-    <div class="row" style="margin:8px 0;"><input id="adConTitle" placeholder="Yarış adı" style="flex:1;"><input id="adConDur" type="number" value="90" style="width:80px;"><input id="adConPids" placeholder="ID-lər (1,2,3)" style="flex:1;"><button class="btn btn-primary btn-sm" onclick="adminCreateContest()">Başlat</button></div>
-  </div>
-  <div class="card">
-    <h3>Kod İcra API Ayarları</h3>
-    <div class="row" style="margin:8px 0;">
-      <select id="cfgProvider" style="width:170px;"><option value="judge0">Judge0 CE</option><option value="wandbox">Wandbox</option><option value="piston">Piston</option><option value="local">Local</option></select>
-      <input id="cfgBaseUrl" placeholder="Base URL" style="flex:1;"><input id="cfgApiKey" type="password" placeholder="API Key" style="flex:1;">
-      <button class="btn btn-sm btn-primary" onclick="saveSettings()">Saxla</button><button class="btn btn-sm" onclick="testConnection()">Yoxla</button>
-    </div>
-    <div id="testConnOut" class="console-out" style="display:none;"></div>
+    <h3>Kod İcra API</h3>
+    <div class="row" style="margin:8px 0"><select id="cfgProv" style="width:165px"><option value="judge0">Judge0 CE</option><option value="wandbox">Wandbox</option><option value="piston">Piston</option><option value="local">Local</option></select><input id="cfgUrl" placeholder="Base URL" style="flex:1"><input id="cfgKey" type="password" placeholder="API Key" style="flex:1"><button class="btn btn-sm btn-p" onclick="saveCfg()">Saxla</button><button class="btn btn-sm" onclick="testCfg()">Yoxla</button></div>
+    <div id="cfgOut" class="out" style="display:none"></div>
   </div>
   <div class="card">
-    <h3>Yeni Məsələ Yarat (birbaşa Məsələlərə düşür)</h3>
-    <div class="grid-2" style="margin-top:8px;">
+    <h3>Yeni Məsələ (birbaşa dərc olunur)</h3>
+    <div class="g2" style="margin-top:8px">
       <div>
-        <input id="npTitle" placeholder="Başlıq *" style="margin-bottom:6px;">
-        <div class="row" style="margin-bottom:6px;"><input id="npCodeLbl" placeholder="Kod (2A)" style="flex:1;"><input id="npRating" type="number" placeholder="Reytinq" style="flex:1;"></div>
-        <input id="npTags" placeholder="Teqlər" style="margin-bottom:6px;">
-        <textarea id="npStatement" rows="4" placeholder="Şərt *" style="margin-bottom:6px;"></textarea>
-        <textarea id="npIn" rows="2" placeholder="Giriş" style="margin-bottom:6px;"></textarea>
-        <textarea id="npOut" rows="2" placeholder="Çıxış" style="margin-bottom:6px;"></textarea>
+        <input id="npTitle" placeholder="Başlıq *" style="margin-bottom:6px">
+        <div class="row" style="margin-bottom:6px"><input id="npCode" placeholder="Kod (2A)" style="flex:1"><input id="npRate" type="number" placeholder="Reytinq" style="flex:1"></div>
+        <input id="npTags" placeholder="Teqlər" style="margin-bottom:6px">
+        <textarea id="npStmt" rows="4" placeholder="Şərt *" style="margin-bottom:6px"></textarea>
+        <textarea id="npIn" rows="2" placeholder="Giriş" style="margin-bottom:6px"></textarea>
+        <textarea id="npOut" rows="2" placeholder="Çıxış" style="margin-bottom:6px"></textarea>
       </div>
-      <div><label class="muted" style="font-size:.82rem;">Testlər *</label><div id="npTestsContainer" style="margin-top:4px;"></div><button class="btn btn-sm" onclick="addTestRow('npTestsContainer')">+ Test</button></div>
+      <div><label class="mu" style="font-size:.81rem">Testlər *</label><div id="npTests" style="margin-top:4px"></div><button class="btn btn-sm" onclick="addTest('npTests')">+ Test</button></div>
     </div>
-    <button class="btn btn-primary" style="margin-top:10px;" onclick="adminCreateProblem()">Yarat</button>
+    <button class="btn btn-p" style="margin-top:10px" onclick="mkProblem()">Yarat</button>
   </div>
 </section>
 {% endif %}
 
 </main>
 
-<div id="authModal" class="modal-backdrop">
-  <div class="modal-card">
-    <div class="modal-head">
-      <div class="row"><button id="tabLoginBtn" class="btn btn-sm btn-primary" onclick="switchAuthTab('login')">Daxil Ol</button><button id="tabRegBtn" class="btn btn-sm" onclick="switchAuthTab('register')">Gmail ilə Qeydiyyat</button></div>
-      <button class="btn btn-sm" onclick="closeModal('authModal')">✕</button>
+<div id="authM" class="mb"><div class="mc">
+  <div class="mh"><div class="row"><button id="tabLog" class="btn btn-sm btn-p" onclick="authTab('login')">Daxil Ol</button><button id="tabReg" class="btn btn-sm" onclick="authTab('register')">Qeydiyyat</button></div><button class="btn btn-sm" onclick="closeM('authM')">✕</button></div>
+  <div class="mbody">
+    <div id="paneLog">
+      <input id="liId" placeholder="Gmail və ya istifadəçi adı" style="margin-bottom:8px" autocomplete="username">
+      <input id="liPw" type="password" placeholder="Parol" style="margin-bottom:10px" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
+      <button class="btn btn-p" style="width:100%;justify-content:center" onclick="login()">Daxil Ol</button>
     </div>
-    <div class="modal-body">
-      <div id="loginPane">
-        <input id="liIdent" placeholder="Gmail və ya istifadəçi adı" style="margin-bottom:8px;">
-        <input id="liPass" type="password" placeholder="Parol" style="margin-bottom:10px;">
-        <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="doLogin()">Daxil Ol</button>
-      </div>
-      <div id="registerPane" style="display:none;">
-        <input id="rgUser" placeholder="İstifadəçi adı" style="margin-bottom:8px;">
-        <input id="rgEmail" placeholder="Gmail ünvanınız" style="margin-bottom:8px;">
-        <input id="rgPass" type="password" placeholder="Parol (min 6 simvol)" style="margin-bottom:8px;">
-        <input id="rgPassConfirm" type="password" placeholder="Parolu təkrar daxil edin" style="margin-bottom:8px;">
-        <div id="rgPassMatch" style="display:none;font-size:.78rem;color:#fca5a5;margin-bottom:8px;">⚠ Parollar uyğun gəlmir!</div>
-        <button id="sendCodeBtn" class="btn btn-sm" style="margin-bottom:8px;" onclick="sendRegCode()">Gmail-ə Kod Göndər</button>
-        <div id="regCodeWrap" style="display:none;">
-          <input id="rgCode" placeholder="6 rəqəmli kod" style="margin-bottom:10px;">
-          <button class="btn btn-success" style="width:100%;justify-content:center;" onclick="doRegister()">Təsdiqlə & Hesab Aç</button>
-        </div>
+    <div id="paneReg" style="display:none">
+      <input id="rgUser" placeholder="İstifadəçi adı (3-22 simvol)" style="margin-bottom:8px">
+      <input id="rgMail" placeholder="Gmail ünvanınız" style="margin-bottom:8px">
+      <input id="rgPass" type="password" placeholder="Parol (min 6 simvol)" style="margin-bottom:8px">
+      <input id="rgPass2" type="password" placeholder="Parolu təkrar daxil edin" style="margin-bottom:8px">
+      <div id="pwMsg" style="display:none;font-size:.77rem;color:#fca5a5;margin-bottom:8px"></div>
+      <button id="codeBtn" class="btn btn-sm" style="margin-bottom:8px" onclick="sendCode()">Gmail-ə Kod Göndər</button>
+      <div id="codeWrap" style="display:none">
+        <input id="rgCode" placeholder="6 rəqəmli kod" style="margin-bottom:10px" inputmode="numeric">
+        <button class="btn btn-s" style="width:100%;justify-content:center" onclick="register()">Təsdiqlə & Hesab Aç</button>
       </div>
     </div>
   </div>
-</div>
+</div></div>
 
-<div id="groupProfileModal" class="modal-backdrop"><div class="modal-card" style="max-width:560px;"><div class="modal-head"><strong>Qrup Profili</strong><button class="btn btn-sm" onclick="closeModal('groupProfileModal')">✕</button></div><div id="groupProfileBody" class="modal-body"></div></div></div>
-<div id="forwardModal" class="modal-backdrop"><div class="modal-card"><div class="modal-head"><strong>Məsələni Yönləndir</strong><button class="btn btn-sm" onclick="closeModal('forwardModal')">✕</button></div><div class="modal-body"><div id="fwdGroupsBox"></div><div class="row" style="margin-top:10px;"><input id="fwdDmUser" placeholder="Dost adı" style="flex:1;"><button class="btn btn-sm btn-primary" onclick="forwardProblemToDm()">Göndər</button></div></div></div></div>
-<div id="detailModal" class="modal-backdrop"><div class="modal-card"><div class="modal-head"><strong id="modalTitle">Detallar</strong><button class="btn btn-sm" onclick="closeModal('detailModal')">✕</button></div><div class="modal-body"><div id="modalMeta" class="muted" style="font-size:.82rem;margin-bottom:8px;"></div><pre id="modalPre" class="console-out"></pre></div></div></div>
+<div id="groupM" class="mb"><div class="mc" style="max-width:560px"><div class="mh"><strong>Qrup Profili</strong><button class="btn btn-sm" onclick="closeM('groupM')">✕</button></div><div id="groupBody" class="mbody"></div></div></div>
+<div id="fwdM" class="mb"><div class="mc"><div class="mh"><strong>Məsələni Yönləndir</strong><button class="btn btn-sm" onclick="closeM('fwdM')">✕</button></div><div class="mbody"><div id="fwdGroups"></div><div class="row" style="margin-top:10px"><input id="fwdUser" placeholder="Dost adı" style="flex:1"><button class="btn btn-sm btn-p" onclick="fwdDM()">Göndər</button></div></div></div></div>
+<div id="detM" class="mb"><div class="mc"><div class="mh"><strong id="detTitle">Detallar</strong><button class="btn btn-sm" onclick="closeM('detM')">✕</button></div><div class="mbody"><div id="detMeta" class="mu" style="font-size:.81rem;margin-bottom:8px"></div><pre id="detPre" class="out" style="margin-top:0"></pre></div></div></div>
 
 <div id="toast" class="toast"></div>
 
-<script>window.ADMIN_PORTAL = {% if admin_portal %}true{% else %}false{% endif %};</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/clike/clike.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
-<script src="{{ url_for('static', filename='app.js') }}"></script>
+<script>
+window.ADMIN_PORTAL = {% if admin_portal %}true{% else %}false{% endif %};
+
+/* ═══ Vəziyyət ═══ */
+let me={authenticated:false,username:null,is_admin:false,infinite_coins:false,human_verified:false,guest_remaining_sec:null};
+let problems=[],cur=null,sCM=null,pCM=null,subs=[],adU=[],fwdId=null,gTimer=null;
+let roomCode="",roomData=null,roomTimer=null,rmLast=0,rmReplyId=null;
+let dmUser="",dmTimer=null,dmLast=0,dmReplyId=null;
+let sprint={token:"",t:null,left:60,score:0,ans:0},bullsId="";
+let dTimer=null,dKey=null,shopData=null,shopF="all";
+let vRec=null,vChunks=[],vStream=null,vInt=null,vStart=0,vMode="";
+let pendOpen=false,ccList=[];
+
+const TPL={python:"# Kodunuzu bura yazın\n",cpp:"#include <iostream>\nusing namespace std;\nint main(){\n    ios::sync_with_stdio(false);\n    return 0;\n}\n",c:"#include <stdio.h>\nint main(){\n    return 0;\n}\n",java:"import java.util.*;\npublic class Main{\n    public static void main(String[] args){\n        Scanner sc=new Scanner(System.in);\n    }\n}\n",javascript:"const fs=require('fs');\nconst d=fs.readFileSync(0,'utf8').trim().split(/\\s+/);\nconsole.log(d.join(' '));\n"};
+const TIERS={"none":"classic","neon-blue":"classic","aqua-frost":"classic","emerald-matrix":"classic","cyber-purple":"classic","fire-phoenix":"classic","gold-crown":"classic","dragon-flame":"fantasy","storm-simurgh":"fantasy","cosmic-portal":"fantasy","forest-vine":"nature","ocean-leviathan":"nature"};
+
+/* ═══ Köməkçi ═══ */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+const jq=s=>esc(JSON.stringify(String(s??"")));
+const fmt=t=>esc(t).replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>").replace(/`([^`]+)`/g,"<code>$1</code>");
+function math(n){if(n&&typeof renderMathInElement==="function")renderMathInElement(n,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false}],throwOnError:false});}
+const mode=l=>l==="python"?"python":l==="javascript"?"javascript":l==="cpp"?"text/x-c++src":l==="c"?"text/x-csrc":"text/x-java";
+const tier=id=>TIERS[String(id||"none")]||"classic";
+function dayKey(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function openM(id){$(id)?.classList.add("open");}
+function closeM(id){$(id)?.classList.remove("open");}
+function sub(id){const e=$(id);if(e)e.style.display=e.style.display==="none"?"block":"none";}
+function toast(m,err){const t=$("toast");if(!t)return;t.textContent=m;t.style.borderColor=err?"var(--no)":"var(--pri)";t.style.display="block";clearTimeout(window._tt);window._tt=setTimeout(()=>t.style.display="none",3600);}
+function copyTxt(t,m){if(navigator.clipboard)navigator.clipboard.writeText(t).then(()=>toast(m||"Kopyalandı!")).catch(()=>fbCopy(t,m));else fbCopy(t,m);}
+function fbCopy(t,m){try{const a=document.createElement("textarea");a.value=t;a.style.cssText="position:fixed;opacity:0";document.body.appendChild(a);a.select();document.execCommand("copy");a.remove();toast(m||"Kopyalandı!");}catch{toast("Kopyalama alınmadı",1);}}
+const nm=(n,a)=>a?`<span class="adm">${esc(n)}</span>`:`<strong>${esc(n)}</strong>`;
+const coinTxt=v=>(me.infinite_coins||me.is_admin)?"∞":String(v??0);
+async function api(url,opt){const r=await fetch(url,opt);let d={};try{d=await r.json();}catch{}return{ok:r.ok,d};}
+const POST=(u,b)=>api(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b||{})});
+function av(w,i,t,cls,u){const W=$(w),I=$(i),T=$(t);if(!W)return;
+  W.className=("av "+(cls||"")+" f-"+(u.avatar_frame||"none")).replace(/\s+/g," ").trim();
+  W.style.background=u.avatar_color||"#3b82f6";
+  if(I&&T){if(u.avatar_url){I.src=u.avatar_url;I.style.display="block";T.style.display="none";}
+  else{I.style.display="none";T.style.display="inline";T.textContent=(u.username||"A")[0];}}}
+
+/* ═══ Human / Guest ═══ */
+async function verifyHuman(){
+  const s=$("gsq"),t=$("gst");s.className="gsq spin";t.textContent="Yoxlanılır...";
+  try{
+    const c=await(await fetch("/api/human-challenge")).json();
+    await new Promise(r=>setTimeout(r,430));
+    const v=await POST("/api/human-verify",{challenge_token:c.challenge_token});
+    if(!v.ok){s.className="gsq";t.textContent="Yenidən klikləyin";return;}
+    s.className="gsq done";s.textContent="✔";t.textContent="Təsdiqləndi!";me.human_verified=true;
+    setTimeout(()=>$("gate").style.display="none",300);
+  }catch{s.className="gsq";t.textContent="Xəta — yenidən cəhd edin";}
+}
+async function guest(){const{d}=await api("/api/guest/start",{method:"POST"});if(d.guest_remaining_sec!=null)gRun(d.guest_remaining_sec);go("announcements");toast("5 dəqiqəlik qonaq rejimi başladı!");}
+function gRun(sec){clearInterval(gTimer);const p=$("gpill");if(!p)return;
+  if(me.authenticated||sec==null){p.style.display="none";return;}
+  let l=sec;const tick=()=>{if(me.authenticated){p.style.display="none";clearInterval(gTimer);return;}
+    if(l<=0){p.style.display="none";clearInterval(gTimer);go("welcome");openM("authM");toast("Qonaq vaxtı bitdi — hesab açın!",1);return;}
+    p.style.display="inline-block";p.textContent="Qonaq "+String(Math.floor(l/60)).padStart(2,"0")+":"+String(l%60).padStart(2,"0");l--;};
+  tick();gTimer=setInterval(tick,1000);}
+
+/* ═══ Nav ═══ */
+function dwL(f){const d=$("dwLeft"),b=$("bdL"),o=f!==undefined?f:!d.classList.contains("open");d.classList.toggle("open",o);b.classList.toggle("open",o);}
+function dwR(f){const d=$("dwRight"),b=$("bdR"),o=f!==undefined?f:!d.classList.contains("open");d.classList.toggle("open",o);b.classList.toggle("open",o);}
+function go(tab){
+  dwL(false);const e=$("t-"+tab);if(!e)return;
+  document.querySelectorAll(".sec").forEach(s=>s.classList.remove("active"));
+  document.querySelectorAll(".dwi").forEach(b=>b.classList.remove("active"));
+  e.classList.add("active");document.querySelector(`.dwi[data-tab="${tab}"]`)?.classList.add("active");
+  window.scrollTo({top:0,behavior:"smooth"});
+  ({welcome:loadRevs,announcements:loadPosts,problems:loadProblems,gym:loadGym,contests:loadContests,
+    daily:loadDaily,shop:loadShop,submissions:loadSubs,leaderboard:loadLB,creative:loadCC,
+    chat:()=>{loadRooms();loadRoomPicker();loadDMs();},
+    propose:()=>{loadMyProps();if(me.is_admin)loadPend();},
+    admin:()=>{if(me.is_admin)loadAdmin();}}[tab]||(()=>{}))();
+  if(tab==="submit"&&sCM)setTimeout(()=>sCM.refresh(),60);
+  if(tab==="playground"&&pCM)setTimeout(()=>pCM.refresh(),60);
+}
+
+/* ═══ Auth ═══ */
+async function syncMe(){
+  const{d}=await api("/api/auth/me");me=d;
+  if(me.authenticated){
+    $("hProf").style.display="inline-flex";$("hAuth").style.display="none";
+    $("hName").innerHTML=me.is_admin?`<span class="adm">${esc(me.username)}</span>`:esc(me.username);
+    $("hLvl").textContent=`Lv.${me.level} · 🪙${coinTxt(me.coins)}`;
+    av("hAvW","hAvI","hAvT","",me);$("gpill").style.display="none";
+  }else{$("hProf").style.display="none";$("hAuth").style.display="inline-flex";
+    if(me.guest_remaining_sec!=null)gRun(me.guest_remaining_sec);}
+  const np=$("newPostBtn");if(np)np.style.display=me.is_admin?"inline-flex":"none";
+  const dp=$("delPBtn");if(dp)dp.style.display=me.is_admin?"inline-flex":"none";
+  const rf=$("revForm");if(rf)rf.style.display=me.authenticated?"block":"none";
+  const dk=$("dPick");if(dk)dk.style.display=me.is_admin?"inline-flex":"none";
+  $("gate").style.display=me.human_verified?"none":"flex";
+}
+function authTab(t){$("paneLog").style.display=t==="login"?"block":"none";$("paneReg").style.display=t==="register"?"block":"none";
+  $("tabLog").className=t==="login"?"btn btn-sm btn-p":"btn btn-sm";$("tabReg").className=t==="register"?"btn btn-sm btn-p":"btn btn-sm";}
+function pwCheck(){
+  const a=$("rgPass").value,b=$("rgPass2").value,m=$("pwMsg"),i=$("rgPass2");
+  if(!b){m.style.display="none";i.classList.remove("ok","bad");return false;}
+  const ok=a===b&&a.length>=6;i.classList.toggle("ok",ok);i.classList.toggle("bad",!ok);
+  m.style.display=ok?"none":"block";m.textContent=a.length<6?"⚠ Parol ən azı 6 simvol olmalıdır":"⚠ Parollar uyğun gəlmir";
+  return ok;
+}
+async function login(){
+  const{ok,d}=await POST("/api/auth/login",{identifier:$("liId").value,password:$("liPw").value});
+  if(!ok)return toast(d.error||"Xəta",1);
+  closeM("authM");$("liPw").value="";await syncMe();go("announcements");toast(d.message||"Xoş gəldiniz!");
+}
+async function sendCode(){
+  const p=$("rgPass").value,p2=$("rgPass2").value;
+  if(p.length<6)return toast("Parol ən azı 6 simvol olmalıdır",1);
+  if(p!==p2){pwCheck();return toast("Parollar uyğun gəlmir",1);}
+  const b=$("codeBtn");b.disabled=true;
+  const{ok,d}=await POST("/api/auth/send-code",{username:$("rgUser").value,email:$("rgMail").value,password:p,password_confirm:p2});
+  b.disabled=false;if(!ok)return toast(d.error||"Xəta",1);
+  $("codeWrap").style.display="block";toast(d.dev_code?"Kod: "+d.dev_code:(d.message||"Kod göndərildi"));
+}
+async function register(){
+  const p=$("rgPass").value,p2=$("rgPass2").value;
+  if(p!==p2){pwCheck();return toast("Parollar uyğun gəlmir",1);}
+  const{ok,d}=await POST("/api/auth/register",{username:$("rgUser").value,email:$("rgMail").value,password:p,password_confirm:p2,code:$("rgCode").value});
+  if(!ok)return toast(d.error||"Xəta",1);
+  closeM("authM");await syncMe();go("announcements");toast(d.message||"Hesab açıldı!");
+}
+async function logout(){await api("/api/auth/logout",{method:"POST"});dwR(false);await syncMe();go("welcome");toast("Çıxış edildi");}
+
+/* ═══ Rəylər ═══ */
+async function loadRevs(){
+  const{ok,d}=await api("/api/site-reviews");if(!ok)return;
+  $("stU").textContent=d.stats.users;$("stP").textContent=d.stats.problems;
+  $("stS").textContent=d.stats.submissions;$("stR").textContent=d.stats.avg_rating+" ★";
+  $("revList").innerHTML=(d.reviews||[]).map(r=>`<div class="card" style="margin:0 0 8px;background:rgba(6,9,15,.66)">
+    <div class="row" style="justify-content:space-between;font-size:.83rem"><span>${nm(r.username,r.is_admin_user)}</span>
+    <span style="color:#fbbf24">${"★".repeat(r.rating)}${"☆".repeat(5-r.rating)}</span></div>
+    <p class="mu" style="margin:6px 0 0;font-size:.84rem">${esc(r.comment)}</p></div>`).join("")||'<p class="mu">Hələ rəy yoxdur.</p>';
+}
+async function sendRev(){
+  const{ok,d}=await POST("/api/site-reviews",{rating:$("revStar").value,comment:$("revTxt").value});
+  toast(d.message||d.error,!ok);if(ok){$("revTxt").value="";loadRevs();}
+}
+
+/* ═══ Admin meta ═══ */
+function applyMeta(pfx,p){
+  const box=$(pfx+"Meta");if(!box)return;const m=p.admin_meta;
+  if(me.is_admin&&m){box.style.display="block";
+    const on=$(pfx+"On"),rg=$(pfx+"Reg");
+    if(on){on.className=m.is_online?"on-t":"off-t";
+      on.innerHTML=m.is_online?'<span class="odot on"></span>Onlayn':'<span class="odot off"></span>Oflayn · '+esc(m.last_seen||"");}
+    if(rg)rg.textContent=String(m.joined_at||"—").slice(0,16);
+  }else box.style.display="none";
+}
+async function openPD(){
+  if(!me.authenticated)return openM("authM");
+  dwR(true);const{ok,d:p}=await api("/api/profile");if(!ok)return;
+  av("pdAvW","pdAvI","pdAvT","av-lg",p);
+  $("pdName").innerHTML=nm(p.username,p.is_admin_user);$("pdMail").textContent=p.email||"";
+  $("pdLvl").textContent="Lv."+p.level;$("pdCoin").textContent=p.infinite_coins?"∞":p.coins;
+  $("pdRate").textContent=p.rating;$("pdStr").textContent=p.streak;
+  $("pdXpN").textContent=`${p.xp} / ${p.needed_xp} XP`;$("pdXpF").style.width=p.progress_pct+"%";
+  $("bioIn").value=p.bio||"";$("colIn").value=p.avatar_color||"#3b82f6";applyMeta("pd",p);
+  $("pdReqs").innerHTML=(p.incoming_requests||[]).map(u=>`<div class="row" style="justify-content:space-between;font-size:.79rem;margin-bottom:4px">
+    <span>${esc(u)}</span><span><button class="btn btn-sm btn-s" onclick="frResp(${jq(u)},'accept')">✔</button>
+    <button class="btn btn-sm btn-d" onclick="frResp(${jq(u)},'reject')">✕</button></span></div>`).join("");
+  $("pdFriends").innerHTML=(p.friends||[]).length?p.friends.map(f=>`<div class="row" style="justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--bd);font-size:.81rem">
+    <span style="cursor:pointer" onclick="dwR(false);openFP(${jq(f.username)})">${nm(f.username,f.is_admin_user)} <span class="mu">Lv.${f.level}</span></span>
+    <button class="btn btn-sm btn-p" onclick="dwR(false);go('chat');chatMode('dm');openDM(${jq(f.username)})">💬</button></div>`).join(""):'<div class="mu" style="font-size:.79rem">Dost yoxdur.</div>';
+}
+async function sendCoins(){
+  if(!me.authenticated)return openM("authM");
+  const u=$("coinTo").value.trim().replace(/^@/,""),a=parseInt($("coinAmt").value,10);
+  if(!u)return toast("İstifadəçi adı yazın",1);
+  if(!a||a<=0)return toast("Düzgün miqdar yazın",1);
+  const{ok,d}=await POST("/api/coins/transfer",{username:u,amount:a});
+  toast(d.message||d.error,!ok);
+  if(ok){$("coinTo").value="";$("coinAmt").value="";await syncMe();openPD();}
+}
+async function quickCoin(t){
+  const a=prompt(t+" istifadəçisinə neçə AzCoin?","50");if(!a)return;
+  const{ok,d}=await POST("/api/coins/transfer",{username:t,amount:parseInt(a,10)||0});
+  toast(d.message||d.error,!ok);if(ok)await syncMe();
+}
+async function upAvatar(){
+  const f=$("avFile").files[0];if(!f)return toast("Şəkil seçin",1);
+  const b=$("avBtn");b.disabled=true;const fd=new FormData();fd.append("avatar",f);
+  const{ok,d}=await api("/api/profile/avatar",{method:"POST",body:fd});b.disabled=false;
+  toast(d.message||d.error,!ok);if(ok){await syncMe();openPD();}
+}
+async function saveBio(){
+  const{ok,d}=await POST("/api/profile/update",{bio:$("bioIn").value,avatar_color:$("colIn").value});
+  toast(d.message||d.error||"Xəta",!ok);if(ok){await syncMe();openPD();}
+}
+async function frTo(t){const{ok,d}=await POST("/api/friends/request",{username:t});toast(d.message||d.error,!ok);return ok;}
+async function frReq(){const i=$("frIn");if(await frTo(i.value.trim()))i.value="";}
+async function frResp(u,a){await POST("/api/friends/respond",{username:u,action:a});openPD();}
+
+/* ═══ Tam profil ═══ */
+async function openFP(u){
+  if(!me.authenticated)return openM("authM");
+  const{ok,d:p}=await api("/api/users/"+encodeURIComponent(u));
+  if(!ok)return toast("Profil tapılmadı",1);
+  go("profile");av("fpAvW","fpAvI","fpAvT","av-xl",p);
+  $("fpName").innerHTML=nm(p.username,p.is_admin_user);$("fpBio").textContent=p.bio||"Bio yazılmayıb.";
+  $("fpLvl").textContent="Səviyyə "+p.level;$("fpRate").textContent="Reytinq "+p.rating;
+  $("fpStr").textContent="🔥 "+p.streak+" gün";$("fpSolved").textContent="✔ "+p.solved_count+" həll";
+  $("fpXpN").textContent=`${p.xp} / ${p.needed_xp}`;$("fpXpF").style.width=p.progress_pct+"%";
+  applyMeta("fp",p);
+  $("fpAct").innerHTML=p.username===me.username?"":
+    `<button class="btn btn-p btn-sm" onclick="go('chat');chatMode('dm');openDM(${jq(p.username)})">💬 Mesaj</button>
+     <button class="btn btn-s btn-sm" onclick="quickCoin(${jq(p.username)})">🪙 Coin</button>
+     <button class="btn btn-sm" onclick="frTo(${jq(p.username)})">+ Dost</button>`;
+  $("fpRecent").innerHTML=(p.recent_solved||[]).length?p.recent_solved.map(s=>
+    `<div style="padding:5px 0;border-bottom:1px solid var(--bd);cursor:pointer" onclick="openP(${jq(s.code_label||s.id)})">✔ <strong>${esc(s.code_label)}. ${esc(s.title)}</strong> <span class="mu">(${s.rating})</span></div>`).join(""):'<span class="mu">Hələ yoxdur.</span>';
+  heat(p.heatmap||{});chart((p.rating_history||[]).length?p.rating_history:[{rating:p.rating}]);
+}
+function heat(h){const g=$("fpHeat");if(!g)return;g.innerHTML="";const now=new Date();
+  for(let i=167;i>=0;i--){const k=dayKey(new Date(now.getTime()-i*864e5)),c=h[k]||0;
+    const d=document.createElement("div");d.className="hmc "+(c>=5?"h4":c>=3?"h3":c>=2?"h2":c>=1?"h1":"");
+    d.title=k+": "+c+" göndəriş";g.appendChild(d);}}
+function chart(h){
+  const c=$("rateCanvas");if(!c)return;const x=c.getContext("2d"),W=c.width,H=c.height;
+  x.clearRect(0,0,W,H);
+  const bands=[[0,1200,"rgba(148,163,184,.12)"],[1200,1400,"rgba(34,197,94,.13)"],[1400,1600,"rgba(6,182,212,.15)"],[1600,1900,"rgba(59,130,246,.16)"],[1900,3500,"rgba(168,85,247,.17)"]];
+  const mn=600,mx=2400,Y=r=>H-18-((Math.min(mx,Math.max(mn,r))-mn)/(mx-mn))*(H-36);
+  bands.forEach(([a,b,col])=>{const y1=Y(b),y2=Y(a);x.fillStyle=col;x.fillRect(0,y1,W,y2-y1);});
+  if(!h.length)return;
+  const X=i=>22+(h.length===1?(W-44)/2:i*(W-44)/(h.length-1));
+  x.strokeStyle="#facc15";x.lineWidth=2.5;x.beginPath();
+  h.forEach((p,i)=>{const px=X(i),py=Y(p.rating);i?x.lineTo(px,py):x.moveTo(px,py);});x.stroke();
+  h.forEach((p,i)=>{x.fillStyle="#fde047";x.beginPath();x.arc(X(i),Y(p.rating),4,0,7);x.fill();});
+}
+
+/* ═══ Duyuru ═══ */
+async function mkPost(){
+  if(!me.is_admin)return toast("Yalnız Admin paylaşa bilər",1);
+  const t=$("pTitle").value.trim(),b=$("pBody").value.trim();
+  if(!t||!b)return toast("Başlıq və məzmun mütləqdir",1);
+  const{ok,d}=await POST("/api/posts",{title:t,body:b,poll_options:$("pPoll").value.split(",").map(s=>s.trim()).filter(Boolean),is_pinned:$("pPin").checked});
+  toast(d.message||d.error,!ok);
+  if(ok){$("pTitle").value="";$("pBody").value="";$("pPoll").value="";sub("postForm");loadPosts();}
+}
+async function loadPosts(){
+  const{ok,d:ps}=await api("/api/posts");if(!ok)return;
+  $("postList").innerHTML=ps.map(p=>{
+    const poll=(p.poll_options||[]).map((o,i)=>{const pc=p.total_votes?Math.round(o.votes*100/p.total_votes):0;
+      return `<div class="popt ${p.my_vote===i?"voted":""}" onclick="vote(${p.id},${i})"><div class="pbar2" style="width:${pc}%"></div>
+      <div class="ptxt"><span>${esc(o.text)}</span><span>${o.votes} (${pc}%)</span></div></div>`;}).join("");
+    const rx=(p.reactions||[]).map(r=>`<button class="rx ${r.mine?"mine":""}" onclick="react(${p.id},${jq(r.emoji)})">${r.emoji} ${r.count}</button>`).join("");
+    const cm=(p.comments||[]).map(c=>`<div class="cmt ${c.parent_id?"rep":""}">${nm(c.author,c.is_admin_user)}: ${esc(c.body)}
+      <button class="btn btn-sm" style="padding:1px 6px;font-size:.69rem" onclick="replyC(${p.id},${c.id},${jq(c.author)})">Cavabla</button></div>`).join("");
+    return `<div class="card post ${p.is_pinned?"pin":""}">
+      <div class="row" style="justify-content:space-between"><strong>${p.is_pinned?"📌 ":""}${esc(p.title)}</strong>
+      <span class="mu" style="font-size:.78rem">${nm(p.author,p.is_admin_user)} · ${esc(String(p.created_at).slice(0,16))}
+      ${me.is_admin?`<button class="btn btn-sm btn-d" onclick="delPost(${p.id})">Sil</button>`:""}</span></div>
+      <p style="margin:8px 0;white-space:pre-wrap">${esc(p.body)}</p>${poll}
+      <div class="row" style="margin-top:10px">${rx}</div>
+      <div style="margin-top:10px;border-top:1px solid var(--bd);padding-top:8px">${cm}
+      <div class="row" style="margin-top:8px"><input id="ci-${p.id}" placeholder="Şərh yaz..." style="flex:1">
+      <input id="cp-${p.id}" type="hidden"><button class="btn btn-sm btn-p" onclick="sendC(${p.id})">Yaz</button></div></div></div>`;
+  }).join("")||'<p class="mu">Hələ duyuru yoxdur.</p>';
+}
+async function vote(p,i){if(!me.authenticated)return openM("authM");await POST(`/api/posts/${p}/vote`,{option_index:i});loadPosts();}
+async function react(p,e){if(!me.authenticated)return openM("authM");await POST(`/api/posts/${p}/react`,{emoji:e});loadPosts();}
+function replyC(p,c,a){$("cp-"+p).value=c;const i=$("ci-"+p);i.placeholder="@"+a+" cavab...";i.focus();}
+async function sendC(p){
+  if(!me.authenticated)return openM("authM");
+  const i=$("ci-"+p);if(!i.value.trim())return;
+  const{ok,d}=await POST(`/api/posts/${p}/comment`,{body:i.value,parent_id:$("cp-"+p).value||null});
+  if(ok)loadPosts();else toast(d.error,1);
+}
+async function delPost(p){await api(`/api/posts/${p}`,{method:"DELETE"});loadPosts();}
+
+/* ═══ Məsələlər ═══ */
+async function loadProblems(){const{ok,d}=await api("/api/problems?view=archive");if(ok){problems=d;renderProblems();}}
+function renderProblems(){
+  const q=($("pSearch").value||"").toLowerCase(),ht=$("hideTags").checked;
+  const rows=problems.filter(p=>p.title.toLowerCase().includes(q)||(p.tags||"").toLowerCase().includes(q)||String(p.code_label||"").toLowerCase().includes(q));
+  $("pBody").innerHTML=rows.length?rows.map(p=>`<tr class="cl ${p.solved?"solved":""}" onclick="openP(${jq(p.code_label||p.id)})">
+    <td><strong>${esc(p.code_label||p.id)}</strong></td><td><strong>${esc(p.title)}</strong></td>
+    <td>${ht?'<span class="mu">gizli</span>':(p.tags||"").split(",").map(t=>`<span class="tag">${esc(t.trim())}</span>`).join("")}</td>
+    <td><span class="badge">${p.rating}</span></td><td class="mu">👤 ${p.solved_count||0}</td>
+    <td><button class="btn btn-sm" onclick="event.stopPropagation();shareP(${p.id},${jq(p.title)})">🔗</button></td></tr>`).join(""):'<tr><td colspan="6" class="mu">Məsələ yoxdur.</td></tr>';
+}
+async function loadGym(){
+  const{ok,d}=await api("/api/problems?view=gym");if(!ok)return;
+  $("gymBody").innerHTML=d.length?d.map(p=>`<tr class="cl ${p.solved?"solved":""}" onclick="openP(${jq(p.code_label||p.id)})">
+    <td><strong>${esc(p.code_label||p.id)}</strong></td><td><strong>${esc(p.title)}</strong></td><td class="mu">${esc(p.tags)}</td>
+    <td><span class="badge">${p.rating}</span></td><td class="mu">👤 ${p.solved_count||0}</td></tr>`).join(""):'<tr><td colspan="5" class="mu">Hələ bitmiş yarış yoxdur.</td></tr>';
+}
+async function openP(key){
+  const{ok,d:p}=await api("/api/problems/"+encodeURIComponent(key));
+  if(!ok)return toast(p.error||"Tapılmadı",1);
+  cur=p;go("problems");
+  $("pListView").style.display="none";$("pReadView").style.display="block";
+  $("rTitle").textContent=(p.code_label?p.code_label+". ":"")+p.title;
+  $("rLim").textContent=`time limit: ${p.time_limit}s | memory: ${p.memory_limit} MB`;
+  $("rAuth").innerHTML="Müəllif: "+nm(p.author,p.author_is_admin)+" | Reytinq: "+p.rating;
+  const S=$("rStmt"),I=$("rIn"),O=$("rOut");
+  S.innerHTML=fmt(p.statement);math(S);I.innerHTML=fmt(p.input_spec||"—");math(I);O.innerHTML=fmt(p.output_spec||"—");math(O);
+  $("rNoteW").style.display=p.note?"block":"none";if(p.note){const n=$("rNote");n.innerHTML=fmt(p.note);math(n);}
+  $("rEdW").style.display=p.editorial?"block":"none";if(p.editorial){const e=$("rEd");e.innerHTML=fmt(p.editorial);math(e);}
+  $("rSmp").innerHTML=(p.samples||[]).map((s,i)=>`<div class="sbox"><div class="shead"><span>Nümunə #${i+1}</span>
+    <button class="btn btn-sm" onclick="copyTxt(cur.samples[${i}].input_data,'Giriş kopyalandı')">Kopyala</button></div>
+    <div class="sgrid"><pre>${esc(s.input_data)}</pre><pre>${esc(s.expected_output)}</pre></div></div>`).join("");
+}
+function backList(){$("pReadView").style.display="none";$("pListView").style.display="block";loadProblems();}
+function copyProblem(){if(!cur)return;const p=cur;
+  const s=(p.samples||[]).map((x,i)=>`Nümunə #${i+1}\nInput:\n${x.input_data}\nOutput:\n${x.expected_output}`).join("\n\n");
+  copyTxt(`${p.code_label}. ${p.title}\n\n${p.statement}\n\nInput:\n${p.input_spec}\n\nOutput:\n${p.output_spec}\n\n${s}`,"Sual kopyalandı!");}
+function goSubmit(){if(!cur)return;$("subCode").value=cur.code_label||cur.id;lookup();go("submit");}
+async function lookup(){
+  const c=$("subCode").value.trim(),h=$("subHint");if(!c){h.textContent="";return;}
+  const{ok,d}=await api("/api/problems/"+encodeURIComponent(c));
+  h.style.color=ok?"var(--ok)":"var(--no)";
+  h.textContent=ok?`✔ ${d.code_label}. ${d.title} (${d.rating})`:"Belə kod tapılmadı";
+}
+function shareP(id,t){const u=location.origin+"/?problem="+id;
+  if(navigator.share)navigator.share({title:"AzForces: "+t,url:u}).catch(()=>copyTxt(u,"Link kopyalandı!"));
+  else copyTxt(u,"Link kopyalandı!");}
+async function openFwd(id){
+  if(!me.authenticated)return openM("authM");
+  fwdId=id;openM("fwdM");const{d}=await api("/api/rooms/mine");
+  $("fwdGroups").innerHTML=(d||[]).length?'<label class="mu" style="font-size:.81rem">Qrupa at:</label>'+
+    d.map(g=>`<button class="btn btn-sm" style="margin:4px 4px 0 0" onclick="fwdRoom(${jq(g.room_code)})">👥 ${esc(g.title)}</button>`).join(""):'<span class="mu">Qrupunuz yoxdur.</span>';
+}
+async function fwdRoom(c){await POST(`/api/rooms/${c}/chat`,{message:"Məsələ yönləndirdi:",shared_problem_id:fwdId});closeM("fwdM");toast("Qrupa atıldı!");}
+async function fwdDM(){const u=$("fwdUser").value.trim();if(!u)return;
+  const{ok}=await POST("/api/dm/"+encodeURIComponent(u),{message:"Məsələ göndərdi:",shared_problem_id:fwdId});
+  closeM("fwdM");toast(ok?"Dosta göndərildi!":"Tapılmadı",!ok);}
+async function delProblem(){if(!cur||!confirm("Silinsin?"))return;
+  const{ok}=await api("/api/problems/"+cur.id,{method:"DELETE"});if(ok){toast("Silindi");backList();}}
+
+/* ═══ Editor ═══ */
+function initEd(){
+  if(typeof CodeMirror==="undefined")return;
+  sCM=CodeMirror.fromTextArea($("sTa"),{mode:"python",theme:"material-darker",lineNumbers:true});
+  pCM=CodeMirror.fromTextArea($("pgTa"),{mode:"python",theme:"material-darker",lineNumbers:true});
+  sSet(TPL.python);pSet("print('Salam AzForces!')\n");
+}
+const sGet=()=>sCM?sCM.getValue():$("sTa").value;
+const pGet=()=>pCM?pCM.getValue():$("pgTa").value;
+function sSet(v){if(sCM){sCM.setValue(v);setTimeout(()=>sCM.refresh(),40);}else $("sTa").value=v;}
+function pSet(v){if(pCM){pCM.setValue(v);setTimeout(()=>pCM.refresh(),40);}else $("pgTa").value=v;}
+function sMode(){if(sCM)sCM.setOption("mode",mode($("sLang").value));}
+function pgMode(){if(pCM)pCM.setOption("mode",mode($("pgLang").value));}
+async function runS(){
+  const b=$("sOut");b.style.display="block";b.textContent="Test edilir...";
+  const{ok,d}=await POST("/api/run",{language:$("sLang").value,code:sGet(),stdin:$("sStdin").value});
+  b.textContent=(!ok||d.ok===false)?(d.error||d.stderr||"Xəta"):`[${d.status} | ${d.time||"-"}]\n${d.stdout||""}${d.stderr?"\n--- Xəta ---\n"+d.stderr:""}`;
+}
+async function submitS(){
+  if(!me.authenticated)return openM("authM");
+  const k=$("subCode").value.trim();if(!k)return toast("Məsələ kodunu yazın",1);
+  const b=$("sOut"),btn=$("subBtn");btn.disabled=true;b.style.display="block";b.textContent="Yoxlanılır...";$("pctW").style.display="none";
+  const{ok,d}=await POST("/api/submit",{problem_code:k,language:$("sLang").value,code:sGet(),room_id:window._rid||null});
+  btn.disabled=false;
+  if(!ok){b.textContent=d.error||"Xəta";return;}
+  const pct=d.quality_pct!=null?d.quality_pct:(d.total?Math.round(d.passed*100/d.total):0);
+  const w=$("pctW"),f=$("pctF"),t=$("pctT"),bk=$("pctB");
+  w.style.display="block";t.textContent=pct+"%";f.style.width="0";
+  f.style.background=pct>=80?"linear-gradient(90deg,#22c55e,#4ade80)":pct>=50?"linear-gradient(90deg,#f59e0b,#fbbf24)":"linear-gradient(90deg,#ef4444,#f87171)";
+  requestAnimationFrame(()=>requestAnimationFrame(()=>f.style.width=pct+"%"));
+  const q=d.quality_breakdown;
+  bk.innerHTML=q?`<span>Test: <b>${q.tests_pct}%</b></span><span>Sürət: <b>${q.speed_pct}%</b></span><span>Stil: <b>${q.style_pct}%</b></span>`:"";
+  b.textContent=`Nəticə: ${d.verdict} (${d.passed}/${d.total}) | Keyfiyyət: ${pct}% | Vaxt: ${d.time}\n`+
+    (d.daily_msg?d.daily_msg+"\n":"")+(d.xp_gained?`+${d.xp_gained} XP, +${d.coins_gained} AzCoin!\n`:"")+(d.details||"");
+  await syncMe();toast(d.verdict==="Accepted"?`Accepted! ${pct}%`:`${d.verdict} — ${pct}%`,d.verdict!=="Accepted");
+}
+async function loadContests(){
+  const{ok,d}=await api("/api/contests");if(!ok)return;
+  $("cList").innerHTML=d.length?d.map(c=>`<div class="card" style="background:rgba(6,9,15,.6)">
+    <div class="row" style="justify-content:space-between"><strong>${esc(c.title)}</strong>
+    <span class="badge">${c.status==="active"?"Aktiv":"Bitib (Gym)"}</span></div>
+    <div style="margin-top:8px">${(c.problems||[]).map(p=>`<button class="btn btn-sm" style="margin:3px" onclick="openP(${jq(p.code_label||p.id)})">${esc(p.code_label)}. ${esc(p.title)}</button>`).join("")}</div>
+    ${me.is_admin&&c.status==="active"?`<button class="btn btn-d btn-sm" style="margin-top:8px" onclick="finContest(${c.id})">Bitir & Gym-ə</button>`:""}</div>`).join(""):'<p class="mu">Yarış yoxdur.</p>';
+}
+async function finContest(id){await POST(`/api/contests/${id}/finish`);toast("Gym-ə köçürüldü!");loadContests();}
+
+/* ═══ Daily ═══ */
+async function loadDaily(){
+  const{ok,d}=await api("/api/daily");if(!ok)return;
+  $("dStr").textContent=d.streak||0;
+  $("dMult").textContent=d.streak>=7?"×3":d.streak>=3?"×2":"×1";
+  let h=d.heatmap||{};
+  if(me.authenticated&&!Object.keys(h).length){const p=await api("/api/profile");if(p.ok)h=p.d.heatmap||{};}
+  const m=$("dMap");m.innerHTML="";const now=new Date();
+  for(let i=29;i>=0;i--){const k=dayKey(new Date(now.getTime()-i*864e5)),c=h[k]||0;
+    const el=document.createElement("div");el.className="sd"+(c>=4?" s3":c>=2?" s2":c>=1?" s1":"")+(i===0?" today":"");
+    el.title=k+": "+(c?c+" göndəriş":"həll yoxdur");m.appendChild(el);}
+  if(d.problem){dKey=d.problem.code_label||d.problem.id;
+    $("dQTitle").textContent=d.problem.code_label+". "+d.problem.title;
+    $("dQMeta").textContent=`Reytinq ${d.problem.rating} · +${d.reward_xp} XP, +${d.reward_coins} AzCoin · 7 gündə +${d.chest_7day_coins} 🪙`;
+    $("dSolve").style.display="inline-flex";$("dSolve").textContent=d.solved_today?"✔ Yenidən Bax":"📘 Sualı Aç & Həll Et";
+    $("dDone").style.display=d.solved_today?"block":"none";
+  }else{dKey=null;$("dQTitle").textContent="Məsələ yoxdur";$("dQMeta").textContent="Admin tezliklə əlavə edəcək.";$("dSolve").style.display="none";}
+  let board=d.streak_board;
+  if(!board){const lb=await api("/api/leaderboard");board=lb.ok?lb.d.slice().sort((a,b)=>(b.daily_streak||0)-(a.daily_streak||0)).slice(0,10):[];}
+  const set=new Set((d.top_solvers||[]).map(t=>t.username.toLowerCase()));
+  $("dBoard").innerHTML=board.length?board.map((u,i)=>`<tr class="cl" onclick="openFP(${jq(u.username)})">
+    <td><strong>#${i+1}</strong></td><td>${nm(u.username,u.is_admin_user)}</td><td>🔥 ${u.daily_streak||0} gün</td>
+    <td>${set.has(u.username.toLowerCase())?'<span style="color:var(--ok);font-weight:700">✔ Bəli</span>':'<span class="mu">— Xeyr</span>'}</td></tr>`).join(""):'<tr><td colspan="4" class="mu">Hələ seriya yoxdur — birinci olun!</td></tr>';
+  clearInterval(dTimer);let l=d.seconds_left||86400;
+  const tick=()=>{if(l<=0){clearInterval(dTimer);loadDaily();return;}
+    $("dTime").textContent=[Math.floor(l/3600),Math.floor(l%3600/60),l%60].map(v=>String(v).padStart(2,"0")).join(":");l--;};
+  tick();dTimer=setInterval(tick,1000);
+}
+function openDaily(){if(dKey)openP(dKey);}
+function pickDaily(){const k=prompt("Günün məsələsi üçün kod (1A):");if(k)setDaily(k.trim());}
+async function setDaily(k){if(!k)return;const{ok,d}=await POST("/api/admin/daily",{problem_code:k});toast(d.message||d.error,!ok);if(ok)loadDaily();}
+
+/* ═══ Chat ═══ */
+function chatMode(m){
+  $("paneG").style.display=m==="groups"?"block":"none";$("paneD").style.display=m==="dm"?"block":"none";
+  $("chG").className=m==="groups"?"btn btn-p btn-sm":"btn btn-sm";$("chD").className=m==="dm"?"btn btn-p btn-sm":"btn btn-sm";
+  if(m==="dm")loadDMs();
+}
+async function loadRooms(){
+  if(!me.authenticated){$("myRooms").textContent="Daxil olun.";return;}
+  const{ok,d}=await api("/api/rooms/mine");if(!ok)return;
+  $("myRooms").innerHTML=d.length?d.map(r=>`<div class="row" style="justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bd);cursor:pointer" onclick="enterRoom(${jq(r.room_code)})">
+    <div class="row"><span class="av" style="background:${esc(r.avatar_color)}">${r.avatar_url?`<img src="${esc(r.avatar_url)}">`:esc(r.title[0])}</span>
+    <div><strong>${esc(r.title)}</strong><div class="mu" style="font-size:.75rem">${esc(r.bio)}</div></div></div>
+    <span class="badge">${r.member_count}/20</span></div>`).join(""):'<div class="mu">Qrupunuz yoxdur.</div>';
+}
+async function loadRoomPicker(){
+  const{ok,d}=await api("/api/problems?view=archive");if(!ok)return;
+  $("crProbs").innerHTML=d.map(p=>`<label style="display:flex;align-items:center;gap:6px;font-size:.81rem;margin-bottom:4px">
+    <input type="checkbox" class="rmp" value="${p.id}"> ${esc(p.code_label||p.id)}. ${esc(p.title)}</label>`).join("");
+}
+async function mkRoom(){
+  if(!me.authenticated)return openM("authM");
+  const pids=[...document.querySelectorAll(".rmp:checked")].map(x=>+x.value);
+  const{ok,d}=await POST("/api/rooms",{title:$("crTitle").value,bio:$("crBio").value,avatar_color:$("crCol").value,
+    duration_min:$("crDur").value||0,voice_link:$("crVoice").value,problem_ids:pids});
+  if(!ok)return toast(d.error,1);
+  $("crTitle").value="";$("crBio").value="";enterRoom(d.room_code);
+}
+async function joinRoom(){
+  if(!me.authenticated)return openM("authM");
+  const{ok,d}=await POST("/api/rooms/join",{room_code:$("joinCode").value});
+  if(!ok)return toast(d.error,1);$("joinCode").value="";enterRoom(d.room_code);
+}
+function enterRoom(c){
+  roomCode=c;rmLast=0;rmReplyId=null;$("rmBox").innerHTML="";
+  $("roomLobby").style.display="none";$("roomActive").style.display="block";
+  pollRoom();clearInterval(roomTimer);roomTimer=setInterval(()=>{if(!document.hidden&&roomCode)pollRoom();},3000);
+}
+function leaveRoom(){roomCode="";window._rid=null;clearInterval(roomTimer);$("roomActive").style.display="none";$("roomLobby").style.display="grid";loadRooms();}
+function vBub(m){
+  const dur=m.audio_duration?Math.floor(m.audio_duration/60)+":"+String(m.audio_duration%60).padStart(2,"0"):"🎤";
+  if(m.audio_url)return `<div class="vbub"><audio controls preload="none" src="${esc(m.audio_url)}"></audio><span class="mu" style="font-size:.71rem">${dur}</span></div>`;
+  return `<div class="vbub"><span class="vwave"><i></i><i></i><i></i><i></i><i></i></span><span class="mu" style="font-size:.74rem">Səsli mesaj ${dur}</span></div>`;
+}
+async function pollRoom(){
+  if(!roomCode)return;
+  const{ok,d}=await api(`/api/rooms/${roomCode}/state?after_id=${rmLast}`);if(!ok)return;
+  roomData=d;window._rid=d.room.id;
+  av("rmAvW","rmAvI","rmAvT","",{username:d.room.title,avatar_url:d.room.avatar_url,avatar_color:d.room.avatar_color,avatar_frame:"none"});
+  $("rmTitle").textContent=d.room.title;$("rmBio").textContent=d.room.bio;$("rmCnt").textContent=d.members.length;
+  $("rmTimer").textContent=d.room.remaining_sec>=0?"· ⏱ "+Math.floor(d.room.remaining_sec/60)+" dəq":"";
+  const v=$("rmVoice");v.style.display=d.room.voice_link?"inline-flex":"none";if(d.room.voice_link)v.href=d.room.voice_link;
+  const pb=$("rmProbs");pb.style.display=d.problems.length?"block":"none";
+  pb.innerHTML=d.problems.map(p=>`<button class="btn btn-sm" style="margin:2px" onclick="openP(${jq(p.code_label||p.id)})">${esc(p.code_label)}. ${esc(p.title)}</button>`).join("");
+  const box=$("rmBox");
+  d.messages.forEach(m=>{
+    rmLast=Math.max(rmLast,m.id);
+    const el=document.createElement("div");el.className="bub "+(m.username===me.username?"me":"they");
+    const body=m.audio_url?vBub(m):`<div><span style="cursor:pointer" onclick="openFP(${jq(m.username)})">${nm(m.username,m.is_admin_user)}</span>: ${esc(m.message)}</div>`;
+    el.innerHTML=(m.reply_author?`<div class="rq"><strong>${esc(m.reply_author)}:</strong> ${esc(m.reply_text||"")}</div>`:"")+body+
+      (m.shared_problem_id?`<button class="btn btn-sm btn-p" style="margin-top:5px" onclick="openP(${jq(m.shared_code||m.shared_problem_id)})">📘 ${esc(m.shared_problem_title||"Məsələ")}</button>`:"")+
+      `<div class="bmeta"><span>${esc(String(m.created_at||"").slice(11,16))}</span>
+      <button class="btn btn-sm" style="padding:1px 6px;font-size:.69rem" onclick="rmReply(${m.id},${jq(m.username)},${jq(m.message)})">↩</button></div>`;
+    box.appendChild(el);box.scrollTop=box.scrollHeight;
+  });
+}
+function rmReply(id,a,t){rmReplyId=id;$("rmReplyT").textContent="↩ "+a+": "+String(t).slice(0,45);$("rmReply").style.display="flex";$("rmIn").focus();}
+async function sendRoom(){
+  const i=$("rmIn");if(!i.value.trim())return;
+  const{ok,d}=await POST(`/api/rooms/${roomCode}/chat`,{message:i.value,reply_to_id:rmReplyId});
+  if(!ok)return toast(d.error,1);
+  i.value="";rmReplyId=null;$("rmReply").style.display="none";pollRoom();
+}
+function groupProfile(){
+  if(!roomData)return;const d=roomData,r=d.room,own=r.creator===me.username;
+  $("groupBody").innerHTML=`<div class="ptop" style="margin-bottom:12px">
+    <span class="av av-lg" style="background:${esc(r.avatar_color)}">${r.avatar_url?`<img src="${esc(r.avatar_url)}">`:esc(r.title[0])}</span>
+    <div><h3 style="margin:0">${esc(r.title)}</h3><div class="mu" style="font-size:.8rem">${esc(r.creator)} · ${r.room_code.replace(/(.{4})/g,"$1-").slice(0,-1)}</div></div></div>
+    <p style="font-size:.87rem;margin:0 0 12px">${esc(r.bio)}</p>
+    ${own?`<div class="pbox" style="margin-bottom:10px"><strong style="font-size:.83rem">Profili Düzəlt</strong>
+    <input id="gpT" value="${esc(r.title)}" style="margin-top:6px"><textarea id="gpB" rows="2" style="margin-top:6px">${esc(r.bio)}</textarea>
+    <div class="row" style="margin-top:6px"><input id="gpU" value="${esc(r.avatar_url||"")}" placeholder="Şəkil URL" style="flex:1">
+    <input id="gpC" type="color" value="${esc(r.avatar_color)}" style="width:46px;height:34px"></div>
+    <button class="btn btn-p btn-sm" style="margin-top:6px" onclick="saveGroup()">Yenilə</button></div>`:""}
+    <div class="pbox"><strong style="font-size:.83rem">Üzvlər (${d.members.length}/20)</strong>
+    ${d.members.map(m=>`<div class="row" style="justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--bd);font-size:.83rem">
+    <span style="cursor:pointer" onclick="closeM('groupM');openFP(${jq(m.username)})">${nm(m.username,m.is_admin_user)} <span class="mu">Lv.${m.level}</span>${m.username===r.creator?' <span class="badge">Admin</span>':""}</span>
+    ${own&&m.username!==r.creator?`<button class="btn btn-d btn-sm" onclick="kick(${jq(m.username)})">Çıxar</button>`:""}</div>`).join("")}</div>
+    <button class="btn btn-d" style="width:100%;justify-content:center;margin-top:12px" onclick="exitGroup()">Qrupdan Ayrıl</button>`;
+  openM("groupM");
+}
+async function saveGroup(){
+  const{ok,d}=await POST(`/api/rooms/${roomCode}/profile`,{title:$("gpT").value,bio:$("gpB").value,avatar_url:$("gpU").value,avatar_color:$("gpC").value});
+  toast(d.message||"Xəta",!ok);closeM("groupM");pollRoom();
+}
+async function kick(u){await POST(`/api/rooms/${roomCode}/kick`,{username:u});closeM("groupM");pollRoom();}
+async function exitGroup(){await POST(`/api/rooms/${roomCode}/leave`);closeM("groupM");leaveRoom();}
+async function loadDMs(){
+  if(!me.authenticated){$("dmList").textContent="Daxil olun.";return;}
+  const{ok,d}=await api("/api/dm/chats");if(!ok)return;
+  $("dmList").innerHTML=d.length?d.map(c=>`<div style="padding:8px;border-bottom:1px solid var(--bd);cursor:pointer" onclick="openDM(${jq(c.username)})">
+    <div class="row"><span class="av av-sm f-${c.avatar_frame||"none"}" style="background:${esc(c.avatar_color||"#3b82f6")}">${c.avatar_url?`<img src="${esc(c.avatar_url)}">`:esc(c.username[0])}</span>
+    <div style="min-width:0">${nm(c.username,c.is_admin_user)}<div class="mu" style="font-size:.75rem;overflow:hidden;text-overflow:ellipsis">${esc(c.last_message)}</div></div></div></div>`).join(""):'<div class="mu" style="font-size:.81rem">Söhbət yoxdur.</div>';
+}
+function openDM(u){
+  u=String(u||"").trim().replace(/^@/,"");if(!u)return;
+  dmUser=u;dmLast=0;dmReplyId=null;$("dmBox").innerHTML="";$("dmTitle").textContent="✈️ @"+u;
+  pollDM();clearInterval(dmTimer);dmTimer=setInterval(()=>{if(!document.hidden&&dmUser)pollDM();},3000);
+}
+function closeDM(){dmUser="";clearInterval(dmTimer);$("dmBox").innerHTML="";$("dmTitle").textContent="✈️ —";}
+function dmReply(id,a,t){dmReplyId=id;$("dmReplyT").textContent="↩ "+a+": "+String(t).slice(0,45);$("dmReply").style.display="flex";$("dmMsg").focus();}
+async function pollDM(){
+  if(!dmUser)return;
+  const{ok,d}=await api(`/api/dm/${encodeURIComponent(dmUser)}?after_id=${dmLast}`);if(!ok)return;
+  $("dmTitle").innerHTML="✈️ "+nm(d.partner,d.partner_is_admin);
+  const box=$("dmBox");
+  d.messages.forEach(m=>{
+    dmLast=Math.max(dmLast,m.id);
+    const el=document.createElement("div");el.className="bub "+(m.sender===me.username?"me":"they");
+    el.innerHTML=(m.reply_author?`<div class="rq"><strong>${esc(m.reply_author)}:</strong> ${esc(m.reply_text||"")}</div>`:"")+
+      (m.audio_url?vBub(m):`<div>${esc(m.message)}</div>`)+
+      (m.shared_problem_id?`<button class="btn btn-sm btn-p" style="margin-top:5px" onclick="openP(${jq(m.shared_code||m.shared_problem_id)})">📘 ${esc(m.shared_problem_title||"Məsələ")}</button>`:"")+
+      `<div class="bmeta"><span>${esc(String(m.created_at||"").slice(11,16))}</span>
+      <button class="btn btn-sm" style="padding:1px 6px;font-size:.69rem" onclick="dmReply(${m.id},${jq(m.sender)},${jq(m.message)})">↩</button></div>`;
+    box.appendChild(el);box.scrollTop=box.scrollHeight;
+  });
+}
+async function sendDM(){
+  if(!dmUser)return toast("Söhbət seçin",1);
+  const i=$("dmMsg");if(!i.value.trim())return;
+  const{ok,d}=await POST("/api/dm/"+encodeURIComponent(dmUser),{message:i.value,reply_to_id:dmReplyId});
+  if(!ok)return toast(d.error,1);
+  i.value="";dmReplyId=null;$("dmReply").style.display="none";pollDM();loadDMs();
+}
+
+/* ═══ Səsli mesaj ═══ */
+const vEls=m=>({mic:$(m==="room"?"rmMic":"dmMic"),pan:$(m==="room"?"rmVP":"dmVP"),tm:$(m==="room"?"rmVT":"dmVT")});
+function vStop(){clearInterval(vInt);if(vStream){vStream.getTracks().forEach(t=>t.stop());vStream=null;}}
+async function voiceToggle(m){
+  if(!me.authenticated)return openM("authM");
+  if(vRec&&vRec.state==="recording"){voiceSend(vMode);return;}
+  if(!navigator.mediaDevices||typeof MediaRecorder==="undefined")return toast("Brauzer səs yazmağı dəstəkləmir",1);
+  try{
+    vStream=await navigator.mediaDevices.getUserMedia({audio:true});vChunks=[];vMode=m;
+    const mt=MediaRecorder.isTypeSupported("audio/webm")?"audio/webm":"";
+    vRec=mt?new MediaRecorder(vStream,{mimeType:mt}):new MediaRecorder(vStream);
+    vRec.ondataavailable=e=>{if(e.data.size>0)vChunks.push(e.data);};
+    vRec.start();vStart=Date.now();
+    const E=vEls(m);E.mic.classList.add("rec");E.pan.style.display="flex";
+    vInt=setInterval(()=>{const s=Math.floor((Date.now()-vStart)/1000);
+      E.tm.textContent=Math.floor(s/60)+":"+String(s%60).padStart(2,"0");
+      if(s>=120)voiceSend(m);},500);
+  }catch{toast("Mikrofona icazə verilmədi",1);vStop();}
+}
+function voiceCancel(m){
+  if(vRec&&vRec.state==="recording"){vRec.onstop=null;vRec.stop();}
+  vStop();vChunks=[];vRec=null;
+  const E=vEls(m||vMode);E.mic.classList.remove("rec");E.pan.style.display="none";E.tm.textContent="0:00";
+}
+async function voiceSend(m){
+  if(!vRec||vRec.state!=="recording")return;
+  const dur=Math.max(1,Math.round((Date.now()-vStart)/1000)),E=vEls(m);
+  const blob=await new Promise(res=>{vRec.onstop=()=>res(new Blob(vChunks,{type:vRec.mimeType||"audio/webm"}));vRec.stop();});
+  vStop();vRec=null;vChunks=[];
+  E.mic.classList.remove("rec");E.pan.style.display="none";E.tm.textContent="0:00";
+  if(blob.size<200)return toast("Səs çox qısa oldu",1);
+  toast("Səs yüklənir...");
+  let url="";
+  try{const fd=new FormData();fd.append("audio",blob,"voice.webm");
+    const{ok,d}=await api("/api/media/upload-voice",{method:"POST",body:fd});
+    if(ok&&d.audio_url)url=d.audio_url;else toast(d.error||"Səs saxlama qoşulmayıb",1);
+  }catch{toast("Səs yüklənmədi",1);}
+  const pl={message:"🎤 Səsli mesaj",audio_url:url,audio_duration:dur};
+  if(m==="room"&&roomCode){pl.reply_to_id=rmReplyId;
+    const{ok,d}=await POST(`/api/rooms/${roomCode}/chat`,pl);
+    if(ok){rmReplyId=null;$("rmReply").style.display="none";pollRoom();toast("Səsli mesaj göndərildi 🎤");}else toast(d.error,1);
+  }else if(m==="dm"&&dmUser){pl.reply_to_id=dmReplyId;
+    const{ok,d}=await POST("/api/dm/"+encodeURIComponent(dmUser),pl);
+    if(ok){dmReplyId=null;$("dmReply").style.display="none";pollDM();loadDMs();toast("Səsli mesaj göndərildi 🎤");}else toast(d.error,1);}
+}
+
+/* ═══ Mağaza ═══ */
+async function loadShop(){
+  if(!me.authenticated){$("shopGrid").innerHTML='<div class="card">Mağaza üçün daxil olun.</div>';return;}
+  const{ok,d}=await api("/api/shop");if(!ok)return;
+  shopData=d;$("shopCoin").textContent=(d.infinite_coins||me.is_admin)?"∞":d.coins;renderShop();
+}
+function renderShop(){
+  if(!shopData)return;
+  const items=shopData.items.map(i=>({...i,tier:i.tier||tier(i.id)}));
+  const list=shopF==="all"?items:items.filter(i=>i.tier===shopF);
+  const adm=shopData.infinite_coins||me.is_admin;
+  $("shopGrid").innerHTML=list.length?list.map(i=>{
+    const cls=i.tier!=="classic"?" "+i.tier:"";
+    const can=adm||shopData.coins>=i.price;
+    const act=i.equipped?'<span class="badge" style="color:var(--ok);border-color:var(--ok)">✔ Taxılıb</span>'
+      :(i.owned||adm)?`<button class="btn btn-sm btn-p" onclick="equip(${jq(i.id)})">Tax</button>`
+      :`<button class="btn btn-sm btn-s" onclick="buy(${jq(i.id)})" ${can?"":'disabled'}>🪙 ${i.price}</button>`;
+    const tb=i.tier==="fantasy"?'<span class="badge" style="border-color:#a855f7;color:#c084fc">🐉 Fantaziya</span>'
+      :i.tier==="nature"?'<span class="badge" style="border-color:#22c55e;color:#4ade80">🌿 Təbiət</span>':"";
+    return `<div class="card sc${cls}"><span class="av av-lg f-${i.id}" style="background:var(--pri)">A</span>
+      <strong>${esc(i.name)}</strong>${tb}<span class="mu" style="font-size:.79rem">${esc(i.desc)}</span>${act}</div>`;
+  }).join(""):'<div class="card mu">Bu kateqoriyada məhsul yoxdur.</div>';
+}
+function shopFilter(f){shopF=f;document.querySelectorAll(".sfb").forEach(b=>b.classList.toggle("active",b.dataset.f===f));renderShop();}
+async function buy(id){const{ok,d}=await POST("/api/shop/buy",{item_id:id});toast(d.message||d.error,!ok);await syncMe();loadShop();}
+async function equip(id){const{ok,d}=await POST("/api/shop/equip",{item_id:id});toast(d.message||d.error,!ok);await syncMe();loadShop();if($("dwRight").classList.contains("open"))openPD();}
+
+/* ═══ Oyunlar ═══ */
+async function sprintStart(){
+  if(!me.authenticated)return openM("authM");
+  const{ok,d}=await api("/api/games/sprint/start",{method:"POST"});if(!ok)return;
+  sprint={token:d.token,left:60,score:0,ans:0,t:null};
+  $("sprintArea").innerHTML=`<div class="row" style="justify-content:space-between;margin-bottom:8px">
+    <strong>⏱ <span id="spL">60</span>s</strong><strong>Xal: <span id="spS">0</span></strong></div>
+    <div id="spQ" style="font-size:1.4rem;font-weight:800;margin:8px 0"></div>
+    <div class="row"><input id="spI" type="number" style="flex:1" onkeydown="if(event.key==='Enter')spCheck()">
+    <button class="btn btn-p" onclick="spCheck()">Cavabla</button></div>`;
+  spNext();
+  sprint.t=setInterval(()=>{sprint.left--;const e=$("spL");if(e)e.textContent=sprint.left;
+    if(sprint.left<=0){clearInterval(sprint.t);spEnd();}},1000);
+}
+function spNext(){
+  const a=2+Math.floor(Math.random()*25),b=2+Math.floor(Math.random()*20),o=Math.floor(Math.random()*3);
+  sprint.ans=o===0?a+b:o===1?a*b:(a+30)-b;
+  $("spQ").textContent=o===0?`${a} + ${b} = ?`:o===1?`${a} × ${b} = ?`:`${a+30} − ${b} = ?`;
+  const i=$("spI");i.value="";i.focus();
+}
+function spCheck(){if(+$("spI").value===sprint.ans){sprint.score++;$("spS").textContent=sprint.score;}spNext();}
+async function spEnd(){
+  const{d}=await POST("/api/games/sprint/finish",{token:sprint.token,score:sprint.score});
+  $("sprintArea").innerHTML=`<p><strong>${esc(d.message||d.error||"")}</strong></p><button class="btn btn-p" onclick="sprintStart()">Yenidən Oyna</button>`;
+  await syncMe();
+}
+async function bullsStart(){
+  if(!me.authenticated)return openM("authM");
+  const{ok,d}=await api("/api/games/bulls/start",{method:"POST"});if(!ok)return;bullsId=d.game_id;
+  $("bullsArea").innerHTML=`<div class="row" style="margin-bottom:8px">
+    <input id="bcI" maxlength="4" placeholder="4 fərqli rəqəm (1482)" style="flex:1" onkeydown="if(event.key==='Enter')bullsGuess()">
+    <button class="btn btn-s" onclick="bullsGuess()">Yoxla</button></div>
+    <div id="bcLog" class="out" style="margin-top:0;min-height:90px">Təxminləriniz burada görünəcək...</div>`;
+}
+async function bullsGuess(){
+  const i=$("bcI"),log=$("bcLog");
+  const{ok,d}=await POST("/api/games/bulls/guess",{game_id:bullsId,guess:i.value});
+  if(!ok)return toast(d.error,1);
+  if(d.tries===1)log.textContent="";
+  log.textContent+=`#${d.tries}: ${i.value} → 🐂 ${d.bulls}  🐄 ${d.cows}\n`;i.value="";
+  if(d.won){log.textContent+=`\n🎉 Tapdınız! +${d.xp_gained} XP, +${d.coins_gained} AzCoin!`;await syncMe();}
+  else if(d.lost)log.textContent+="\nBitdi! Gizli ədəd: "+d.answer;
+  log.scrollTop=log.scrollHeight;
+}
+
+/* ═══ Təkliflər ═══ */
+function addTest(cid){
+  const box=$(cid);if(!box)return;
+  const d=document.createElement("div");d.className="card";d.style.padding="8px";
+  d.innerHTML=`<div class="g2"><textarea class="t-in" rows="2" placeholder="Giriş"></textarea>
+    <textarea class="t-out" rows="2" placeholder="Çıxış"></textarea></div>
+    <div class="row" style="justify-content:space-between;margin-top:4px">
+    <label style="font-size:.81rem"><input type="checkbox" class="t-s" checked> Nümunə</label>
+    <button class="btn btn-d btn-sm" onclick="this.closest('.card').remove()">Sil</button></div>`;
+  box.appendChild(d);
+}
+const getTests=cid=>[...document.querySelectorAll(`#${cid} > .card`)].map(c=>({
+  input:c.querySelector(".t-in").value,output:c.querySelector(".t-out").value,is_sample:c.querySelector(".t-s").checked}));
+async function sendProp(){
+  if(!me.authenticated)return openM("authM");
+  const{ok,d}=await POST("/api/proposals",{title:$("prTitle").value,rating:$("prRate").value,tags:$("prTags").value,
+    statement:$("prStmt").value,input_spec:$("prIn").value,output_spec:$("prOut").value,editorial:$("prEd").value,
+    author_lang:$("prLang").value,author_code:$("prCode").value,tests:getTests("prTests")});
+  toast(d.message||d.error,!ok);
+  if(ok){loadMyProps();if(me.is_admin){loadPend();loadProblems();}}
+}
+async function loadMyProps(){
+  if(!me.authenticated){$("myProps").textContent="Daxil olun.";return;}
+  const{ok,d}=await api("/api/my-proposals");if(!ok)return;
+  $("myProps").innerHTML=d.length?d.map(x=>`<div style="padding:6px 0;border-bottom:1px solid var(--bd)">
+    <strong>${esc(x.code_label||"")}. ${esc(x.title)}</strong> <span class="badge">${esc(x.visibility)}</span>
+    ${x.awarded_xp?`<span style="color:var(--ok)">+${x.awarded_xp} XP</span>`:""}
+    ${x.reject_reason?`<span class="mu">(${esc(x.reject_reason)})</span>`:""}</div>`).join(""):'<span class="mu">Yoxdur.</span>';
+}
+async function loadPend(){
+  if(!me.is_admin)return;const bar=$("pendBar");if(!bar)return;
+  const{ok,d}=await api("/api/admin/proposals");
+  if(!ok||!d.length){bar.style.display="none";return;}
+  bar.style.display="block";$("pendN").textContent=d.length;
+  $("pendList").innerHTML=d.map(p=>`<div class="pbi" onclick="pendDet(${p.id})">
+    <span class="pbc">${esc(p.code_label||"U"+p.id)}</span><span class="pbt">${esc(p.title)}</span><span class="pbr">⭐ ${p.rating}</span></div>
+    <div id="pdet-${p.id}" class="pbd" style="display:none">
+    <p style="margin:0 0 6px"><strong>Müəllif:</strong> ${esc(p.author)} · ${esc(p.author_check_status||"—")}</p>
+    <p style="margin:0 0 6px;white-space:pre-wrap;max-height:110px;overflow-y:auto">${esc(p.statement)}</p>
+    ${(p.tests||[]).slice(0,2).map((t,i)=>`<div class="sbox" style="margin-top:4px"><div class="shead">Test #${i+1}</div>
+      <div class="sgrid"><pre>${esc(t.input_data)}</pre><pre>${esc(t.expected_output)}</pre></div></div>`).join("")}
+    <div class="row" style="margin-top:8px"><input id="xp-${p.id}" type="number" value="150" style="width:95px">
+    <select id="vis-${p.id}" style="width:115px"><option value="archive">Arxiv</option><option value="gym">Gym</option></select>
+    <button class="btn btn-s btn-sm" onclick="event.stopPropagation();review(${p.id},'approve')">✔ Təsdiqlə</button>
+    <button class="btn btn-d btn-sm" onclick="event.stopPropagation();review(${p.id},'reject')">✕ Rədd</button></div></div>`).join("");
+  if(pendOpen)$("pendList").classList.add("open");
+}
+function pendToggle(){pendOpen=!pendOpen;$("pendList").classList.toggle("open",pendOpen);$("pendArw").textContent=pendOpen?"▼":"▲";}
+function pendDet(id){const e=$("pdet-"+id);if(e)e.style.display=e.style.display==="none"?"block":"none";}
+async function review(id,act){
+  const{ok,d}=await POST(`/api/admin/proposals/${id}/review`,{action:act,
+    xp_reward:$("xp-"+id)?.value||150,visibility:$("vis-"+id)?.value||"archive"});
+  toast(d.message||d.error,!ok);
+  if(window.ADMIN_PORTAL)loadAdmin();
+  loadPend();loadProblems();
+}
+
+/* ═══ Digər bölmələr ═══ */
+async function loadSubs(){
+  const u=($("subF").value==="mine"&&me.username)?"?username="+encodeURIComponent(me.username):"";
+  const{ok,d}=await api("/api/submissions"+u);if(!ok)return;subs=d;
+  $("subBody").innerHTML=subs.length?subs.map((s,i)=>{
+    const pc=s.quality_pct!=null?s.quality_pct:(s.total_tests?Math.round(s.passed_tests*100/s.total_tests):0);
+    return `<tr class="cl" onclick="subDet(${i})"><td>#${s.id}</td><td>${nm(s.username,s.is_admin_user)}</td>
+    <td>${esc(s.problem_title)}</td><td>${esc(s.language)}</td>
+    <td style="font-weight:700;color:${s.verdict==="Accepted"?"var(--ok)":"var(--no)"}">${esc(s.verdict)}</td>
+    <td>${s.passed_tests}/${s.total_tests} <span class="mu">(${pc}%)</span></td><td>${esc(s.exec_time)}</td></tr>`;
+  }).join(""):'<tr><td colspan="7" class="mu">Yoxdur.</td></tr>';
+}
+function subDet(i){const s=subs[i];
+  $("detTitle").textContent="#"+s.id+" — "+s.problem_title;
+  $("detMeta").textContent=`${s.username} | ${s.verdict} | ${s.exec_time} | Keyfiyyət: ${s.quality_pct??"—"}%`;
+  $("detPre").textContent=s.details||"Əlavə məlumat yoxdur.";openM("detM");}
+async function loadLB(){
+  const{ok,d}=await api("/api/leaderboard");if(!ok)return;
+  $("lbBody").innerHTML=d.map((u,i)=>`<tr class="cl" onclick="openFP(${jq(u.username)})">
+    <td><strong>#${i+1}</strong></td><td>${nm(u.username,u.is_admin_user)}</td><td><span class="badge">Lv.${u.level}</span></td>
+    <td>${u.xp}/${u.needed_xp} <span class="mu">(${u.total_xp})</span></td><td>${u.rating}</td>
+    <td>🔥 ${u.daily_streak}</td><td>${u.solved_count}</td></tr>`).join("");
+}
+async function loadCC(){
+  const{ok,d}=await api("/api/creative");if(!ok)return;ccList=d;
+  $("ccGrid").innerHTML=d.map((c,i)=>`<div class="card"><strong>${esc(c.title)}</strong> <span class="badge">${esc(c.language)}</span>
+    <div class="mu" style="font-size:.77rem">${nm(c.author,c.is_admin_user)}</div>
+    <p class="mu" style="font-size:.83rem">${esc(c.description)}</p>
+    <pre class="out" style="max-height:105px;margin-top:0">${esc(c.code)}</pre>
+    <button class="btn btn-sm btn-p" style="margin-top:8px" onclick="runCC(${i})">▶ Playground</button></div>`).join("");
+}
+function runCC(i){const c=ccList[i];go("playground");$("pgLang").value=c.language;pgMode();pSet(c.code);$("pgStdin").value=c.sample_input||"";runPG();}
+async function mkCreative(){
+  if(!me.authenticated)return openM("authM");
+  const{ok,d}=await POST("/api/creative",{title:$("ccTitle").value,language:$("ccLang").value,
+    description:$("ccDesc").value,code:$("ccCode").value,sample_input:$("ccStdin").value});
+  toast(d.message||d.error,!ok);if(ok){sub("crForm");loadCC();}
+}
+async function runPG(){
+  const o=$("pgOut");o.textContent="İşə salınır...";
+  const{ok,d}=await POST("/api/run",{language:$("pgLang").value,code:pGet(),stdin:$("pgStdin").value});
+  o.textContent=(!ok||d.ok===false)?(d.error||d.stderr||"Xəta"):`[${d.status} | ${d.time||"-"}]\n${d.stdout||""}${d.stderr?"\n--- Xəta ---\n"+d.stderr:""}`;
+}
+
+/* ═══ Admin ═══ */
+async function adUsers(){
+  if(!window.ADMIN_PORTAL)return;
+  const{ok,d}=await api("/api/admin/users?q="+encodeURIComponent($("adSearch")?.value||""));if(!ok)return;adU=d;
+  $("adBody").innerHTML=adU.length?adU.map((u,i)=>`<tr>
+    <td>${nm(u.username,u.is_admin_user)}<div style="font-size:.69rem" class="${u.is_online?"":"mu"}">${u.is_online?'<span class="odot on"></span>Onlayn':'<span class="odot off"></span>Oflayn'}</div></td>
+    <td class="mu" style="font-size:.79rem">${esc(u.email)}<div style="font-size:.69rem">📅 ${esc(String(u.created_at||"").slice(0,10))}</div></td>
+    <td>Lv.${u.level} (${u.xp})</td><td>🪙 ${u.is_admin_user?"∞":u.coins}</td><td>${u.solved_count}</td>
+    <td><div class="row" style="flex-wrap:nowrap"><input id="gc-${i}" type="number" value="100" style="width:70px;padding:4px">
+    <input id="gx-${i}" type="number" value="0" style="width:62px;padding:4px">
+    <button class="btn btn-s btn-sm" onclick="gift(${i})">Ver</button></div></td>
+    <td>${u.is_admin_user?"":`<button class="btn btn-d btn-sm" onclick="delUser(${i})">Sil</button>`}</td></tr>`).join(""):'<tr><td colspan="7" class="mu">Tapılmadı.</td></tr>';
+}
+async function gift(i){const u=adU[i];if(!u)return;
+  const{ok,d}=await POST(`/api/admin/users/${encodeURIComponent(u.username)}/gift`,{coins:$("gc-"+i).value,xp:$("gx-"+i).value});
+  toast(d.message||d.error,!ok);if(ok)adUsers();}
+async function delUser(i){const u=adU[i];if(!u||!confirm(u.username+" silinsin?"))return;
+  const{ok,d}=await api("/api/admin/users/"+encodeURIComponent(u.username),{method:"DELETE"});
+  toast(d.message||d.error,!ok);if(ok)adUsers();}
+async function loadAdmin(){
+  if(!window.ADMIN_PORTAL)return;adUsers();
+  const[pr,sr]=await Promise.all([api("/api/admin/proposals"),api("/api/settings")]);
+  if(pr.ok)$("adProps").innerHTML=pr.d.length?pr.d.map(p=>`<div class="card" style="background:rgba(6,9,15,.7)">
+    <strong>${esc(p.code_label||"")}. ${esc(p.title)}</strong> <span class="mu">(@${esc(p.author)} · ${p.rating} · ${esc(p.author_check_status)})</span>
+    <p style="font-size:.83rem">${esc(p.statement)}</p>
+    <div class="row"><input id="xp-${p.id}" type="number" value="150" style="width:95px">
+    <select id="vis-${p.id}" style="width:115px"><option value="archive">Arxiv</option><option value="gym">Gym</option></select>
+    <button class="btn btn-s btn-sm" onclick="review(${p.id},'approve')">Təsdiqlə</button>
+    <button class="btn btn-d btn-sm" onclick="review(${p.id},'reject')">Rədd</button></div></div>`).join(""):'<span class="mu">Gözləyən sual yoxdur.</span>';
+  if(sr.ok){$("cfgProv").value=sr.d.provider;$("cfgUrl").value=sr.d.base_url;}
+  loadPend();
+}
+async function mkContest(){
+  const{ok,d}=await POST("/api/contests",{title:$("adCTitle").value,duration_min:$("adCDur").value,
+    problem_ids:$("adCPids").value.split(",").map(x=>x.trim()).filter(Boolean)});
+  toast(d.message||d.error,!ok);
+}
+async function saveCfg(){
+  const{ok,d}=await POST("/api/settings",{provider:$("cfgProv").value,base_url:$("cfgUrl").value,api_key:$("cfgKey").value});
+  toast(d.message||d.error,!ok);
+}
+async function testCfg(){const o=$("cfgOut");o.style.display="block";o.textContent="Yoxlanılır...";
+  const{d}=await api("/api/test-connection",{method:"POST"});o.textContent=JSON.stringify(d,null,2);}
+async function mkProblem(){
+  const{ok,d}=await POST("/api/problems",{title:$("npTitle").value,code_label:$("npCode").value,rating:$("npRate").value,
+    tags:$("npTags").value,statement:$("npStmt").value,input_spec:$("npIn").value,output_spec:$("npOut").value,tests:getTests("npTests")});
+  toast(d.message||d.error,!ok);if(ok)loadProblems();
+}
+
+/* ═══ Start ═══ */
+window.addEventListener("DOMContentLoaded",async()=>{
+  initEd();addTest("prTests");if($("npTests"))addTest("npTests");
+  $("rgPass").addEventListener("input",pwCheck);$("rgPass2").addEventListener("input",pwCheck);
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"){
+    document.querySelectorAll(".mb.open").forEach(m=>m.classList.remove("open"));dwL(false);dwR(false);}});
+  await syncMe();
+  const pid=new URLSearchParams(location.search).get("problem");
+  if(window.ADMIN_PORTAL&&me.is_admin)go("admin");
+  else if(pid)openP(pid);
+  else if(!me.authenticated&&me.guest_remaining_sec==null)go("welcome");
+  else go("announcements");
+});
+</script>
 </body>
-  </html>
+    </html>
