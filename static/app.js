@@ -1104,7 +1104,7 @@ function renderStreakMap(heatmap) {
   const map = el("dailyStreakMap"); if (!map) return; map.innerHTML = "";
   const today = new Date();
   for (let i = 29; i >= 0; i--) {
-    const key = new Date(today.getTime() - i * 86400000).toISOString().slice(0, 10), count = heatmap[key] || 0;
+    const key = new Date(today.getTime() + 4 * 3600000 - i * 86400000).toISOString().slice(0, 10), count = heatmap[key] || 0;
     const day = document.createElement("div");
     day.className = "streak-day" + (count >= 4 ? " s3" : count >= 2 ? " s2" : count >= 1 ? " s1" : "") + (i === 0 ? " today" : "");
     day.title = `${key}: ${count ? "həll edildi ✔" : "həll yoxdur"}`; map.appendChild(day);
