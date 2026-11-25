@@ -1221,3 +1221,119 @@ async function reviewProp(pid, action, prefix) {
 async function loadSubmissions() {
   const u = (el("subFilter").value === "mine" && me.username) ? `?username=${encodeURIComponent(me.username)}` : "";
   submissionsCache = await (await fetch("/api/submissions" + u)).json();
+
+  el("submissionsTableBody").innerHTML = submissionsCache.length
+    ? submissionsCache.map((s, i) => {
+      const pct = (s.quality_pct !== undefined && s.quality_pct !== null) ? s.quality_pct : (s.total_tests ? Math.round(s.passed_tests * 100 / s.total_tests) : 0);
+      return `<tr class="clickable" onclick="openSubModal(${i})"><td>#${s.id}</td><td>${renderName(s.username, s.is_admin_user)}</td><td>${esc(s.problem_title)}</td><td>${esc(s.language)}</td>
+        <td style="font-weight:700;color:${s.verdict === 'Accepted' ? 'var(--success)' : 'var(--danger)'}">${esc(s.verdict)}</td>
+        <td>${s.passed_tests}/${s.total_tests} <span class="muted">(${pct}%)</span></td><td>${esc(s.exec_time)}</td></tr>`;
+    }).join("") : `<tr><td colspan="7" class="muted">Yoxdur.</td></tr>`;
+}
+function openSubModal(i) {
+  const s = submissionsCache[i]; el("modalTitle").textContent = `#${s.id} — ${s.problem_title}`;
+  el("modalMeta").textContent = `${s.username} | ${s.verdict} | ${s.exec_time} | Keyfiyyət: ${s.quality_pct ?? "—"}%`;
+  el("modalPre").textContent = s.details || "Əlavə məlumat yoxdur."; el("detailModal").classList.add("open");
+}
+async function loadLeaderboard() {
+  const rows = await (await fetch("/api/leaderboard")).json();
+  el("leaderboardBody").innerHTML = rows.map((u, i) => `<tr class="clickable" onclick="openFullProfile(${q(u.username)})">
+    <td><strong>#${i + 1}</strong></td><td>${renderNameWithRank(u.username, u.is_admin_user, u.rating)}</td>
+    <td><span class="badge">Lv.${u.level}</span></td><td>${u.xp}/${u.needed_xp} (${u.total_xp})</td>
+    <td>${u.rating}</td><td>🔥 ${u.daily_streak}</td><td>${u.solved_count}</td></tr>`).join("");
+}
+async function loadCreative() {
+  const list = await (await fetch("/api/creative")).json(); creativeCache = list;
+  el("creativeGrid").innerHTML = list.map((c, i) => `<div class="card"><strong>${esc(c.title)}</strong> <span class="badge">${esc(c.language)}</span>
+    <div class="muted" style="font-size:.78rem;">${renderName(c.author, c.is_admin_user)}</div><p class="muted" style="font-size:.84rem;">${esc(c.description)}</p>
+    <pre class="console-out" style="max-height:110px;">${esc(c.code)}</pre>
+    <button class="btn btn-sm btn-primary" style="margin-top:8px;" onclick="runCr(${i})">▶ Playground</button></div>`).join("");
+}
+function runCr(i) {
+  const c = creativeCache[i]; switchTab("playground"); el("pgLang").value = c.language; onPgLangChange();
+  setPgCode(c.code); el("pgStdin").value = c.sample_input || ""; runPlayground();
+}
+async function createCreative() {
+  if (!me.authenticated) return openAuthModal();
+  const r = await fetch("/api/creative", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: el("crTitle").value, language: el("crLang").value, description: el("crDesc").value, code: el("crCode").value, sample_input: el("crStdin").value }) });
+  const d = await r.json(); toast(d.message || d.error || "Xəta", !r.ok); if (r.ok) loadCreative();
+}
+async function runPlayground() {
+  const o = el("pgOutput"); o.textContent = "İşə salınır...";
+  const r = await fetch("/api/run", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ language: el("pgLang").value, code: getPgCode(), stdin: el("pgStdin").value }) });
+  const d = await r.json();
+  o.textContent = (!r.ok || d.ok === false) ? (d.error || d.stderr) : `[${d.status} | ${d.time || "-"}]\n${d.stdout || ""}${d.stderr ? "\n--- Xəta ---\n" + d.stderr : ""}`;
+}
+
+/* ── GİZLİ ADMİN PANELİ ── */
+async function loadAdminUsers() {
+  if (!window.ADMIN_PORTAL) return;
+  const qy = encodeURIComponent(el("adUserSearch")?.value || ""), pr = encodeURIComponent(el("adUserPeriod")?.value || "all");
+  const r = await fetch(`/api/admin/users?q=${qy}&period=${pr}`); if (!r.ok) return;
+  adminUsersCache = await r.json();
+  el("adminUsersBody").innerHTML = adminUsersCache.length ? adminUsersCache.map((u, i) => `
+    <tr><td>${renderNameWithRank(u.username, u.is_admin_user, u.rating)}
+        <div style="font-size:.7rem;" class="${u.is_online ? '' : 'muted'}">${u.is_online ? '<span class="online-dot on"></span>Onlayn' : `<span class="online-dot off"></span>Oflayn (${esc(u.last_seen || "—")})`}</div></td>
+      <td class="muted">${esc(u.email)}<div style="font-size:.7rem;">📅 ${esc(String(u.created_at || "").slice(0, 16))}</div></td>
+      <td>Lv.${u.level} (${u.xp})</td><td>🪙 ${u.infinite_coins ? "∞" : u.coins}</td><td>${u.solved_count}</td>
+      <td><div class="row" style="flex-wrap:nowrap;"><input id="adGiftC-${i}" type="number" value="100" style="width:72px;padding:4px;"><input id="adGiftX-${i}" type="number" value="0" style="width:65px;padding:4px;"><button class="btn btn-success btn-sm" onclick="adminGiftUser(${i})">Ver</button></div></td>
+      <td>${u.is_admin_user ? "" : `<button class="btn btn-danger btn-sm" onclick="adminDeleteUser(${i})">Sil</button>`}</td></tr>`).join("") : `<tr><td colspan="7" class="muted">Tapılmadı.</td></tr>`;
+}
+async function adminGiftUser(i) {
+  const u = adminUsersCache[i]; if (!u) return;
+  const r = await fetch(`/api/admin/users/${encodeURIComponent(u.username)}/gift`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ coins: el(`adGiftC-${i}`).value, xp: el(`adGiftX-${i}`).value }) });
+  const d = await r.json(); toast(d.message || d.error, !r.ok); if (r.ok) loadAdminUsers();
+}
+async function adminDeleteUser(i) {
+  const u = adminUsersCache[i]; if (!u || !confirm(`${u.username} silinsin?`)) return;
+  const r = await fetch(`/api/admin/users/${encodeURIComponent(u.username)}`, { method: "DELETE" });
+  const d = await r.json(); toast(d.message || d.error, !r.ok); if (r.ok) loadAdminUsers();
+}
+async function loadAdminData() {
+  if (!window.ADMIN_PORTAL) return;
+  loadAdminUsers();
+  const [pr, sr] = await Promise.all([fetch("/api/admin/proposals"), fetch("/api/settings")]);
+  if (pr.ok) {
+    const props = await pr.json();
+    el("adminProposalsBox").innerHTML = props.length ? props.map(p => renderPendingPropCard(p, "adm")).join("") : "Gözləyən sual yoxdur.";
+  }
+  if (sr.ok) { const cfg = await sr.json(); el("cfgProvider").value = cfg.provider; el("cfgBaseUrl").value = cfg.base_url; }
+  loadAdminPendingBar();
+}
+async function adminCreateContest() {
+  const pids = el("adConPids").value.split(",").map(x => x.trim()).filter(Boolean);
+  const r = await fetch("/api/contests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: el("adConTitle").value, duration_min: el("adConDur").value, problem_ids: pids }) });
+  toast((await r.json()).message || "Xəta", !r.ok);
+}
+async function saveSettings() {
+  const r = await fetch("/api/settings", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ provider: el("cfgProvider").value, base_url: el("cfgBaseUrl").value, api_key: el("cfgApiKey").value }) });
+  toast((await r.json()).message || "Xəta", !r.ok);
+}
+async function testConnection() {
+  const o = el("testConnOut"); o.style.display = "block"; o.textContent = "Yoxlanılır...";
+  o.textContent = JSON.stringify(await (await fetch("/api/test-connection", { method: "POST" })).json(), null, 2);
+}
+async function adminCreateProblem() {
+  const r = await fetch("/api/problems", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: el("npTitle").value, code_label: el("npCodeLbl").value, rating: el("npRating").value, tags: el("npTags").value, statement: el("npStatement").value, input_spec: el("npIn").value, output_spec: el("npOut").value, tests: collectTests("npTestsContainer") }) });
+  const d = await r.json(); toast(d.message || d.error, !r.ok); if (r.ok) loadProblems("archive");
+}
+
+/* ── INIT ── */
+window.addEventListener("DOMContentLoaded", async () => {
+  if (window.ADMIN_PORTAL === undefined) window.ADMIN_PORTAL = !!el("tab-admin");
+  initEditors();
+  addTestRow("prTestsContainer");
+  if (el("dqTestsContainer")) addTestRow("dqTestsContainer");
+  if (el("npTestsContainer")) addTestRow("npTestsContainer");
+  if (el("rgPass")) el("rgPass").addEventListener("input", validatePasswordConfirm);
+  if (el("rgPassConfirm")) el("rgPassConfirm").addEventListener("input", validatePasswordConfirm);
+
+  await syncMe();
+  checkHumanGate();
+
+  const pid = new URLSearchParams(location.search).get("problem");
+  if (window.ADMIN_PORTAL && me.is_admin) switchTab("admin");
+  else if (pid) openProblem(pid);
+  else if (!me.authenticated && (me.guest_remaining_sec === null || me.guest_remaining_sec === undefined)) switchTab("welcome");
+  else switchTab("announcements");
+});
