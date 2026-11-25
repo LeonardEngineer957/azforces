@@ -450,8 +450,6 @@ const SVG_FRAMES = {
     </g>
   </svg>`
 };
-SVG_FRAMES["angel-wings"] = SVG_FRAMES["fallen-angel"]
-};
 SVG_FRAMES["angel-wings"] = SVG_FRAMES["fallen-angel"];
 
 function el(id) { return document.getElementById(id); }
