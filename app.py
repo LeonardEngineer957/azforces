@@ -1538,8 +1538,16 @@ def admin_add_custom_frame():
 @app.route("/api/admin/frames/<fid>", methods=["DELETE"])
 @require_admin
 def admin_delete_custom_frame(fid):
-    @app.route("/api/admin/frames/upload", methods=["POST"])
+    conn = get_db()
+    conn.execute("DELETE FROM custom_frames WHERE id=?", (fid,))
+    conn.commit()
+    conn.close()
+    return jsonify({"message": "Çərçivə silindi."})
+
+@app.route("/api/admin/frames/upload", methods=["POST"])
 @require_admin
+
+
 def admin_upload_custom_frame():
     f = request.files.get("file")
     if not f:
