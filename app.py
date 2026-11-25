@@ -1111,6 +1111,8 @@ def auth_register():
     pw = str(d.get("password") or "")
     pw2 = str(d.get("password_confirm") or "")
     code = str(d.get("code") or "").strip()
+    if uname.lower() == ADMIN_USERNAME.lower():
+        return jsonify({"error": "Bu ad qorunur."}), 400
     if len(pw) < 6:
         return jsonify({"error": "Parol ən azı 6 simvol olmalıdır."}), 400
     if pw != pw2:
