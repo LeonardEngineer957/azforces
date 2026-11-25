@@ -1538,6 +1538,60 @@ def admin_add_custom_frame():
 @app.route("/api/admin/frames/<fid>", methods=["DELETE"])
 @require_admin
 def admin_delete_custom_frame(fid):
+    @app.route("/api/admin/frames/upload", methods=["POST"])
+@require_admin
+def admin_upload_custom_frame():
+    f = request.files.get("file")
+    if not f:
+        return jsonify({"error": "Şəkil/GIF seçin."}), 400
+    raw = f.read(2500 * 1024 + 1)
+    if len(raw) > 2500 * 1024 or len(raw) < 20:
+        return jsonify({"error": "Fayl maksimum 2.5 MB ola bilər."}), 400
+    if raw.startswith(b"\x89PNG"):
+        mime = "image/png"
+    elif raw.startswith(b"GIF8"):
+        mime = "image/gif"
+    elif raw[:4] == b"RIFF" and raw[8:12] == b"WEBP":
+        mime = "image/webp"
+    elif raw.startswith(b"\xff\xd8\xff"):
+        mime = "image/jpeg"
+    else:
+        return jsonify({"error": "Yalnız PNG, GIF, WEBP və ya JPG seçin."}), 400
+
+    name = str(request.form.get("name") or "Xüsusi Çərçivə").strip()[:60]
+    tier = str(request.form.get("tier") or "fantasy").strip()
+    if tier not in ("classic", "fantasy", "nature", "legendary"):
+        tier = "fantasy"
+    price = safe_int(request.form.get("price"), 25000, 12000, 1000000)
+    desc = str(request.form.get("description") or "Xüsusi animasiyalı çərçivə").strip()[:120]
+    anim = str(request.form.get("anim_class") or "fx-float").strip()
+    if anim not in ("fx-float", "fx-spin", "fx-pulse", "fx-flicker", "fx-glitch", "fx-flap", ""):
+        anim = "fx-float"
+
+    url = ""
+    if CLOUD_NAME and CLOUD_KEY and CLOUD_SECRET:
+        ts = int(time.time())
+        sig = hashlib.sha1(f"folder=azforces_frames&timestamp={ts}{CLOUD_SECRET}".encode("utf-8")).hexdigest()
+        try:
+            r = requests.post(
+                f"https://api.cloudinary.com/v1_1/{CLOUD_NAME}/image/upload",
+                data={"api_key": CLOUD_KEY, "timestamp": ts, "folder": "azforces_frames", "signature": sig},
+                files={"file": (f.filename or "frame.png", raw)}, timeout=25,
+            )
+            if r.status_code < 400:
+                url = r.json().get("secure_url", "")
+        except Exception:
+            pass
+    if not url:
+        url = f"data:{mime};base64,{base64.b64encode(raw).decode('ascii')}"
+
+    fid = "cf-" + secrets.token_hex(4)
+    conn = get_db()
+    conn.execute("INSERT INTO custom_frames (id, name, tier, price, description, image_url, anim_class) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                 (fid, name, tier, price, desc, url, anim))
+    conn.commit()
+    conn.close()
+    return jsonify({"message": f"'{name}' qalereyadan yükləndi!", "id": fid})
     conn = get_db()
     conn.execute("DELETE FROM custom_frames WHERE id=?", (fid,))
     conn.commit()
