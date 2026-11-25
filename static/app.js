@@ -1186,7 +1186,7 @@ async function joinRoom() {
   el("joinRoomCode").value = ""; enterRoom(d.room_code);
 }
 function enterRoom(code) {
-  activeRoomCode = code; lastRoomMsgId = 0; roomReplyId = null; el("rmChatBox").innerHTML = "";
+  activeRoomCode = code; lastRoomMsgId = 0; roomReplyId = null; roomPolling = false; el("rmChatBox").innerHTML = "";
   el("roomLobbyView").style.display = "none"; el("roomActiveView").style.display = "block";
   pollRoom(); clearInterval(roomPollTimer);
   roomPollTimer = setInterval(() => { if (!document.hidden && activeRoomCode) pollRoom(); }, 3000);
@@ -1202,31 +1202,47 @@ function voiceBubbleHtml(m) {
     : `<div class="voice-bubble"><button class="voice-play-btn" onclick="toast('Səs faylı saxlama servisinə qoşulmayıb',true)">▶</button><div class="voice-wave"><span></span><span></span><span></span><span></span><span></span></div><span class="muted" style="font-size:.75rem;">Səs mesajı ${dur}</span></div>`;
 }
 async function pollRoom() {
-  if (!activeRoomCode) return;
-  const r = await fetch(`/api/rooms/${activeRoomCode}/state?after_id=${lastRoomMsgId}`); if (!r.ok) return;
-  const d = await r.json(); activeRoomData = d; window._activeRoomId = d.room.id;
-  setAvatar("rmAvatarWrap", "rmAvatarImg", "rmAvatarTxt", "", { username: d.room.title, avatar_url: d.room.avatar_url, avatar_color: d.room.avatar_color, avatar_frame: "none" });
-  el("rmTitle").textContent = d.room.title; el("rmBio").textContent = d.room.bio; el("rmMemCount").textContent = d.members.length;
-  el("rmTimerWrap").textContent = d.room.remaining_sec >= 0 ? `· ⏱ ${Math.floor(d.room.remaining_sec / 60)} dəq` : "";
-  const vb = el("rmVoiceBtn"); vb.style.display = d.room.voice_link ? "inline-flex" : "none"; if (d.room.voice_link) vb.href = d.room.voice_link;
-  const pb = el("rmProblemsBar"); pb.style.display = d.problems.length ? "block" : "none";
-  pb.innerHTML = d.problems.map(p => `<button class="btn btn-sm" style="margin:2px;" onclick="openProblem(${q(p.code_label || p.id)})">${esc(p.code_label)}. ${esc(p.title)}</button>`).join("");
-  const box = el("rmChatBox");
-  d.messages.forEach(m => {
-    lastRoomMsgId = Math.max(lastRoomMsgId, m.id);
-    const div = document.createElement("div"); div.className = `chat-bubble ${m.username === me.username ? 'mine' : 'theirs'}`;
-    const bodyHtml = m.audio_url ? voiceBubbleHtml(m) : `<div>${userLinkHtml(m.username, renderName(m.username, m.is_admin_user))}: ${esc(m.message)}</div>`;
-    div.innerHTML = (m.reply_author ? `<div class="chat-reply-quote"><strong>${esc(m.reply_author)}:</strong> ${esc(m.reply_text || "")}</div>` : "") + bodyHtml +
-      (m.shared_problem_id ? `<button class="btn btn-sm btn-primary" style="margin-top:5px;" onclick="openProblem(${q(m.shared_code || m.shared_problem_id)})">📘 ${esc(m.shared_code ? m.shared_code + '. ' : '')}${esc(m.shared_problem_title || "Məsələni aç")}</button>` : "") +
-      `<div class="chat-meta"><span>${esc((m.created_at || "").slice(11, 16))}</span><button class="btn btn-sm" style="padding:1px 6px;font-size:.7rem;" onclick="replyRoomMsg(${m.id},${q(m.username)},${q(m.message)})">↩ Cavabla</button></div>`;
-    box.appendChild(div); box.scrollTop = box.scrollHeight;
-  });
+  if (!activeRoomCode || roomPolling) return;
+  roomPolling = true;
+  try {
+    const r = await fetch(`/api/rooms/${activeRoomCode}/state?after_id=${lastRoomMsgId}`); if (!r.ok) return;
+    const d = await r.json(); activeRoomData = d; window._activeRoomId = d.room.id;
+    setAvatar("rmAvatarWrap", "rmAvatarImg", "rmAvatarTxt", "", { username: d.room.title, avatar_url: d.room.avatar_url, avatar_color: d.room.avatar_color, avatar_frame: "none" });
+    el("rmTitle").textContent = d.room.title; el("rmBio").textContent = d.room.bio; el("rmMemCount").textContent = d.members.length;
+    el("rmTimerWrap").textContent = d.room.remaining_sec >= 0 ? `· ⏱ ${Math.floor(d.room.remaining_sec / 60)} dəq` : "";
+    const vb = el("rmVoiceBtn"); vb.style.display = d.room.voice_link ? "inline-flex" : "none"; if (d.room.voice_link) vb.href = d.room.voice_link;
+    const pb = el("rmProblemsBar"); pb.style.display = d.problems.length ? "block" : "none";
+    pb.innerHTML = d.problems.map(p => `<button class="btn btn-sm" style="margin:2px;" onclick="openProblem(${q(p.code_label || p.id)})">${esc(p.code_label)}. ${esc(p.title)}</button>`).join("");
+    const box = el("rmChatBox");
+    d.messages.forEach(m => {
+      lastRoomMsgId = Math.max(lastRoomMsgId, m.id);
+      if (el(`rm-msg-${m.id}`)) return;
+      const div = document.createElement("div");
+      div.id = `rm-msg-${m.id}`;
+      div.className = `chat-bubble ${m.username === me.username ? 'mine' : 'theirs'}`;
+      const bodyHtml = m.audio_url ? voiceBubbleHtml(m) : `<div>${userLinkHtml(m.username, renderName(m.username, m.is_admin_user))}: ${esc(m.message)}</div>`;
+      div.innerHTML = (m.reply_author ? `<div class="chat-reply-quote"><strong>${esc(m.reply_author)}:</strong> ${esc(m.reply_text || "")}</div>` : "") + bodyHtml +
+        (m.shared_problem_id ? `<button class="btn btn-sm btn-primary" style="margin-top:5px;" onclick="openProblem(${q(m.shared_code || m.shared_problem_id)})">📘 ${esc(m.shared_code ? m.shared_code + '. ' : '')}${esc(m.shared_problem_title || "Məsələni aç")}</button>` : "") +
+        `<div class="chat-meta"><span>${esc((m.created_at || "").slice(11, 16))}</span><button class="btn btn-sm" style="padding:1px 6px;font-size:.7rem;" onclick="replyRoomMsg(${m.id},${q(m.username)},${q(m.message)})">↩ Cavabla</button></div>`;
+      box.appendChild(div); box.scrollTop = box.scrollHeight;
+    });
+  } finally {
+    roomPolling = false;
+  }
 }
+
 async function sendRoomChat() {
-  const inp = el("rmChatInput"); if (!inp.value.trim()) return;
-  const r = await fetch(`/api/rooms/${activeRoomCode}/chat`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: inp.value, reply_to_id: roomReplyId }) });
-  if (!r.ok) return toast((await r.json()).error, true);
-  inp.value = ""; cancelRoomReply(); pollRoom();
+  if (sendingRoom) return;
+  const inp = el("rmChatInput"), msg = inp.value.trim();
+  if (!msg) return;
+  sendingRoom = true; inp.value = "";
+  try {
+    const r = await fetch(`/api/rooms/${activeRoomCode}/chat`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: msg, reply_to_id: roomReplyId }) });
+    if (!r.ok) { inp.value = msg; return toast((await r.json()).error, true); }
+    cancelRoomReply(); await pollRoom();
+  } finally {
+    sendingRoom = false;
+  }
 }
 function openGroupProfile() {
   if (!activeRoomData) return;
