@@ -210,6 +210,18 @@ function renderNameWithRank(name, isAdm, rating) {
   return `<span class="name-rank-wrap">${renderName(name, isAdm)}${renderRankHtml(rating, isAdm)}</span>`;
 }
 function coinTxt(v) { return (me.infinite_coins || me.is_admin) ? "∞" : String(v ?? 0); }
+function fxMediaHtml(url, anim) {
+  const isVid = /^data:video\/|\.(mp4|webm|mov)(\?|$)/i.test(url || "");
+  return isVid
+    ? `<video class="fx-vid ${esc(anim || 'fx-screen')}" src="${esc(url)}" autoplay loop muted playsinline></video>`
+    : `<img class="fx-img ${esc(anim || 'fx-float')}" src="${esc(url)}" alt="">`;
+}
+function injectSvgFrame(w, frameId) {
+  if (!w) return;
+  w.querySelectorAll(".fx-svg, .fx-img, .fx-vid").forEach(n => n.remove());
+  if (SVG_FRAMES[frameId]) w.insertAdjacentHTML("beforeend", SVG_FRAMES[frameId]);
+  else if (customFramesMap[frameId]) w.insertAdjacentHTML("beforeend", fxMediaHtml(customFramesMap[frameId].image_url, customFramesMap[frameId].anim_class));
+}
 
 function injectSvgFrame(w, frameId) {
   if (!w) return;
@@ -1033,7 +1045,7 @@ function renderShopItems() {
   const isAdmin = shopCache.infinite_coins || me.is_admin;
   el("shopGrid").innerHTML = list.length ? list.map(it => {
     const tierCls = it.tier !== "classic" ? ` ${it.tier}-card` : "", canBuy = isAdmin || shopCache.coins >= it.price;
-    const fxHtml = SVG_FRAMES[it.id] || (it.image_url ? `<img class="fx-img ${esc(it.anim_class || 'fx-float')}" src="${esc(it.image_url)}" alt="">` : "");
+    const fxHtml = SVG_FRAMES[it.id] || (it.image_url ? fxMediaHtml(it.image_url, it.anim_class) : "");
     const action = it.equipped ? `<span class="badge" style="color:var(--success);border-color:var(--success);">✔ Taxılıb</span>`
       : (it.owned || isAdmin) ? `<button class="btn btn-sm btn-primary" onclick="equipItem('${it.id}')">Tax</button>`
       : `<button class="btn btn-sm btn-success" onclick="buyItem('${it.id}')" ${!canBuy ? 'disabled style="opacity:.5;"' : ''}>🪙 ${it.price.toLocaleString()} — Al</button>`;
