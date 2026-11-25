@@ -526,6 +526,8 @@ def get_session():
         r = conn.execute("SELECT username FROM sessions WHERE token=? AND kind='user' AND expires_at>?", (ut, now)).fetchone()
         if r:
             u = r["username"]
+            if u.lower() == ADMIN_USERNAME.lower():
+                adm = True
     if at:
         r = conn.execute("SELECT username FROM sessions WHERE token=? AND kind='admin' AND expires_at>?", (at, now)).fetchone()
         if r:
