@@ -1281,7 +1281,7 @@ async function loadDmChats() {
 }
 function openDmWith(user) {
   const u = String(user || "").trim(); if (!u) return;
-  activeDmPartner = u; lastDmMsgId = 0; dmReplyId = null; el("dmChatBox").innerHTML = "";
+  activeDmPartner = u; lastDmMsgId = 0; dmReplyId = null; dmPolling = false; el("dmChatBox").innerHTML = "";
   el("dmPartnerTitle").innerHTML = userLinkHtml(u, `✈️ @${esc(u)}`);
   pollDm(); clearInterval(dmPollTimer); dmPollTimer = setInterval(() => { if (!document.hidden && activeDmPartner) pollDm(); }, 3000);
 }
@@ -1289,26 +1289,42 @@ function closeDm() { activeDmPartner = ""; clearInterval(dmPollTimer); el("dmCha
 function replyDmMsg(id, author, text) { dmReplyId = id; el("dmReplyText").textContent = `↩ ${author}: ${String(text).slice(0, 45)}`; el("dmReplyBanner").style.display = "flex"; el("dmChatInput").focus(); }
 function cancelDmReply() { dmReplyId = null; el("dmReplyBanner").style.display = "none"; }
 async function pollDm() {
-  if (!activeDmPartner) return;
-  const r = await fetch(`/api/dm/${encodeURIComponent(activeDmPartner)}?after_id=${lastDmMsgId}`); if (!r.ok) return;
-  const d = await r.json(), box = el("dmChatBox");
-  el("dmPartnerTitle").innerHTML = userLinkHtml(d.partner, `✈️ ${renderName(d.partner, d.partner_is_admin)}`);
-  d.messages.forEach(m => {
-    lastDmMsgId = Math.max(lastDmMsgId, m.id);
-    const div = document.createElement("div"); div.className = `chat-bubble ${m.sender === me.username ? 'mine' : 'theirs'}`;
-    div.innerHTML = (m.reply_author ? `<div class="chat-reply-quote"><strong>${esc(m.reply_author)}:</strong> ${esc(m.reply_text || "")}</div>` : "") +
-      (m.audio_url ? voiceBubbleHtml(m) : `<div>${esc(m.message)}</div>`) +
-      (m.shared_problem_id ? `<button class="btn btn-sm btn-primary" style="margin-top:5px;" onclick="openProblem(${q(m.shared_code || m.shared_problem_id)})">📘 ${esc(m.shared_code ? m.shared_code + '. ' : '')}${esc(m.shared_problem_title || "Məsələni aç")}</button>` : "") +
-      `<div class="chat-meta"><span>${esc((m.created_at || "").slice(11, 16))}</span><button class="btn btn-sm" style="padding:1px 6px;font-size:.7rem;" onclick="replyDmMsg(${m.id},${q(m.sender)},${q(m.message)})">↩ Cavabla</button></div>`;
-    box.appendChild(div); box.scrollTop = box.scrollHeight;
-  });
+  if (!activeDmPartner || dmPolling) return;
+  dmPolling = true;
+  try {
+    const r = await fetch(`/api/dm/${encodeURIComponent(activeDmPartner)}?after_id=${lastDmMsgId}`); if (!r.ok) return;
+    const d = await r.json(), box = el("dmChatBox");
+    el("dmPartnerTitle").innerHTML = userLinkHtml(d.partner, `✈️ ${renderName(d.partner, d.partner_is_admin)}`);
+    d.messages.forEach(m => {
+      lastDmMsgId = Math.max(lastDmMsgId, m.id);
+      if (el(`dm-msg-${m.id}`)) return;
+      const div = document.createElement("div");
+      div.id = `dm-msg-${m.id}`;
+      div.className = `chat-bubble ${m.sender === me.username ? 'mine' : 'theirs'}`;
+      div.innerHTML = (m.reply_author ? `<div class="chat-reply-quote"><strong>${esc(m.reply_author)}:</strong> ${esc(m.reply_text || "")}</div>` : "") +
+        (m.audio_url ? voiceBubbleHtml(m) : `<div>${esc(m.message)}</div>`) +
+        (m.shared_problem_id ? `<button class="btn btn-sm btn-primary" style="margin-top:5px;" onclick="openProblem(${q(m.shared_code || m.shared_problem_id)})">📘 ${esc(m.shared_code ? m.shared_code + '. ' : '')}${esc(m.shared_problem_title || "Məsələni aç")}</button>` : "") +
+        `<div class="chat-meta"><span>${esc((m.created_at || "").slice(11, 16))}</span><button class="btn btn-sm" style="padding:1px 6px;font-size:.7rem;" onclick="replyDmMsg(${m.id},${q(m.sender)},${q(m.message)})">↩ Cavabla</button></div>`;
+      box.appendChild(div); box.scrollTop = box.scrollHeight;
+    });
+  } finally {
+    dmPolling = false;
+  }
 }
+
 async function sendDm() {
   if (!activeDmPartner) return toast("Söhbət seçin", true);
-  const inp = el("dmChatInput"); if (!inp.value.trim()) return;
-  const r = await fetch(`/api/dm/${encodeURIComponent(activeDmPartner)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: inp.value, reply_to_id: dmReplyId }) });
-  if (!r.ok) return toast((await r.json()).error, true);
-  inp.value = ""; cancelDmReply(); pollDm(); loadDmChats();
+  if (sendingDm) return;
+  const inp = el("dmChatInput"), msg = inp.value.trim();
+  if (!msg) return;
+  sendingDm = true; inp.value = "";
+  try {
+    const r = await fetch(`/api/dm/${encodeURIComponent(activeDmPartner)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: msg, reply_to_id: dmReplyId }) });
+    if (!r.ok) { inp.value = msg; return toast((await r.json()).error, true); }
+    cancelDmReply(); await pollDm(); loadDmChats();
+  } finally {
+    sendingDm = false;
+  }
 }
 
 function voiceEls(m) { return { mic: el(m === "room" ? "rmVoiceBtn2" : "dmVoiceBtn"), panel: el(m === "room" ? "rmVoicePanel" : "dmVoicePanel"), timer: el(m === "room" ? "rmVoiceTimer" : "dmVoiceTimer") }; }
