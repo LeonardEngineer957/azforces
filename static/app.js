@@ -15,6 +15,7 @@ let dailyTimerInterval = null, dailyProblemKey = null;
 let shopCache = null, shopFilterCategory = "all";
 let voiceRecorder = null, voiceChunks = [], voiceStream = null, voiceTimerInt = null, voiceStartTs = 0, voiceActiveMode = "";
 let pendingExpanded = false, creativeCache = [], pingStarted = false;
+let currentProfileUser = "", currentProfileSubTab = "overview";
 
 const TEMPLATES = {
   python: "# Kodunuzu bura yazın\n",
@@ -512,6 +513,10 @@ function renderName(name, isAdm) { return isAdm ? `<span class="admin-chromatic"
 function renderNameWithRank(name, isAdm, rating) {
   return `<span class="name-rank-wrap">${renderName(name, isAdm)}${renderRankHtml(rating, isAdm)}</span>`;
 }
+function userLinkHtml(username, innerHtml) {
+  if (!username || username === "AzForces") return innerHtml;
+  return `<span class="user-link" onclick="event.stopPropagation();openFullProfile(${q(username)})">${innerHtml}</span>`;
+}
 function coinTxt(v) { return (me.infinite_coins || me.is_admin) ? "∞" : String(v ?? 0); }
 function fxMediaHtml(url, anim) {
   const isVid = /^data:video\/|\.(mp4|webm|mov)(\?|$)/i.test(url || "");
@@ -569,18 +574,21 @@ function runGuestTimer(sec) {
   tick(); guestTimer = setInterval(tick, 1000);
 }
 
-/* ── DRAWERS & NAVİQASİYA ── */
+/* ── DRAWER & NAVİQASİYA ── */
 function toggleLeftDrawer(force) {
   const d = el("leftDrawer"), b = el("leftBackdrop"), open = force !== undefined ? force : !d.classList.contains("open");
   d.classList.toggle("open", open); b.classList.toggle("open", open);
 }
-function toggleProfileDrawer(force) {
-  const d = el("profileDrawer"), b = el("rightBackdrop"), open = force !== undefined ? force : !d.classList.contains("open");
-  d.classList.toggle("open", open); b.classList.toggle("open", open);
-}
+function toggleProfileDrawer() {}
 function togglePdSub(id) { const n = el(id); if (n) n.style.display = n.style.display === "none" ? "block" : "none"; }
+function openMyProfileTab(subTab) {
+  if (!me.authenticated) return openAuthModal();
+  return openFullProfile(me.username, subTab || "overview");
+}
 function switchTab(tab) {
   toggleLeftDrawer(false);
+  if (tab === "shop") return openMyProfileTab("shop");
+  if (tab === "games") return openMyProfileTab("games");
   const sec = el("tab-" + tab); if (!sec) return;
   document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
   document.querySelectorAll(".drawer-item").forEach(b => b.classList.remove("active"));
@@ -595,7 +603,6 @@ function switchTab(tab) {
   if (tab === "contests") loadContests();
   if (tab === "daily") loadDailyChallenge();
   if (tab === "chat") { loadMyRooms(); loadRoomProblemsPicker(); loadDmChats(); }
-  if (tab === "shop") loadShop();
   if (tab === "propose") { loadMyProposals(); if (me.is_admin) loadAdminPendingBar(); }
   if (tab === "registrations") loadRegistrations("weekly");
   if (tab === "submissions") loadSubmissions();
@@ -649,7 +656,7 @@ async function loadWelcomeReviews() {
   el("siteReviewsList").innerHTML = d.reviews.map(r => `
     <div class="card" style="margin:0 0 8px;background:rgba(7,10,16,.65);">
       <div class="row" style="justify-content:space-between;font-size:.84rem;">
-        ${renderNameWithRank(r.username, r.is_admin_user, r.user_rating)}
+        ${userLinkHtml(r.username, renderNameWithRank(r.username, r.is_admin_user, r.user_rating))}
         <span style="color:#fbbf24;">${"★".repeat(r.rating)}${"☆".repeat(5 - r.rating)}</span>
       </div>
       <p class="muted" style="margin:6px 0 0;font-size:.85rem;">${esc(r.comment)}</p>
@@ -702,10 +709,11 @@ async function doRegister() {
 }
 async function logoutAll() {
   await fetch("/api/auth/logout", { method: "POST" });
-  toggleProfileDrawer(false); await syncMe(); switchTab("welcome"); toast("Çıxış edildi");
+  currentProfileUser = "";
+  await syncMe(); switchTab("welcome"); toast("Çıxış edildi");
 }
 
-/* ── ADMİN META & PROFİL DRAWER & TAM PROFİL ── */
+/* ── ADMİN META & PROFİL SƏHİFƏSİ (Çərçivə + Oyunlar + Ayarlar daxilində) ── */
 function applyAdminMeta(prefix, p) {
   const box = el(prefix + "AdminMeta"); if (!box) return;
   const meta = p.admin_meta;
@@ -720,45 +728,13 @@ function applyAdminMeta(prefix, p) {
   } else box.style.display = "none";
 }
 
-async function openProfileDrawer() {
-  if (!me.authenticated) return openAuthModal();
-  toggleProfileDrawer(true);
-  const r = await fetch("/api/profile"); if (!r.ok) return;
-  const p = await r.json();
-  setAvatar("pdAvatarWrap", "pdAvatarImg", "pdAvatarTxt", "av-lg", p);
-  el("pdName").innerHTML = renderName(p.username, p.is_admin_user);
-  applyRankEl(el("pdRank"), p.rating, p.is_admin_user);
-  el("pdEmail").textContent = p.email || "";
-  el("pdLvlBadge").textContent = `Lv.${p.level}`;
-  el("pdCoins").textContent = p.infinite_coins ? "∞" : p.coins;
-  el("pdRating").textContent = p.rating;
-  el("pdStreak").textContent = p.streak;
-  el("pdXpNums").textContent = `${p.xp} / ${p.needed_xp} XP`;
-  el("pdXpFill").style.width = `${p.progress_pct}%`;
-  el("profBioInput").value = p.bio || "";
-  el("profColorInput").value = p.avatar_color || "#3b82f6";
-  applyAdminMeta("pd", p);
-  el("pdIncomingReqs").innerHTML = (p.incoming_requests || []).map(u => `
-    <div class="row" style="justify-content:space-between;font-size:.8rem;margin-bottom:4px;">
-      <span>${esc(u)}</span>
-      <span><button class="btn btn-sm btn-success" onclick="respondFriend(${q(u)},'accept')">✔</button> <button class="btn btn-sm btn-danger" onclick="respondFriend(${q(u)},'reject')">✕</button></span>
-    </div>`).join("");
-  el("pdFriendsList").innerHTML = (p.friends || []).length
-    ? p.friends.map(f => `
-      <div class="row" style="justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);font-size:.82rem;">
-        <span style="cursor:pointer;" onclick="toggleProfileDrawer(false);openFullProfile(${q(f.username)})">${renderName(f.username, f.is_admin_user)} <span class="muted">Lv.${f.level}</span></span>
-        <button class="btn btn-sm btn-primary" onclick="toggleProfileDrawer(false);switchTab('chat');switchChatMode('dm');openDmWith(${q(f.username)})">💬</button>
-      </div>`).join("")
-    : `<div class="muted" style="font-size:.8rem;">Dost yoxdur.</div>`;
-}
-
 async function sendCoinsToUser() {
   if (!me.authenticated) return openAuthModal();
   const u = el("coinTargetInput").value.trim().replace(/^@/, ""), amt = parseInt(el("coinAmtInput").value, 10);
   if (!u || !amt || amt <= 0) return toast("İstifadəçi adı və düzgün miqdar yazın!", true);
   const r = await fetch("/api/coins/transfer", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: u, amount: amt }) });
   const d = await r.json(); toast(d.message || d.error, !r.ok);
-  if (r.ok) { el("coinTargetInput").value = ""; el("coinAmtInput").value = ""; await syncMe(); openProfileDrawer(); }
+  if (r.ok) { el("coinTargetInput").value = ""; el("coinAmtInput").value = ""; await syncMe(); openFullProfile(me.username, currentProfileSubTab); }
 }
 async function quickSendCoins(target) {
   const amt = prompt(`${target} istifadəçisinə neçə AzCoin göndərmək istəyirsiniz?`, "50"); if (!amt) return;
@@ -771,11 +747,11 @@ async function uploadAvatar() {
   const fd = new FormData(); fd.append("avatar", f);
   const r = await fetch("/api/profile/avatar", { method: "POST", body: fd }); btn.disabled = false;
   const d = await r.json(); toast(d.message || d.error, !r.ok);
-  if (r.ok) { await syncMe(); openProfileDrawer(); }
+  if (r.ok) { await syncMe(); openFullProfile(me.username, currentProfileSubTab); }
 }
 async function saveProfileBio() {
   const r = await fetch("/api/profile/update", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bio: el("profBioInput").value, avatar_color: el("profColorInput").value }) });
-  if (r.ok) { await syncMe(); openProfileDrawer(); toast("Yadda saxlanıldı!"); }
+  if (r.ok) { await syncMe(); openFullProfile(me.username, currentProfileSubTab); toast("Yadda saxlanıldı!"); }
   else toast((await r.json()).error || "Xəta", true);
 }
 async function sendFriendRequestTo(target) {
@@ -785,36 +761,81 @@ async function sendFriendRequestTo(target) {
 async function sendFriendRequest() { const i = el("addFriendInput"); if (await sendFriendRequestTo(i.value.trim())) i.value = ""; }
 async function respondFriend(username, action) {
   await fetch("/api/friends/respond", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username, action }) });
-  openProfileDrawer();
+  openFullProfile(me.username, "settings");
 }
 
-async function openFullProfile(uname) {
+function switchProfileSubTab(sub) {
+  const isMe = me.authenticated && currentProfileUser.toLowerCase() === me.username.toLowerCase();
+  const target = (isMe || sub === "overview") ? sub : "overview";
+  currentProfileSubTab = target;
+
+  document.querySelectorAll(".prof-sub-btn").forEach(b => b.classList.toggle("active", b.dataset.psub === target));
+  const map = { overview: "profPaneOverview", shop: "profPaneShop", games: "profPaneGames", settings: "profPaneSettings" };
+  Object.entries(map).forEach(([k, id]) => {
+    const node = el(id); if (node) node.style.display = (k === target) ? "block" : "none";
+  });
+
+  if (target === "shop") loadShop();
+}
+
+async function openFullProfile(uname, subTab) {
   if (!me.authenticated) return openAuthModal();
   const r = await fetch(`/api/users/${encodeURIComponent(uname)}`);
   if (!r.ok) return toast("Profil tapılmadı", true);
   const p = await r.json();
+  currentProfileUser = p.username;
+  const isMe = me.authenticated && p.username.toLowerCase() === me.username.toLowerCase();
+
   switchTab("profile");
   setAvatar("fpAvatarWrap", "fpAvatarImg", "fpAvatarTxt", "av-xl", p);
   el("fpName").innerHTML = renderName(p.username, p.is_admin_user);
   applyRankEl(el("fpRank"), p.rating, p.is_admin_user);
   el("fpBio").textContent = p.bio || "Bio yazılmayıb.";
   el("fpLvlBadge").textContent = `Səviyyə ${p.level}`;
+  el("fpCoinsBadge").style.display = isMe ? "inline-block" : "none";
+  el("fpCoinsBadge").textContent = `🪙 ${p.infinite_coins ? "∞" : p.coins}`;
   el("fpRatingBadge").textContent = `Reytinq: ${p.rating}`;
   el("fpStreakBadge").textContent = `🔥 ${p.streak} gün`;
   el("fpSolvedBadge").textContent = `✔ ${p.solved_count} həll`;
   el("fpXpNums").textContent = `${p.xp} / ${p.needed_xp} XP`;
   el("fpXpFill").style.width = `${p.progress_pct}%`;
   applyAdminMeta("fp", p);
-  el("fpActions").innerHTML = (p.username === me.username) ? "" : `
-    <button class="btn btn-primary btn-sm" onclick="switchTab('chat');switchChatMode('dm');openDmWith(${q(p.username)})">💬 Mesaj Yaz</button>
-    <button class="btn btn-success btn-sm" onclick="quickSendCoins(${q(p.username)})">🪙 Coin Göndər</button>
-    <button class="btn btn-sm" onclick="sendFriendRequestTo(${q(p.username)})">+ Dost Ol</button>`;
+
+  ["psubShopBtn", "psubGamesBtn", "psubSettingsBtn"].forEach(id => {
+    const b = el(id); if (b) b.style.display = isMe ? "inline-flex" : "none";
+  });
+
+  el("fpActions").innerHTML = isMe
+    ? `<button class="btn btn-sm btn-danger" onclick="logoutAll()">🚪 Hesabdan Çıx</button>`
+    : `<button class="btn btn-primary btn-sm" onclick="switchTab('chat');switchChatMode('dm');openDmWith(${q(p.username)})">💬 Mesaj Yaz</button>
+       <button class="btn btn-success btn-sm" onclick="quickSendCoins(${q(p.username)})">🪙 Coin Göndər</button>
+       <button class="btn btn-sm" onclick="sendFriendRequestTo(${q(p.username)})">+ Dost Ol</button>`;
+
+  if (isMe) {
+    el("profBioInput").value = p.bio || "";
+    el("profColorInput").value = p.avatar_color || "#3b82f6";
+    el("fpIncomingReqs").innerHTML = (p.incoming_requests || []).map(u => `
+      <div class="row" style="justify-content:space-between;font-size:.82rem;margin-bottom:6px;">
+        <span class="user-link" onclick="openFullProfile(${q(u)})">${esc(u)}</span>
+        <span><button class="btn btn-sm btn-success" onclick="respondFriend(${q(u)},'accept')">✔</button> <button class="btn btn-sm btn-danger" onclick="respondFriend(${q(u)},'reject')">✕</button></span>
+      </div>`).join("");
+    el("fpFriendsList").innerHTML = (p.friends || []).length
+      ? p.friends.map(f => `
+        <div class="row" style="justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:.84rem;">
+          <span class="user-link" onclick="openFullProfile(${q(f.username)})">${renderName(f.username, f.is_admin_user)} <span class="muted">Lv.${f.level}</span></span>
+          <button class="btn btn-sm btn-primary" onclick="switchTab('chat');switchChatMode('dm');openDmWith(${q(f.username)})">💬</button>
+        </div>`).join("")
+      : `<div class="muted" style="font-size:.82rem;">Dost yoxdur.</div>`;
+  }
+
   el("fpRecentSolved").innerHTML = (p.recent_solved || []).length
     ? p.recent_solved.map(s => `<div style="padding:5px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="openProblem(${q(s.code_label || s.id)})">✔ <strong>${esc(s.code_label)}. ${esc(s.title)}</strong> <span class="muted">(${s.rating})</span></div>`).join("")
     : `<span class="muted">Hələ yoxdur.</span>`;
   renderHeatmap(p.heatmap || {});
   drawRatingChart((p.rating_history && p.rating_history.length) ? p.rating_history : [{ rating: p.rating }]);
+  switchProfileSubTab(isMe ? (subTab || "overview") : "overview");
 }
+
 function renderHeatmap(heat) {
   const grid = el("profileHeatmap"); if (!grid) return; grid.innerHTML = "";
   const now = new Date();
@@ -839,7 +860,7 @@ function drawRatingChart(hist) {
   hist.forEach((pt, idx) => { ctx.fillStyle = "#fde047"; ctx.beginPath(); ctx.arc(xOf(idx), yOf(pt.rating), 4, 0, Math.PI * 2); ctx.fill(); });
 }
 
-/* ── QEYDİYYATLAR PƏNCƏRƏSİ (GÜNLÜK / HƏFTƏLİK) ── */
+/* ── QEYDİYYATLAR PƏNCƏRƏSİ ── */
 async function loadRegistrations(period) {
   const p = period || "weekly";
   document.querySelectorAll(".reg-filter-btn").forEach(b => b.classList.remove("active"));
@@ -886,10 +907,10 @@ async function loadPosts() {
       return `<div class="poll-opt ${p.my_vote === i ? 'voted' : ''}" onclick="votePoll(${p.id},${i})"><div class="poll-bar" style="width:${pct}%"></div><div class="poll-txt"><span>${esc(o.text)}</span><span>${o.votes} (${pct}%)</span></div></div>`;
     }).join("");
     const reactHtml = (p.reactions || []).map(rx => `<button class="react-btn ${rx.mine ? 'mine' : ''}" onclick="reactPost(${p.id},'${rx.emoji}')">${rx.emoji} ${rx.count}</button>`).join("");
-    const cmtHtml = (p.comments || []).map(c => `<div class="comment-item ${c.parent_id ? 'comment-reply' : ''}">${renderName(c.author, c.is_admin_user)}: ${esc(c.body)} <button class="btn btn-sm" style="padding:1px 6px;font-size:.7rem;" onclick="replyComment(${p.id},${c.id},${q(c.author)})">Cavabla</button></div>`).join("");
+    const cmtHtml = (p.comments || []).map(c => `<div class="comment-item ${c.parent_id ? 'comment-reply' : ''}">${userLinkHtml(c.author, renderName(c.author, c.is_admin_user))}: ${esc(c.body)} <button class="btn btn-sm" style="padding:1px 6px;font-size:.7rem;" onclick="replyComment(${p.id},${c.id},${q(c.author)})">Cavabla</button></div>`).join("");
     return `<div class="card post-card ${p.is_pinned ? 'pinned' : ''}">
       <div class="row" style="justify-content:space-between;"><strong>${p.is_pinned ? '📌 ' : ''}${esc(p.title)}</strong>
-        <span class="muted" style="font-size:.8rem;">${renderName(p.author, p.is_admin_user)} · ${esc(p.created_at)} ${me.is_admin ? `<button class="btn btn-sm btn-danger" onclick="deletePost(${p.id})">Sil</button>` : ''}</span>
+        <span class="muted" style="font-size:.8rem;">${userLinkHtml(p.author, renderName(p.author, p.is_admin_user))} · ${esc(p.created_at)} ${me.is_admin ? `<button class="btn btn-sm btn-danger" onclick="deletePost(${p.id})">Sil</button>` : ''}</span>
       </div>
       ${p.body ? `<p style="margin:8px 0;white-space:pre-wrap;">${esc(p.body)}</p>` : ""}
       ${pollHtml}
@@ -916,9 +937,7 @@ async function sendComment(pid) {
   const r = await fetch(`/api/posts/${pid}/comment`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ body: i.value, parent_id: par || null }) });
   if (r.ok) loadPosts(); else toast((await r.json()).error, true);
 }
-async function deletePost(pid) { await fetch(`/api/posts/${pid}`, { method: "DELETE" }); loadPosts(); }
-
-/* ── MƏSƏLƏLƏR ── */
+async function deletePost(pid) { await fetch(`/api/posts/${pid}`, { method: "DELETE" }); loadPosts(); }/* ── MƏSƏLƏLƏR ── */
 async function loadProblems(view) { allProblems = await (await fetch(`/api/problems?view=${view || "archive"}`)).json(); renderProblemsTable(); }
 function renderProblemsTable() {
   const sb = el("problemSearch"), ht = el("hideTagsToggle"); if (!sb) return;
@@ -948,7 +967,7 @@ async function openProblem(key) {
   el("problemListView").style.display = "none"; el("problemReadView").style.display = "block";
   el("probTitle").textContent = `${p.code_label ? p.code_label + '. ' : ''}${p.title}`;
   el("probLimits").textContent = `time limit per test: ${p.time_limit}s | memory limit per test: ${p.memory_limit} MB`;
-  el("probAuthorMeta").innerHTML = `Müəllif: ${renderName(p.author, p.author_is_admin)} | Reytinq: ${p.rating}`;
+  el("probAuthorMeta").innerHTML = `Müəllif: ${userLinkHtml(p.author, renderName(p.author, p.author_is_admin))} | Reytinq: ${p.rating}`;
   const st = el("probStatement"), ins = el("probInputSpec"), out = el("probOutputSpec");
   st.innerHTML = fmtStmt(p.statement); renderMath(st);
   ins.innerHTML = fmtStmt(p.input_spec || "—"); renderMath(ins);
@@ -997,7 +1016,7 @@ async function forwardProblemToDm() {
   const u = el("fwdDmUser").value.trim(); if (!u) return;
   const r = await fetch(`/api/dm/${encodeURIComponent(u)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message: "Məsələ göndərdi:", shared_problem_id: forwardPid }) });
   closeModal("forwardModal"); toast(r.ok ? "Dosta göndərildi!" : "İstifadəçi tapılmadı", !r.ok);
-  }
+}
 
 /* ── CODEMIRROR & SUBMIT ── */
 function initEditors() {
@@ -1195,7 +1214,7 @@ async function pollRoom() {
   d.messages.forEach(m => {
     lastRoomMsgId = Math.max(lastRoomMsgId, m.id);
     const div = document.createElement("div"); div.className = `chat-bubble ${m.username === me.username ? 'mine' : 'theirs'}`;
-    const bodyHtml = m.audio_url ? voiceBubbleHtml(m) : `<div><span style="cursor:pointer;" onclick="openFullProfile(${q(m.username)})">${renderName(m.username, m.is_admin_user)}</span>: ${esc(m.message)}</div>`;
+    const bodyHtml = m.audio_url ? voiceBubbleHtml(m) : `<div>${userLinkHtml(m.username, renderName(m.username, m.is_admin_user))}: ${esc(m.message)}</div>`;
     div.innerHTML = (m.reply_author ? `<div class="chat-reply-quote"><strong>${esc(m.reply_author)}:</strong> ${esc(m.reply_text || "")}</div>` : "") + bodyHtml +
       (m.shared_problem_id ? `<button class="btn btn-sm btn-primary" style="margin-top:5px;" onclick="openProblem(${q(m.shared_code || m.shared_problem_id)})">📘 ${esc(m.shared_code ? m.shared_code + '. ' : '')}${esc(m.shared_problem_title || "Məsələni aç")}</button>` : "") +
       `<div class="chat-meta"><span>${esc((m.created_at || "").slice(11, 16))}</span><button class="btn btn-sm" style="padding:1px 6px;font-size:.7rem;" onclick="replyRoomMsg(${m.id},${q(m.username)},${q(m.message)})">↩ Cavabla</button></div>`;
@@ -1213,7 +1232,7 @@ function openGroupProfile() {
   const d = activeRoomData, rm = d.room, isCr = rm.creator === me.username;
   el("groupProfileBody").innerHTML = `
     <div class="prof-top" style="margin-bottom:12px;"><div class="av-wrap av-lg" style="background:${esc(rm.avatar_color)};">${rm.avatar_url ? `<img src="${esc(rm.avatar_url)}">` : esc(rm.title[0])}</div>
-      <div><h3 style="margin:0;">${esc(rm.title)}</h3><div class="muted" style="font-size:.82rem;">Yaradıcı: ${esc(rm.creator)} · Kod: ${rm.room_code.replace(/(.{4})/g, "$1-").slice(0, -1)}</div></div></div>
+      <div><h3 style="margin:0;">${esc(rm.title)}</h3><div class="muted" style="font-size:.82rem;">Yaradıcı: ${userLinkHtml(rm.creator, esc(rm.creator))} · Kod: ${rm.room_code.replace(/(.{4})/g, "$1-").slice(0, -1)}</div></div></div>
     <p style="font-size:.88rem;margin:0 0 12px;">${esc(rm.bio)}</p>
     ${isCr ? `<div class="prof-box" style="margin-bottom:10px;"><strong style="font-size:.84rem;">Qrup Profilini Düzəlt</strong>
       <input id="gpTitle" value="${esc(rm.title)}" style="margin-top:6px;"><textarea id="gpBio" rows="2" style="margin-top:6px;">${esc(rm.bio)}</textarea>
@@ -1222,7 +1241,7 @@ function openGroupProfile() {
     ${(d.shared_problems || []).length ? `<div class="prof-box" style="margin-bottom:10px;"><strong style="font-size:.84rem;">Paylaşılan Suallar</strong><div style="margin-top:6px;">${d.shared_problems.map(p => `<button class="btn btn-sm" style="margin:2px;" onclick="closeModal('groupProfileModal');openProblem(${q(p.code_label || p.id)})">${esc(p.code_label)}. ${esc(p.title)}</button>`).join("")}</div></div>` : ""}
     <div class="prof-box"><strong style="font-size:.84rem;">Üzvlər (${d.members.length}/20)</strong>
       ${d.members.map(m => `<div class="row" style="justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:.84rem;">
-        <span style="cursor:pointer;" onclick="closeModal('groupProfileModal');openFullProfile(${q(m.username)})">${renderName(m.username, m.is_admin_user)} <span class="muted">Lv.${m.level}</span> ${m.username === rm.creator ? '<span class="badge">Admin</span>' : ''}</span>
+        <span class="user-link" onclick="closeModal('groupProfileModal');openFullProfile(${q(m.username)})">${renderName(m.username, m.is_admin_user)} <span class="muted">Lv.${m.level}</span> ${m.username === rm.creator ? '<span class="badge">Admin</span>' : ''}</span>
         ${isCr && m.username !== rm.creator ? `<button class="btn btn-danger btn-sm" onclick="kickMember(${q(m.username)})">Çıxar</button>` : ""}</div>`).join("")}</div>
     <button class="btn btn-danger" style="width:100%;justify-content:center;margin-top:12px;" onclick="exitGroupPermanent()">Qrupdan Ayrıl</button>`;
   el("groupProfileModal").classList.add("open");
@@ -1245,7 +1264,8 @@ async function loadDmChats() {
 }
 function openDmWith(user) {
   const u = String(user || "").trim(); if (!u) return;
-  activeDmPartner = u; lastDmMsgId = 0; dmReplyId = null; el("dmChatBox").innerHTML = ""; el("dmPartnerTitle").textContent = `✈️ @${u}`;
+  activeDmPartner = u; lastDmMsgId = 0; dmReplyId = null; el("dmChatBox").innerHTML = "";
+  el("dmPartnerTitle").innerHTML = userLinkHtml(u, `✈️ @${esc(u)}`);
   pollDm(); clearInterval(dmPollTimer); dmPollTimer = setInterval(() => { if (!document.hidden && activeDmPartner) pollDm(); }, 3000);
 }
 function closeDm() { activeDmPartner = ""; clearInterval(dmPollTimer); el("dmChatBox").innerHTML = ""; el("dmPartnerTitle").textContent = "✈️ —"; }
@@ -1255,7 +1275,7 @@ async function pollDm() {
   if (!activeDmPartner) return;
   const r = await fetch(`/api/dm/${encodeURIComponent(activeDmPartner)}?after_id=${lastDmMsgId}`); if (!r.ok) return;
   const d = await r.json(), box = el("dmChatBox");
-  el("dmPartnerTitle").innerHTML = `✈️ ${renderName(d.partner, d.partner_is_admin)}`;
+  el("dmPartnerTitle").innerHTML = userLinkHtml(d.partner, `✈️ ${renderName(d.partner, d.partner_is_admin)}`);
   d.messages.forEach(m => {
     lastDmMsgId = Math.max(lastDmMsgId, m.id);
     const div = document.createElement("div"); div.className = `chat-bubble ${m.sender === me.username ? 'mine' : 'theirs'}`;
@@ -1324,7 +1344,7 @@ async function sendVoiceRecord(mode) {
   }
 }
 
-/* ── MAĞAZA ── */
+/* ── MAĞAZA (PROFİL DAXİLİNDƏ) ── */
 async function loadShop() {
   if (!me.authenticated) { el("shopGrid").innerHTML = `<div class="card">Mağazadan istifadə üçün daxil olun.</div>`; return; }
   shopCache = await (await fetch("/api/shop")).json();
@@ -1360,12 +1380,18 @@ function filterShop(cat) {
 }
 async function buyItem(id) {
   const r = await fetch("/api/shop/buy", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ item_id: id }) }), d = await r.json();
-  toast(d.message || d.error, !r.ok); await syncMe(); loadShop();
+  toast(d.message || d.error, !r.ok); await syncMe(); await loadShop();
+  if (el("tab-profile")?.classList.contains("active") && currentProfileUser.toLowerCase() === (me.username || "").toLowerCase()) {
+    setAvatar("fpAvatarWrap", "fpAvatarImg", "fpAvatarTxt", "av-xl", me);
+    if (el("fpCoinsBadge")) el("fpCoinsBadge").textContent = `🪙 ${me.infinite_coins ? "∞" : me.coins}`;
+  }
 }
 async function equipItem(id) {
   const r = await fetch("/api/shop/equip", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ item_id: id }) }), d = await r.json();
-  toast(d.message || d.error, !r.ok); await syncMe(); loadShop();
-  if (el("profileDrawer").classList.contains("open")) openProfileDrawer();
+  toast(d.message || d.error, !r.ok); await syncMe(); await loadShop();
+  if (el("tab-profile")?.classList.contains("active") && currentProfileUser.toLowerCase() === (me.username || "").toLowerCase()) {
+    setAvatar("fpAvatarWrap", "fpAvatarImg", "fpAvatarTxt", "av-xl", me);
+  }
 }
 async function adminAddCustomFrame() {
   const file = el("cfFile")?.files[0];
@@ -1391,7 +1417,7 @@ async function adminDeleteCustomFrame(fid) {
   if (r.ok) { toast("Silindi"); await syncMe(); loadShop(); }
 }
 
-/* ── 5 DƏQİQƏLİK ÇƏTİN RİYAZİ OYUN + BULLS & COWS ── */
+/* ── 5 DƏQİQƏLİK ÇƏTİN RİYAZİ OYUN + BULLS & COWS (PROFİL DAXİLİNDƏ) ── */
 async function startCalculusGame() {
   if (!me.authenticated) return openAuthModal();
   clearInterval(calcTimerInt);
@@ -1490,7 +1516,7 @@ function renderPendingPropCard(p, prefix) {
     <span class="psi-rating">⭐ ${p.rating}</span>
   </div>
   <div id="${prefix}Detail-${p.id}" class="pending-detail-expand" style="display:none;">
-    <p style="margin:0 0 6px;"><strong>Müəllif:</strong> ${esc(p.author)} · <strong>Kod yoxlaması:</strong> ${esc(p.author_check_status || "—")} · <strong>Teqlər:</strong> ${esc(p.tags)}</p>
+    <p style="margin:0 0 6px;"><strong>Müəllif:</strong> ${userLinkHtml(p.author, esc(p.author))} · <strong>Kod yoxlaması:</strong> ${esc(p.author_check_status || "—")} · <strong>Teqlər:</strong> ${esc(p.tags)}</p>
     <p style="margin:0 0 6px;"><strong>Plan:</strong> ${esc(p.plan || "—")}</p>
     <div style="background:rgba(13,20,32,.9);border:1px solid var(--border);border-radius:8px;padding:8px;margin-bottom:6px;white-space:pre-wrap;max-height:150px;overflow-y:auto;">${esc(p.statement)}</div>
     ${p.input_spec ? `<div class="muted" style="font-size:.78rem;"><b>Input:</b> ${esc(p.input_spec)}</div>` : ""}
@@ -1543,7 +1569,7 @@ async function loadSubmissions() {
   el("submissionsTableBody").innerHTML = submissionsCache.length
     ? submissionsCache.map((s, i) => {
       const pct = (s.quality_pct !== undefined && s.quality_pct !== null) ? s.quality_pct : (s.total_tests ? Math.round(s.passed_tests * 100 / s.total_tests) : 0);
-      return `<tr class="clickable" onclick="openSubModal(${i})"><td>#${s.id}</td><td>${renderName(s.username, s.is_admin_user)}</td><td>${esc(s.problem_title)}</td><td>${esc(s.language)}</td>
+      return `<tr class="clickable" onclick="openSubModal(${i})"><td>#${s.id}</td><td>${userLinkHtml(s.username, renderName(s.username, s.is_admin_user))}</td><td>${esc(s.problem_title)}</td><td>${esc(s.language)}</td>
         <td style="font-weight:700;color:${s.verdict === 'Accepted' ? 'var(--success)' : 'var(--danger)'}">${esc(s.verdict)}</td>
         <td>${s.passed_tests}/${s.total_tests} <span class="muted">(${pct}%)</span></td><td>${esc(s.exec_time)}</td></tr>`;
     }).join("") : `<tr><td colspan="7" class="muted">Yoxdur.</td></tr>`;
@@ -1563,7 +1589,7 @@ async function loadLeaderboard() {
 async function loadCreative() {
   const list = await (await fetch("/api/creative")).json(); creativeCache = list;
   el("creativeGrid").innerHTML = list.map((c, i) => `<div class="card"><strong>${esc(c.title)}</strong> <span class="badge">${esc(c.language)}</span>
-    <div class="muted" style="font-size:.78rem;">${renderName(c.author, c.is_admin_user)}</div><p class="muted" style="font-size:.84rem;">${esc(c.description)}</p>
+    <div class="muted" style="font-size:.78rem;">${userLinkHtml(c.author, renderName(c.author, c.is_admin_user))}</div><p class="muted" style="font-size:.84rem;">${esc(c.description)}</p>
     <pre class="console-out" style="max-height:110px;">${esc(c.code)}</pre>
     <button class="btn btn-sm btn-primary" style="margin-top:8px;" onclick="runCr(${i})">▶ Playground</button></div>`).join("");
 }
@@ -1590,7 +1616,7 @@ async function loadAdminUsers() {
   const r = await fetch(`/api/admin/users?q=${qy}&period=${pr}`); if (!r.ok) return;
   adminUsersCache = await r.json();
   el("adminUsersBody").innerHTML = adminUsersCache.length ? adminUsersCache.map((u, i) => `
-    <tr><td>${renderNameWithRank(u.username, u.is_admin_user, u.rating)}
+    <tr><td>${userLinkHtml(u.username, renderNameWithRank(u.username, u.is_admin_user, u.rating))}
         <div style="font-size:.7rem;" class="${u.is_online ? '' : 'muted'}">${u.is_online ? '<span class="online-dot on"></span>Onlayn' : `<span class="online-dot off"></span>Oflayn (${esc(u.last_seen || "—")})`}</div></td>
       <td class="muted">${esc(u.email)}<div style="font-size:.7rem;">📅 ${esc(String(u.created_at || "").slice(0, 16))}</div></td>
       <td>Lv.${u.level} (${u.xp})</td><td>🪙 ${u.infinite_coins ? "∞" : u.coins}</td><td>${u.solved_count}</td>
