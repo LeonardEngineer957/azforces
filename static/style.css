@@ -487,9 +487,9 @@ textarea.code-fallback { height: 320px; font-family: var(--font-code); font-size
 .shop-filter-btn { transition: all 0.2s; }
 .shop-filter-btn.active { background: var(--primary); border-color: var(--primary); color: #fff; box-shadow: 0 0 12px rgba(59, 130, 246, 0.4); }
 .shop-grid, .creative-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
-.shop-card { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; padding-top: 34px; transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s; }
+.shop-card { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px; padding-top: 42px; overflow: visible; transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s; }
 .shop-card:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(0, 0, 0, 0.38); }
-.shop-card .av-wrap { margin: 22px auto 26px; }
+.shop-card .av-wrap { width: 108px; height: 108px; font-size: 2.4rem; margin: 28px auto 34px; }
 .shop-card.fantasy-card { border-color: rgba(168, 85, 247, 0.42); }
 .shop-card.fantasy-card:hover { box-shadow: 0 12px 30px rgba(168, 85, 247, 0.28); border-color: rgba(168, 85, 247, 0.7); }
 .shop-card.nature-card { border-color: rgba(34, 197, 94, 0.42); }
