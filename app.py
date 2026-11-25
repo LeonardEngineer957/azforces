@@ -1549,7 +1549,7 @@ def admin_delete_custom_frame(fid):
 
 
 def admin_upload_custom_frame():
-    @app.route("/api/admin/frames/upload", methods=["POST"])
+@app.route("/api/admin/frames/upload", methods=["POST"])
 @require_admin
 def admin_upload_custom_frame():
     f = request.files.get("file")
