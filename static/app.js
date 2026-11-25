@@ -1063,9 +1063,22 @@ async function equipItem(id) {
   if (el("profileDrawer").classList.contains("open")) openProfileDrawer();
 }
 async function adminAddCustomFrame() {
-  const r = await fetch("/api/admin/frames", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: el("cfName").value, image_url: el("cfUrl").value, price: el("cfPrice").value, tier: el("cfTier").value, anim_class: el("cfAnim").value, description: el("cfDesc").value }) });
+  const file = el("cfFile")?.files[0];
+  let r;
+  if (file) {
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("name", el("cfName").value || "Xüsusi Çərçivə");
+    fd.append("price", el("cfPrice").value);
+    fd.append("tier", el("cfTier").value);
+    fd.append("anim_class", el("cfAnim").value);
+    fd.append("description", el("cfDesc").value);
+    r = await fetch("/api/admin/frames/upload", { method: "POST", body: fd });
+  } else {
+    r = await fetch("/api/admin/frames", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: el("cfName").value, image_url: el("cfUrl").value, price: el("cfPrice").value, tier: el("cfTier").value, anim_class: el("cfAnim").value, description: el("cfDesc").value }) });
+  }
   const d = await r.json(); toast(d.message || d.error, !r.ok);
-  if (r.ok) { el("cfName").value = ""; el("cfUrl").value = ""; togglePdSub("shopAddCustomBox"); await syncMe(); loadShop(); }
+  if (r.ok) { el("cfName").value = ""; el("cfUrl").value = ""; if (el("cfFile")) el("cfFile").value = ""; togglePdSub("shopAddCustomBox"); await syncMe(); loadShop(); }
 }
 async function adminDeleteCustomFrame(fid) {
   if (!confirm("Bu çərçivə mağazadan silinsin?")) return;
