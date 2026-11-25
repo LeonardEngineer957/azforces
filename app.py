@@ -1549,42 +1549,51 @@ def admin_delete_custom_frame(fid):
 
 
 def admin_upload_custom_frame():
+    @app.route("/api/admin/frames/upload", methods=["POST"])
+@require_admin
+def admin_upload_custom_frame():
     f = request.files.get("file")
     if not f:
-        return jsonify({"error": "Şəkil/GIF seçin."}), 400
-    raw = f.read(2500 * 1024 + 1)
-    if len(raw) > 2500 * 1024 or len(raw) < 20:
-        return jsonify({"error": "Fayl maksimum 2.5 MB ola bilər."}), 400
+        return jsonify({"error": "Şəkil/GIF/Video seçin."}), 400
+    raw = f.read(3800 * 1024 + 1)
+    if len(raw) > 3800 * 1024 or len(raw) < 20:
+        return jsonify({"error": "Fayl maksimum 3.8 MB ola bilər."}), 400
+    is_vid = False
     if raw.startswith(b"\x89PNG"):
-        mime = "image/png"
+        mime, ext = "image/png", "png"
     elif raw.startswith(b"GIF8"):
-        mime = "image/gif"
+        mime, ext = "image/gif", "gif"
     elif raw[:4] == b"RIFF" and raw[8:12] == b"WEBP":
-        mime = "image/webp"
+        mime, ext = "image/webp", "webp"
     elif raw.startswith(b"\xff\xd8\xff"):
-        mime = "image/jpeg"
+        mime, ext = "image/jpeg", "jpg"
+    elif b"ftyp" in raw[4:12]:
+        mime, ext, is_vid = "video/mp4", "mp4", True
+    elif raw.startswith(b"\x1a\x45\xdf\xa3"):
+        mime, ext, is_vid = "video/webm", "webm", True
     else:
-        return jsonify({"error": "Yalnız PNG, GIF, WEBP və ya JPG seçin."}), 400
+        return jsonify({"error": "Yalnız PNG, GIF, WEBP, JPG, MP4 və ya WEBM seçin."}), 400
 
     name = str(request.form.get("name") or "Xüsusi Çərçivə").strip()[:60]
     tier = str(request.form.get("tier") or "fantasy").strip()
     if tier not in ("classic", "fantasy", "nature", "legendary"):
         tier = "fantasy"
-    price = safe_int(request.form.get("price"), 25000, 12000, 1000000)
+    price = safe_int(request.form.get("price"), 50000, 12000, 1000000)
     desc = str(request.form.get("description") or "Xüsusi animasiyalı çərçivə").strip()[:120]
     anim = str(request.form.get("anim_class") or "fx-float").strip()
-    if anim not in ("fx-float", "fx-spin", "fx-pulse", "fx-flicker", "fx-glitch", "fx-flap", ""):
+    if anim not in ("fx-float", "fx-spin", "fx-pulse", "fx-flicker", "fx-glitch", "fx-flap", "fx-screen", "fx-wings-rot", ""):
         anim = "fx-float"
 
     url = ""
     if CLOUD_NAME and CLOUD_KEY and CLOUD_SECRET:
         ts = int(time.time())
         sig = hashlib.sha1(f"folder=azforces_frames&timestamp={ts}{CLOUD_SECRET}".encode("utf-8")).hexdigest()
+        ep = "video/upload" if is_vid else "image/upload"
         try:
             r = requests.post(
-                f"https://api.cloudinary.com/v1_1/{CLOUD_NAME}/image/upload",
+                f"https://api.cloudinary.com/v1_1/{CLOUD_NAME}/{ep}",
                 data={"api_key": CLOUD_KEY, "timestamp": ts, "folder": "azforces_frames", "signature": sig},
-                files={"file": (f.filename or "frame.png", raw)}, timeout=25,
+                files={"file": (f.filename or f"frame.{ext}", raw)}, timeout=30,
             )
             if r.status_code < 400:
                 url = r.json().get("secure_url", "")
@@ -1599,12 +1608,7 @@ def admin_upload_custom_frame():
                  (fid, name, tier, price, desc, url, anim))
     conn.commit()
     conn.close()
-    return jsonify({"message": f"'{name}' qalereyadan yükləndi!", "id": fid})
-    conn = get_db()
-    conn.execute("DELETE FROM custom_frames WHERE id=?", (fid,))
-    conn.commit()
-    conn.close()
-    return jsonify({"message": "Çərçivə silindi."})
+    return jsonify({"message": f"'{name}' yükləndi və mağazaya əlavə edildi!", "id": fid})
 
 
 # ═══════════════ DOSTLAR ═══════════════
