@@ -47,6 +47,9 @@ ALLOWED_PROVIDERS = {"judge0", "wandbox", "piston", "local"}
 ALLOWED_EMOJIS = {"👍", "🔥", "💡", "👏", "❤️"}
 ALLOW_LOCAL_RUNNER = os.environ.get("ALLOW_LOCAL_RUNNER", "false").lower() == "true"
 
+# ── Azərbaycan saat qurşağı (UTC+4) ──
+AZ_TZ = datetime.timezone(datetime.timedelta(hours=4))
+
 # ── Admin və gizli panel (Render mühit dəyişənlərindən oxunur) ──
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "").strip().lower()
 ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "Mr.Leonard").strip() or "Mr.Leonard"
@@ -316,13 +319,40 @@ def safe_float(v, default=2.0, lo=0.5, hi=10.0):
     return max(lo, min(hi, n))
 
 
+def az_now():
+    return datetime.datetime.now(AZ_TZ)
+
+
+def az_today(days_offset=0):
+    return (az_now() + datetime.timedelta(days=days_offset)).strftime("%Y-%m-%d")
+
+
+def to_az_str(val):
+    if val is None:
+        return ""
+    if isinstance(val, datetime.datetime):
+        dt = val if val.tzinfo else val.replace(tzinfo=datetime.timezone.utc)
+        return dt.astimezone(AZ_TZ).strftime("%Y-%m-%d %H:%M:%S")
+    if isinstance(val, datetime.date):
+        return val.strftime("%Y-%m-%d")
+    s = str(val).strip()
+    if len(s) >= 19 and s[10] in (" ", "T"):
+        try:
+            fmt = "%Y-%m-%d %H:%M:%S" if s[10] == " " else "%Y-%m-%dT%H:%M:%S"
+            dt = datetime.datetime.strptime(s[:19], fmt)
+            return dt.replace(tzinfo=datetime.timezone.utc).astimezone(AZ_TZ).strftime("%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            pass
+    return s
+
+
 def clean_row(r):
     if r is None:
         return None
     d = dict(r)
     for k, v in d.items():
-        if isinstance(v, (datetime.datetime, datetime.date)):
-            d[k] = v.strftime("%Y-%m-%d %H:%M:%S") if isinstance(v, datetime.datetime) else v.strftime("%Y-%m-%d")
+        if isinstance(v, (datetime.datetime, datetime.date)) or (k in ("created_at", "solved_at") and isinstance(v, str)):
+            d[k] = to_az_str(v)
     return d
 
 
@@ -477,8 +507,8 @@ def update_daily_streak(conn, username):
     u = conn.execute("SELECT daily_streak, last_solve_date FROM users WHERE LOWER(username)=LOWER(?)", (username,)).fetchone()
     if not u:
         return 0
-    today = time.strftime("%Y-%m-%d")
-    yest = time.strftime("%Y-%m-%d", time.localtime(time.time() - 86400))
+    today = az_today()
+    yest = az_today(-1)
     if (u["last_solve_date"] or "") == today:
         return u["daily_streak"]
     streak = (u["daily_streak"] + 1) if u["last_solve_date"] == yest else 1
@@ -525,7 +555,10 @@ def get_session():
     gt = request.cookies.get("az_guest", "").strip()
     now = time.time()
     conn = get_db()
-    conn.execute("DELETE FROM sessions WHERE expires_at <= ?", (now,))
+    did_write = False
+    if secrets.randbelow(20) == 0:
+        conn.execute("DELETE FROM sessions WHERE expires_at <= ?", (now,))
+        did_write = True
     u, adm, hum, guest_rem = None, False, False, None
     if ut:
         r = conn.execute("SELECT username FROM sessions WHERE token=? AND kind='user' AND expires_at>?", (ut, now)).fetchone()
@@ -547,7 +580,9 @@ def get_session():
     if u and (now - _seen_cache.get(u.lower(), 0) > 25):
         _seen_cache[u.lower()] = now
         conn.execute("UPDATE users SET last_seen_at=? WHERE LOWER(username)=LOWER(?)", (now, u))
-    conn.commit()
+        did_write = True
+    if did_write:
+        conn.commit()
     conn.close()
     return u, adm, hum, guest_rem
 
@@ -598,10 +633,7 @@ def safe_add_col(conn, table, col_def):
         try:
             conn.rollback()
         except Exception:
-            pass
-
-
-def init_db():
+            passdef init_db():
     conn = get_db()
     PK = "SERIAL PRIMARY KEY" if IS_PG else "INTEGER PRIMARY KEY AUTOINCREMENT"
     TS = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
@@ -710,6 +742,7 @@ def init_db():
     conn.commit()
     conn.close()
 
+
 @app.before_request
 def _boot():
     global _db_ready
@@ -741,7 +774,7 @@ def check_daily(conn, username, kind, limit):
     u = conn.execute("SELECT * FROM users WHERE LOWER(username)=LOWER(?)", (username,)).fetchone()
     if not u:
         return True
-    today = time.strftime("%Y-%m-%d")
+    today = az_today()
     dc, cc = f"d_{kind}_date", f"d_{kind}_cnt"
     cnt = u[cc] if u[dc] == today else 0
     if cnt >= limit:
@@ -755,7 +788,7 @@ def norm_out(txt):
 
 
 def get_or_create_daily_pid(conn):
-    today = time.strftime("%Y-%m-%d")
+    today = az_today()
     row = conn.execute("SELECT problem_id FROM daily_challenges WHERE day_date=?", (today,)).fetchone()
     if row:
         if conn.execute("SELECT 1 FROM problems WHERE id=? AND visibility IN ('archive','gym')", (row["problem_id"],)).fetchone():
@@ -763,7 +796,7 @@ def get_or_create_daily_pid(conn):
     pool = conn.execute("SELECT id FROM problems WHERE visibility IN ('archive','gym') ORDER BY id ASC").fetchall()
     if not pool:
         return None
-    chosen = pool[int(time.strftime("%Y%m%d")) % len(pool)]["id"]
+    chosen = pool[int(az_now().strftime("%Y%m%d")) % len(pool)]["id"]
     conn.execute("INSERT INTO daily_challenges (day_date, problem_id) VALUES (?, ?) ON CONFLICT (day_date) DO UPDATE SET problem_id=excluded.problem_id", (today, chosen))
     conn.commit()
     return chosen
@@ -1287,7 +1320,7 @@ def _build_profile_payload(conn, target, include_private=False, viewer_is_admin=
         last_ts = float(u["last_seen_at"] or 0)
         data["admin_meta"] = {
             "is_online": (time.time() - last_ts) <= 120 if last_ts > 0 else False,
-            "last_seen": datetime.datetime.fromtimestamp(last_ts).strftime("%Y-%m-%d %H:%M") if last_ts > 0 else "Məlumat yoxdur",
+            "last_seen": datetime.datetime.fromtimestamp(last_ts, AZ_TZ).strftime("%Y-%m-%d %H:%M") if last_ts > 0 else "Məlumat yoxdur",
             "joined_at": u["created_at"],
             "email": u["email"],
         }
@@ -1313,12 +1346,11 @@ def _build_profile_payload(conn, target, include_private=False, viewer_is_admin=
 
 @app.route("/api/users/registrations", methods=["GET"])
 def list_registrations():
-    """Günlük və həftəlik qeydiyyat siyahısı (qeydiyyat tarixi ilə; onlayn/oflayn YALNIZ admin üçün)."""
+    """Günlük və həftəlik qeydiyyat siyahısı (Bakı vaxtı UTC+4; onlayn/oflayn YALNIZ admin üçün)."""
     _, adm, _, _ = get_session()
     period = (request.args.get("period") or "weekly").strip().lower()
-    now_dt = datetime.datetime.now()
-    today_str = now_dt.strftime("%Y-%m-%d")
-    week_ago_str = (now_dt - datetime.timedelta(days=7)).strftime("%Y-%m-%d")
+    today_str = az_today()
+    week_ago_str = az_today(-7)
 
     conn = get_db()
     rows = conn.execute("SELECT username, email, level, rating, avatar_url, avatar_color, avatar_frame, last_seen_at, created_at FROM users ORDER BY id DESC LIMIT 200").fetchall()
@@ -1359,7 +1391,7 @@ def list_registrations():
         } | rk
         if adm:
             item["is_online"] = is_on
-            item["last_seen"] = datetime.datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M") if ts > 0 else "—"
+            item["last_seen"] = datetime.datetime.fromtimestamp(ts, AZ_TZ).strftime("%Y-%m-%d %H:%M") if ts > 0 else "—"
             item["email"] = r["email"]
         items.append(item)
 
@@ -1470,10 +1502,7 @@ def upload_voice():
     url, err = upload_voice_storage(raw, ext)
     if err:
         return jsonify({"error": err}), 400
-    return jsonify({"audio_url": url})
-
-
-# ═══════════════ COİN (admin limitsiz) ═══════════════
+    return jsonify({"audio_url": url})# ═══════════════ COİN (admin limitsiz) ═══════════════
 @app.route("/api/coins/transfer", methods=["POST"])
 @require_user
 @rate_limit(15, 60, by_user=True)
@@ -1663,6 +1692,7 @@ def admin_upload_custom_frame():
     conn.close()
     return jsonify({"message": f"'{name}' yükləndi və mağazaya əlavə edildi!", "id": fid})
 
+
 # ═══════════════ DOSTLAR ═══════════════
 @app.route("/api/friends/request", methods=["POST"])
 @require_user
@@ -1707,9 +1737,8 @@ def friend_resp():
 def admin_list_users():
     q = (request.args.get("q") or "").strip().lower()
     period = (request.args.get("period") or "all").strip().lower()
-    now_dt = datetime.datetime.now()
-    today_str = now_dt.strftime("%Y-%m-%d")
-    week_ago_str = (now_dt - datetime.timedelta(days=7)).strftime("%Y-%m-%d")
+    today_str = az_today()
+    week_ago_str = az_today(-7)
 
     conn = get_db()
     rows = conn.execute("SELECT id, username, email, level, xp, total_xp, coins, rating, daily_streak, last_seen_at, created_at FROM users ORDER BY id DESC").fetchall()
@@ -1731,7 +1760,7 @@ def admin_list_users():
             "solved_count": solved_map.get(r["username"].lower(), 0),
             "is_admin_user": is_adm_u,
             "is_online": (now - ts) <= 120 if ts > 0 else False,
-            "last_seen": datetime.datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M") if ts > 0 else "—",
+            "last_seen": datetime.datetime.fromtimestamp(ts, AZ_TZ).strftime("%Y-%m-%d %H:%M") if ts > 0 else "—",
             "infinite_coins": is_adm_u,
         } | rk)
     return jsonify(out)
@@ -1771,14 +1800,14 @@ def admin_delete_user(target):
     return jsonify({"message": f"{target} silindi."}) if cur.rowcount else (jsonify({"error": "Tapılmadı."}), 404)
 
 
-# ═══════════════ GÜNÜN MƏSƏLƏSİ & SERİYA (Admin birbaşa sual göndərə bilir) ═══════════════
+# ═══════════════ GÜNÜN MƏSƏLƏSİ & SERİYA (Bakı vaxtı UTC+4) ═══════════════
 @app.route("/api/daily", methods=["GET"])
 def daily_challenge():
     u, _, _, _ = get_session()
     conn = get_db()
     pid = get_or_create_daily_pid(conn)
     prob = conn.execute("SELECT id, code_label, title, rating, tags, time_limit, memory_limit FROM problems WHERE id=?", (pid,)).fetchone() if pid else None
-    today = time.strftime("%Y-%m-%d")
+    today = az_today()
     solved_today, streak = False, 0
     heat = {}
     if u:
@@ -1791,8 +1820,8 @@ def daily_challenge():
     raw_board = conn.execute("SELECT username, daily_streak, rating FROM users WHERE daily_streak > 0 ORDER BY daily_streak DESC LIMIT 10").fetchall()
     board = [r | {"is_admin_user": r["username"] == ADMIN_USERNAME} | get_user_rank(r["rating"], r["username"] == ADMIN_USERNAME) for r in raw_board]
     conn.close()
-    lt = time.localtime()
-    sec_left = 86400 - (lt.tm_hour * 3600 + lt.tm_min * 60 + lt.tm_sec)
+    lt = az_now()
+    sec_left = 86400 - (lt.hour * 3600 + lt.minute * 60 + lt.second)
     return jsonify({"day_date": today, "problem": prob, "solved_today": solved_today, "streak": streak,
                     "seconds_left": sec_left, "reward_xp": 50, "reward_coins": 40, "chest_7day_coins": 200,
                     "top_solvers": top, "streak_board": board, "heatmap": heat})
@@ -1803,7 +1832,7 @@ def daily_challenge():
 def admin_set_daily():
     """Həm mövcud sualı kodla seçir, həm də Adminin birbaşa yazdığı yeni sualı günün sualı edir."""
     d = request.get_json(silent=True) or {}
-    today = time.strftime("%Y-%m-%d")
+    today = az_today()
     conn = get_db()
 
     if str(d.get("title") or "").strip() and str(d.get("statement") or "").strip():
@@ -1964,7 +1993,7 @@ def finish_contest(cid):
     return jsonify({"message": "Yarış bitirildi, suallar Gym-ə köçürüldü!"})
 
 
-# ═══════════════ TƏKLİFLƏR (kod + ad + plan + tam detallar + təsdiq) ═══════════════
+# ═══════════════ TƏKLİFLƏR ═══════════════
 @app.route("/api/proposals", methods=["POST"])
 @require_user
 @rate_limit(5, 60, by_user=True)
@@ -2142,7 +2171,7 @@ def submit_solution():
             conn.execute("UPDATE users SET rating=? WHERE LOWER(username)=LOWER(?)", (new_r, me_u))
             conn.execute("INSERT INTO rating_history (username, rating, label) VALUES (?, ?, ?)", (me_u, new_r, p["code_label"] or p["title"][:12]))
         daily_pid = get_or_create_daily_pid(conn)
-        today = time.strftime("%Y-%m-%d")
+        today = az_today()
         if daily_pid == pid and not conn.execute("SELECT 1 FROM daily_solves WHERE day_date=? AND LOWER(username)=LOWER(?)", (today, me_u)).fetchone():
             conn.execute("INSERT INTO daily_solves (day_date, username, quality_pct) VALUES (?, ?, ?)", (today, me_u, quality_pct))
             new_streak = update_daily_streak(conn, me_u)
@@ -2208,6 +2237,9 @@ def create_room():
     color = str(d.get("avatar_color") or "#0ea5e9").strip()
     if not re.match(r"^#[0-9a-fA-F]{6}$", color):
         color = "#0ea5e9"
+    voice_link = str(d.get("voice_link") or "").strip()[:240]
+    if voice_link and not (voice_link.startswith("https://") or voice_link.startswith("http://")):
+        return jsonify({"error": "Səs linki https:// və ya http:// ilə başlamalıdır."}), 400
     pids = [int(x) for x in (d.get("problem_ids") or []) if str(x).isdigit()][:10]
     if not title:
         return jsonify({"error": "Qrup adı yazın."}), 400
@@ -2216,7 +2248,7 @@ def create_room():
     code16 = f"{secrets.randbelow(10**16):016d}"
     conn = get_db()
     rid = conn.execute("INSERT INTO rooms (room_code,title,bio,avatar_color,creator,voice_link,problem_ids_json,duration_min,max_members,starts_at,ends_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                       (code16, title, bio, color, me_u, str(d.get("voice_link") or "").strip()[:240], json.dumps(pids), dur, MAX_ROOM_MEMBERS, now, ends)).lastrowid
+                       (code16, title, bio, color, me_u, voice_link, json.dumps(pids), dur, MAX_ROOM_MEMBERS, now, ends)).lastrowid
     conn.execute("INSERT INTO room_members (room_id, username) VALUES (?, ?)", (rid, me_u))
     conn.commit()
     conn.close()
@@ -2261,6 +2293,9 @@ def update_room_profile(code):
     if not re.match(r"^#[0-9a-fA-F]{6}$", color):
         color = rm["avatar_color"]
     av_url = str(d.get("avatar_url") if "avatar_url" in d else rm["avatar_url"]).strip()[:300]
+    if av_url and not (av_url.startswith("https://") or av_url.startswith("http://") or av_url.startswith("data:image/")):
+        conn.close()
+        return jsonify({"error": "Şəkil linki düzgün deyil."}), 400
     conn.execute("UPDATE rooms SET title=?, bio=?, avatar_color=?, avatar_url=? WHERE id=?", (title, bio, color, av_url, rm["id"]))
     conn.commit()
     conn.close()
@@ -2726,4 +2761,4 @@ if __name__ == "__main__":
         port=int(os.environ.get("PORT", 5000)),
         debug=os.environ.get("FLASK_DEBUG", "false").lower() == "true",
         threaded=True,
-    )
+)
