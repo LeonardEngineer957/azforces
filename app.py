@@ -633,7 +633,8 @@ def safe_add_col(conn, table, col_def):
         try:
             conn.rollback()
         except Exception:
-            passdef init_db():
+            pass 
+def init_db():
     conn = get_db()
     PK = "SERIAL PRIMARY KEY" if IS_PG else "INTEGER PRIMARY KEY AUTOINCREMENT"
     TS = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
