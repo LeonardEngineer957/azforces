@@ -157,20 +157,29 @@ header {
 
 /* Yeni Mağaza + SVG Çərçivələr (12.000 - 50.000) */
 .frame-none, .f-none { border-color: rgba(255, 255, 255, 0.15); }
-.frame-angry-anime { border-color: rgba(239, 68, 68, 0.7); box-shadow: 0 0 14px rgba(239, 68, 68, 0.45); }
-.frame-neon-spark { border-color: rgba(56, 189, 248, 0.85); box-shadow: 0 0 16px rgba(56, 189, 248, 0.65); }
-.frame-afternoon-bloom { border-color: rgba(74, 222, 128, 0.65); box-shadow: 0 0 14px rgba(74, 222, 128, 0.4); }
-.frame-butterfly-dream { border-color: rgba(244, 63, 94, 0.75); box-shadow: 0 0 16px rgba(244, 63, 94, 0.5); }
-.frame-golden-aura { border-color: rgba(251, 191, 36, 0.85); box-shadow: 0 0 20px rgba(251, 191, 36, 0.75); }
-.frame-purple-runes { border-color: rgba(168, 85, 247, 0.85); box-shadow: 0 0 18px rgba(168, 85, 247, 0.75); }
-.frame-cyclone-wind { border-color: rgba(34, 211, 238, 0.75); box-shadow: 0 0 16px rgba(34, 211, 238, 0.6); }
-.frame-venom-symbiote { border-color: rgba(15, 23, 42, 0.95); box-shadow: 0 0 18px rgba(0, 0, 0, 0.95), 0 0 10px rgba(148, 163, 184, 0.35); }
-.frame-oni-glitch { border-color: rgba(6, 182, 212, 0.8); box-shadow: 0 0 18px rgba(236, 72, 153, 0.55), 0 0 18px rgba(6, 182, 212, 0.55); }
-.frame-thunder-god { border-color: rgba(250, 204, 21, 0.9); box-shadow: 0 0 22px rgba(250, 204, 21, 0.8); }
+.frame-angry-anime { border-color: rgba(239, 68, 68, 0.75); box-shadow: 0 0 14px rgba(239, 68, 68, 0.45); }
+.frame-butterfly-dream { border-color: rgba(244, 63, 94, 0.8); box-shadow: 0 0 16px rgba(244, 63, 94, 0.55); }
+.frame-afternoon-bloom { border-color: rgba(74, 222, 128, 0.7); box-shadow: 0 0 14px rgba(74, 222, 128, 0.4); }
+.frame-oni-glitch { border-color: rgba(6, 182, 212, 0.85); box-shadow: 0 0 18px rgba(236, 72, 153, 0.55), 0 0 18px rgba(6, 182, 212, 0.55); }
+.frame-siyah-mana { border-color: rgba(147, 51, 234, 0.85); box-shadow: 0 0 18px rgba(147, 51, 234, 0.65); }
+.frame-zaman-carki { border-color: rgba(74, 222, 128, 0.8); box-shadow: 0 0 16px rgba(217, 119, 6, 0.55), 0 0 14px rgba(34, 197, 94, 0.45); }
+.frame-bonsai-sakura { border-color: rgba(244, 114, 182, 0.85); box-shadow: 0 0 16px rgba(244, 114, 182, 0.55); }
+.frame-pirate-king { border-color: rgba(217, 119, 6, 0.8); box-shadow: 0 0 14px rgba(180, 83, 9, 0.55); }
+.frame-elit-yilan { border-color: rgba(251, 191, 36, 0.85); box-shadow: 0 0 18px rgba(217, 119, 6, 0.65); }
+.frame-purple-runes { border-color: rgba(168, 85, 247, 0.9); box-shadow: 0 0 20px rgba(168, 85, 247, 0.8); }
+.frame-golden-leo { border-color: rgba(251, 191, 36, 0.85); box-shadow: 0 0 18px rgba(245, 158, 11, 0.7); }
+.frame-golden-aura { border-color: rgba(251, 191, 36, 0.95); box-shadow: 0 0 22px rgba(251, 191, 36, 0.85); }
+.frame-black-hole { border-color: rgba(228, 228, 231, 0.75); box-shadow: 0 0 22px rgba(255, 255, 255, 0.55); }
+.frame-venom-symbiote { border-color: rgba(15, 23, 42, 0.95); box-shadow: 0 0 18px rgba(0, 0, 0, 0.95), 0 0 10px rgba(148, 163, 184, 0.4); }
 .frame-flaming-bull { border-color: rgba(249, 115, 22, 0.9); box-shadow: 0 0 22px rgba(239, 68, 68, 0.8); }
-.frame-phoenix-wings { border-color: rgba(251, 146, 60, 0.85); box-shadow: 0 0 24px rgba(249, 115, 22, 0.85); }
-.frame-fallen-angel, .frame-angel-wings { border-color: rgba(226, 232, 240, 0.6); box-shadow: 0 0 24px rgba(255, 255, 255, 0.55); }
-
+.frame-cyclone-wind { border-color: rgba(34, 211, 238, 0.8); box-shadow: 0 0 18px rgba(34, 211, 238, 0.65); }
+.frame-thunder-god { border-color: rgba(250, 204, 21, 0.95); box-shadow: 0 0 22px rgba(250, 204, 21, 0.85); }
+.frame-cute-angel { border-color: rgba(253, 224, 71, 0.75); box-shadow: 0 0 18px rgba(255, 255, 255, 0.55); }
+.frame-tatli-ejderha { border-color: rgba(139, 92, 246, 0.9); box-shadow: 0 0 22px rgba(139, 92, 246, 0.75); }
+.frame-venom-legend { border-color: rgba(15, 23, 42, 1); box-shadow: 0 0 24px rgba(0, 0, 0, 1), 0 0 14px rgba(168, 85, 247, 0.45); }
+.frame-phoenix-wings { border-color: rgba(251, 146, 60, 0.9); box-shadow: 0 0 26px rgba(249, 115, 22, 0.85); }
+.frame-dark-angel { border-color: rgba(226, 232, 240, 0.7); box-shadow: 0 0 26px rgba(255, 255, 255, 0.5), 0 0 18px rgba(0, 0, 0, 0.9); }
+.frame-fallen-angel, .frame-angel-wings { border-color: rgba(255, 255, 255, 0.75); box-shadow: 0 0 26px rgba(255, 255, 255, 0.65); }
 /* Köhnə ID uyğunluğu */
 .frame-neon-blue { border: 3px solid #38bdf8; box-shadow: 0 0 12px rgba(56, 189, 248, 0.75); }
 .frame-gold-crown { border: 3px solid #fbbf24; box-shadow: 0 0 18px rgba(251, 191, 36, 0.85); }
