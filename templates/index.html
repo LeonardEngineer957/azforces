@@ -426,17 +426,15 @@
     <button id="shopAddCustomBtn" class="btn btn-sm btn-success" style="display:none;margin-left:auto;" onclick="togglePdSub('shopAddCustomBox')">+ Şəkil/GIF Çərçivə Əlavə Et</button>
   </div>
   <div id="shopAddCustomBox" class="card" style="display:none;">
-    <h4 style="margin-bottom:8px;">Admin: Şəkil / GIF / WebP Çərçivə Əlavə Et</h4>
+    <h4 style="margin-bottom:8px;">Admin: Şəkil / GIF / WebP / Video Çərçivə Əlavə Et</h4>
     <div class="grid-2" style="margin-bottom:8px;">
       <input id="cfName" placeholder="Çərçivə adı *">
-      <input id="cfUrl" placeholder="Şəffaf PNG/GIF/WebP linki (URL) *">
+      <input id="cfUrl" placeholder="Şəffaf PNG/GIF/WebP/MP4 linki (və ya aşağıdan fayl seçin)">
+      <input id="cfFile" type="file" accept="image/*,video/mp4,video/webm" title="Fayldan yüklə (PNG/GIF/WebP/MP4/WebM)">
       <input id="cfPrice" type="number" value="25000" min="12000" placeholder="Qiymət (min 12000)">
       <select id="cfTier"><option value="fantasy">Fantaziya</option><option value="nature">Təbiət</option><option value="legendary">Əfsanəvi</option><option value="classic">Klassik</option></select>
-      <select id="cfAnim"><option value="fx-float">Üzən (Float)</option><option value="fx-flap">Qanad çırpan</option><option value="fx-spin">Fırlanan</option><option value="fx-flicker">Alov/İşıq</option><option value="fx-glitch">Glitch</option><option value="fx-pulse">Nəbz</option></select>
-      <option value="fx-wings-rot">🪽 Video Qanad (-90° + Qara fon şəffaf)</option><option value="fx-screen">✨ Qara fonu şəffaf et (Video/GIF)</option>
-      <input id="cfDesc" placeholder="Qısa təsvir">
-      <input id="cfFile" type="file" accept="image/png,image/gif,image/webp,image/*" style="grid-column:1/-1;font-size:.82rem;">
-    <input id="cfFile" type="file" accept="image/*,video/mp4,video/webm,video/quicktime" style="grid-column:1/-1;font-size:.82rem;">
+      <select id="cfAnim"><option value="fx-float">Üzən (Float)</option><option value="fx-flap">Qanad çırpan</option><option value="fx-spin">Fırlanan</option><option value="fx-flicker">Alov/İşıq</option><option value="fx-glitch">Glitch</option><option value="fx-pulse">Nəbz</option><option value="fx-screen">Şəffaf Ekran / Video (Screen)</option><option value="fx-wings-rot">Video Qanadlar (Rotate + Screen)</option></select>
+      <input id="cfDesc" placeholder="Qısa təsvir" style="grid-column:1/-1;">
     </div>
     <button class="btn btn-primary btn-sm" onclick="adminAddCustomFrame()">Mağazaya Əlavə Et</button>
   </div>
@@ -745,4 +743,4 @@
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
-        </html>
+  </html>
