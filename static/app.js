@@ -15,6 +15,7 @@ let dailyTimerInterval = null, dailyProblemKey = null;
 let shopCache = null, shopFilterCategory = "all";
 let voiceRecorder = null, voiceChunks = [], voiceStream = null, voiceTimerInt = null, voiceStartTs = 0, voiceActiveMode = "";
 let pendingExpanded = false, creativeCache = [], pingStarted = false;
+let roomPolling = false, dmPolling = false, sendingRoom = false, sendingDm = false;
 let currentProfileUser = "", currentProfileSubTab = "overview";
 
 const TEMPLATES = {
