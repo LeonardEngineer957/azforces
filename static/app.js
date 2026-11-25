@@ -841,7 +841,7 @@ function renderHeatmap(heat) {
   const grid = el("profileHeatmap"); if (!grid) return; grid.innerHTML = "";
   const now = new Date();
   for (let i = 167; i >= 0; i--) {
-    const key = new Date(now.getTime() - i * 86400000).toISOString().slice(0, 10), cnt = heat[key] || 0;
+    const key = new Date(today.getTime() + 4 * 3600000 - i * 86400000).toISOString().slice(0, 10), count = heatmap[key] || 0;
     const cell = document.createElement("div");
     cell.className = "hm-cell " + (cnt >= 5 ? "hm-4" : cnt >= 3 ? "hm-3" : cnt >= 2 ? "hm-2" : cnt >= 1 ? "hm-1" : "");
     cell.title = `${key}: ${cnt} göndəriş`; grid.appendChild(cell);
