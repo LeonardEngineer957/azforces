@@ -107,7 +107,7 @@ MAX_DAILY_PROPS = 2
 CALC_TIME_LIMIT = 300  # 5 dəqiqə = 300 saniyə
 UNI_CHANGE_COOLDOWN = 86400 * 30  # 30 gün
 
-# ── MAĞAZA: Hərəkətli SVG Fantastik/Təbiət/Əfsanəvi Çərçivələr (12.000 – 50.000 AzCoin) ──
+# ── MAĞAZA: Hərəkətli SVG Fantastik/Təbiət/Əfsanəvi Çərçivələr (15.000 – 50.000 AzCoin) ──
 SHOP_ITEMS = [
     {"id": "none", "name": "Çərçivəsiz", "tier": "classic", "price": 0, "desc": "Sadə görünüş"},
     {"id": "angry-anime", "name": "💢 Sinirli", "tier": "classic", "price": 15000, "desc": "Qırmızı zərbə halqası, anime əsəb işarəsi və ! balonu"},
@@ -665,6 +665,7 @@ def safe_add_col(conn, table, col_def):
         except Exception:
             pass
 
+
 def ensure_global_server(conn):
     row = conn.execute("SELECT id FROM servers WHERE server_code='AZ-GLOBAL'").fetchone()
     if row:
@@ -768,7 +769,7 @@ def init_db():
     conn.execute(f"CREATE TABLE IF NOT EXISTS rooms (id {PK}, room_code TEXT UNIQUE NOT NULL, title TEXT NOT NULL, bio TEXT DEFAULT 'Dostlarla söhbət və yarış qrupu', avatar_url TEXT DEFAULT '', avatar_color TEXT DEFAULT '#0ea5e9', creator TEXT NOT NULL, voice_link TEXT DEFAULT '', problem_ids_json TEXT DEFAULT '[]', duration_min INTEGER DEFAULT 0, max_members INTEGER DEFAULT 20, starts_at {DBL} NOT NULL, ends_at {DBL} NOT NULL, created_at {TS})")
     conn.execute(f"CREATE TABLE IF NOT EXISTS room_members (id {PK}, room_id INTEGER NOT NULL REFERENCES rooms(id) ON DELETE CASCADE, username TEXT NOT NULL, joined_at {TS}, UNIQUE(room_id, username))")
     conn.execute(f"CREATE TABLE IF NOT EXISTS room_messages (id {PK}, room_id INTEGER NOT NULL REFERENCES rooms(id) ON DELETE CASCADE, username TEXT NOT NULL, message TEXT NOT NULL, reply_to_id INTEGER DEFAULT NULL, shared_problem_id INTEGER DEFAULT NULL, audio_url TEXT DEFAULT '', audio_duration INTEGER DEFAULT 0, created_at {TS})")
-    conn.execute(f"CREATE TABLE IF NOT EXISTS servers (id {PK}, server_code TEXT UNIQUE NOT NULL, name TEXT NOT NULL, description TEXT DEFAULT '', icon_emoji TEXT DEFAULT '🌐', avatar_color TEXT DEFAULT '#3b82f6', owner TEXT NOT NULL, server_type TEXT DEFAULT 'custom', university TEXT DEFAULT '', is_public INTEGER DEFAULT 1, max_members INTEGER DEFAULT 500, created_at {TS})")
+    conn.execute(f"CREATE TABLE IF NOT EXISTS servers (id {PK}, server_code TEXT UNIQUE NOT NULL, name TEXT NOT NULL, description TEXT DEFAULT '', icon_emoji TEXT DEFAULT '🌐', avatar_url TEXT DEFAULT '', avatar_color TEXT DEFAULT '#3b82f6', owner TEXT NOT NULL, server_type TEXT DEFAULT 'custom', university TEXT DEFAULT '', is_public INTEGER DEFAULT 1, max_members INTEGER DEFAULT 500, created_at {TS})")
     conn.execute(f"CREATE TABLE IF NOT EXISTS server_channels (id {PK}, server_id INTEGER NOT NULL REFERENCES servers(id) ON DELETE CASCADE, slug TEXT NOT NULL, name TEXT NOT NULL, topic TEXT DEFAULT '', channel_type TEXT DEFAULT 'text', voice_url TEXT DEFAULT '', pos INTEGER DEFAULT 0, created_at {TS})")
     conn.execute(f"CREATE TABLE IF NOT EXISTS server_members (id {PK}, server_id INTEGER NOT NULL REFERENCES servers(id) ON DELETE CASCADE, username TEXT NOT NULL, role TEXT DEFAULT 'member', muted_until {DBL} DEFAULT 0, joined_at {TS}, UNIQUE(server_id, username))")
     conn.execute(f"CREATE TABLE IF NOT EXISTS server_messages (id {PK}, server_id INTEGER NOT NULL REFERENCES servers(id) ON DELETE CASCADE, channel_id INTEGER NOT NULL REFERENCES server_channels(id) ON DELETE CASCADE, username TEXT NOT NULL, message TEXT NOT NULL, reply_to_id INTEGER DEFAULT NULL, shared_problem_id INTEGER DEFAULT NULL, audio_url TEXT DEFAULT '', audio_duration INTEGER DEFAULT 0, is_pinned INTEGER DEFAULT 0, created_at {TS})")
@@ -785,6 +786,7 @@ def init_db():
         ("users", f"last_seen_at {DBL} DEFAULT 0"),
         ("users", "university TEXT DEFAULT ''"),
         ("users", f"uni_changed_at {DBL} DEFAULT 0"),
+        ("servers", "avatar_url TEXT DEFAULT ''"),
         ("problems", "plan TEXT DEFAULT ''"),
         ("submissions", "quality_pct INTEGER DEFAULT 0"),
         ("room_messages", "audio_url TEXT DEFAULT ''"),
@@ -818,7 +820,7 @@ def init_db():
                 ("1A", "A + B Cəmi", 650, "math, başlanğıc", 1.0, 256, "İki tam ədəd $a$ və $b$ verilir. Onların cəmini tapın.", "Tək sətirdə $a$ və $b$.", "$a+b$ cəmi.", "", "`print(sum(map(int, input().split())))`", [("3 5", "8", 1), ("-10 25", "15", 1), ("1000000000 1000000000", "2000000000", 0)]),
                 ("1B", "Tək yoxsa Cüt", 700, "math, başlanğıc", 1.0, 256, "Verilmiş $n$ ədədinin tək və ya cüt olduğunu tapın.", "Bir tam ədəd $n$.", "Cütdürsə `EVEN`, təkdirsə `ODD`.", "", "`n % 2 == 0` yoxlayın.", [("4", "EVEN", 1), ("7", "ODD", 1), ("999999999", "ODD", 0)]),
                 ("1C", "Sadə Ədəd", 1000, "number theory", 2.0, 256, "$n$ natural ədədinin sadə olub-olmadığını yoxlayın.", "Bir tam ədəd $n$.", "Sadədirsə `YES`, əks halda `NO`.", "$1$ sadə deyil.", "Kökə qədər bölənləri yoxlayın.", [("7", "YES", 1), ("1", "NO", 1), ("1000000007", "YES", 0)]),
-                ("1D", "Hədəf Cəm (Two Sum)", 1200, "hashing, arrays", 2.0, 256, "Massivdə cəmi $k$-ya bərabər iki element varmı?", "1-ci sətirdə $n, k$; 2-ci sətirdə $n$ ədəd.", "`YES` və ya `NO`.", "", "Ədədləri `set`-də saxlayın.", [("4 9\n2 7 11 15", "YES", 1), ("3 10\n1 2 3", "NO", 0)]),
+                ("1D", "Hədəf Cəm (Two Sum)", 1200, "hashing, arrays", 2.0, 256, "Massivdə cəmi $k$-ya bərər iki element varmı?", "1-ci sətirdə $n, k$; 2-ci sətirdə $n$ ədəd.", "`YES` və ya `NO`.", "", "Ədədləri `set`-də saxlayın.", [("4 9\n2 7 11 15", "YES", 1), ("3 10\n1 2 3", "NO", 0)]),
                 ("1E", "Ən Uzun Artan Alt-ardıcıllıq", 1800, "dp, binary search", 2.0, 256, "Ən uzun ciddi artan alt-ardıcıllığın uzunluğunu tapın.", "1-ci sətirdə $n$; 2-ci sətirdə massiv.", "Maksimum uzunluq.", "", "Binary search + tails.", [("6\n10 9 2 5 3 7", "3", 1), ("5\n5 4 3 2 1", "1", 0)]),
             ]
         for lbl, t, rt, tg, tl, ml, st, ins, outs, nt, ed, tests in seed:
@@ -842,7 +844,6 @@ def init_db():
     ensure_global_server(conn)
     conn.commit()
     conn.close()
-
 
 @app.before_request
 def _boot():
@@ -1602,15 +1603,12 @@ def update_profile():
     return jsonify({"message": "Profil yeniləndi!"})
 
 
-@app.route("/api/profile/avatar", methods=["POST"])
-@require_user
-def upload_avatar():
-    f = request.files.get("avatar")
+def _save_image_upload(f, folder="azforces_avatars"):
     if not f:
-        return jsonify({"error": "Şəkil seçin."}), 400
+        return None, "Şəkil seçin."
     raw = f.read(2 * 1024 * 1024 + 1)
     if len(raw) > 2 * 1024 * 1024:
-        return jsonify({"error": "Şəkil maksimum 2 MB ola bilər."}), 400
+        return None, "Şəkil maksimum 2 MB ola bilər."
     if raw.startswith(b"\xff\xd8\xff"):
         mime = "image/jpeg"
     elif raw.startswith(b"\x89PNG"):
@@ -1620,17 +1618,17 @@ def upload_avatar():
     elif raw[:4] == b"RIFF" and raw[8:12] == b"WEBP":
         mime = "image/webp"
     else:
-        return jsonify({"error": "Yalnız JPG, PNG, WEBP və ya GIF şəkli yükləyin."}), 400
+        return None, "Yalnız JPG, PNG, WEBP və ya GIF şəkli yükləyin."
 
     url = ""
     if CLOUD_NAME and CLOUD_KEY and CLOUD_SECRET:
         ts = int(time.time())
-        sig = hashlib.sha1(f"folder=azforces_avatars&timestamp={ts}{CLOUD_SECRET}".encode("utf-8")).hexdigest()
+        sig = hashlib.sha1(f"folder={folder}&timestamp={ts}{CLOUD_SECRET}".encode("utf-8")).hexdigest()
         try:
             r = requests.post(
                 f"https://api.cloudinary.com/v1_1/{CLOUD_NAME}/image/upload",
-                data={"api_key": CLOUD_KEY, "timestamp": ts, "folder": "azforces_avatars", "signature": sig},
-                files={"file": (f.filename or "avatar.jpg", raw)}, timeout=20,
+                data={"api_key": CLOUD_KEY, "timestamp": ts, "folder": folder, "signature": sig},
+                files={"file": (f.filename or "img.jpg", raw)}, timeout=20,
             )
             if r.status_code < 400:
                 url = r.json().get("secure_url", "").replace("/upload/", "/upload/c_fill,w_256,h_256,q_auto/")
@@ -1638,9 +1636,17 @@ def upload_avatar():
             pass
     if not url:
         if len(raw) > 512 * 1024:
-            return jsonify({"error": "Cloudinary qoşulmadığı üçün şəkli 512 KB-dan kiçik seçin."}), 400
+            return None, "Cloudinary qoşulmadığı üçün şəkli 512 KB-dan kiçik seçin."
         url = f"data:{mime};base64,{base64.b64encode(raw).decode('ascii')}"
+    return url, None
 
+
+@app.route("/api/profile/avatar", methods=["POST"])
+@require_user
+def upload_avatar():
+    url, err = _save_image_upload(request.files.get("avatar"), "azforces_avatars")
+    if err:
+        return jsonify({"error": err}), 400
     conn = get_db()
     conn.execute("UPDATE users SET avatar_url=? WHERE LOWER(username)=LOWER(?)", (url, request._u))
     conn.commit()
@@ -1665,6 +1671,7 @@ def upload_voice():
     if err:
         return jsonify({"error": err}), 400
     return jsonify({"audio_url": url})
+
 
 # ═══════════════ COİN (admin limitsiz) ═══════════════
 @app.route("/api/coins/transfer", methods=["POST"])
@@ -1855,7 +1862,6 @@ def admin_upload_custom_frame():
     conn.commit()
     conn.close()
     return jsonify({"message": f"'{name}' yükləndi və mağazaya əlavə edildi!", "id": fid})
-
 
 # ═══════════════ DOSTLAR ═══════════════
 @app.route("/api/friends/request", methods=["POST"])
@@ -2083,7 +2089,6 @@ def problem_detail(key):
 
 @app.route("/api/problems/<key>/submissions", methods=["GET"])
 def problem_submissions(key):
-    """Codeforces üslubu: Məsələni tərk etmədən bu suala göndərişlərə baxmaq üçün."""
     u, _, _, _ = get_session()
     scope = (request.args.get("scope") or "mine").strip().lower()
     conn = get_db()
@@ -2397,7 +2402,6 @@ def get_submissions():
 
 @app.route("/api/leaderboard", methods=["GET"])
 def leaderboard():
-    """Dünya (Azərbaycan), Qitə (Öz Universitetim) və Universitetlər üzrə Lider Lövhəsi."""
     has_scope = "scope" in request.args
     scope = (request.args.get("scope") or "world").strip().lower()
     req_uni = (request.args.get("uni") or "").strip().upper()
@@ -2458,7 +2462,7 @@ def leaderboard():
     return jsonify({"scope": scope, "university": target_uni, "university_name": get_uni_name(target_uni), "needs_university": False, "items": out})
 
 
-# ═══════════════ DISCORD-TƏRZİ SERVERLƏR (Ümumi DC + Öz Universitetin + Özəl) ═══════════════
+# ═══════════════ DISCORD-TƏRZİ SERVERLƏR (Admin Tam Səlahiyyətli + Profil Şəkli) ═══════════════
 def _can_access_server(conn, srv, username, is_admin):
     if is_admin:
         return True
@@ -2496,7 +2500,7 @@ def servers_handler():
             if not _can_access_server(conn, s, me_u, is_adm):
                 continue
             chans = conn.execute("SELECT id, slug, name, channel_type FROM server_channels WHERE server_id=? ORDER BY pos ASC, id ASC", (s["id"],)).fetchall()
-            out.append(s | {"joined": bool(s.get("my_role")), "channels": chans})
+            out.append(s | {"joined": bool(s.get("my_role")) or is_adm, "my_role": "owner" if is_adm else s.get("my_role"), "channels": chans})
         conn.close()
         return jsonify({"servers": out, "my_university": my_uni, "my_university_name": get_uni_name(my_uni)})
 
@@ -2521,7 +2525,7 @@ def servers_handler():
 
     scode = "AZ-" + secrets.token_hex(3).upper()
     sid = conn.execute(
-        "INSERT INTO servers (server_code, name, description, icon_emoji, avatar_color, owner, server_type, university, is_public, max_members) VALUES (?, ?, ?, ?, ?, ?, 'custom', '', ?, ?)",
+        "INSERT INTO servers (server_code, name, description, icon_emoji, avatar_url, avatar_color, owner, server_type, university, is_public, max_members) VALUES (?, ?, ?, ?, '', ?, ?, 'custom', '', ?, ?)",
         (scode, name, desc, icon, color, me_u, is_pub, MAX_SERVER_MEMBERS)
     ).lastrowid
     conn.execute("INSERT INTO server_channels (server_id, slug, name, topic, channel_type, pos) VALUES (?, 'umumi', '#ümumi', 'Ümumi söhbət kanalı', 'text', 1)", (sid,))
@@ -2554,10 +2558,10 @@ def join_server():
             conn.close()
             return jsonify({"error": f"Bu server yalnız {srv['university']} tələbələri üçündür!"}), 403
     if not conn.execute("SELECT 1 FROM server_members WHERE server_id=? AND LOWER(username)=LOWER(?)", (srv["id"], me_u)).fetchone():
-        if conn.execute("SELECT COUNT(*) AS cnt FROM server_members WHERE server_id=?", (srv["id"],)).fetchone()["cnt"] >= srv["max_members"]:
+        if not is_adm and conn.execute("SELECT COUNT(*) AS cnt FROM server_members WHERE server_id=?", (srv["id"],)).fetchone()["cnt"] >= srv["max_members"]:
             conn.close()
             return jsonify({"error": "Server doludur."}), 403
-        role = "owner" if is_adm and srv["server_type"] != "custom" else "member"
+        role = "owner" if is_adm else "member"
         conn.execute("INSERT INTO server_members (server_id, username, role) VALUES (?, ?, ?)", (srv["id"], me_u, role))
     conn.commit()
     conn.close()
@@ -2578,10 +2582,10 @@ def server_state(sid):
 
     mem = conn.execute("SELECT role, muted_until FROM server_members WHERE server_id=? AND LOWER(username)=LOWER(?)", (sid, me_u)).fetchone()
     if not mem:
-        if conn.execute("SELECT COUNT(*) AS cnt FROM server_members WHERE server_id=?", (sid,)).fetchone()["cnt"] >= srv["max_members"]:
+        if not is_adm and conn.execute("SELECT COUNT(*) AS cnt FROM server_members WHERE server_id=?", (sid,)).fetchone()["cnt"] >= srv["max_members"]:
             conn.close()
             return jsonify({"error": "Server doludur."}), 403
-        role_new = "owner" if (is_adm and srv["server_type"] != "custom") else "member"
+        role_new = "owner" if is_adm else "member"
         conn.execute("INSERT INTO server_members (server_id, username, role) VALUES (?, ?, ?)", (sid, me_u, role_new))
         conn.commit()
         mem = {"role": role_new, "muted_until": 0}
@@ -2622,14 +2626,14 @@ def server_state(sid):
         m_adm = (m["username"] == ADMIN_USERNAME)
         rk = get_user_rank(m["rating"], m_adm)
         ts = float(m.get("last_seen_at") or 0)
-        members.append(m | {"is_admin_user": m_adm, "is_online": (now - ts) <= 120 if ts > 0 else False} | rk)
+        members.append(m | {"role": "owner" if m_adm else m["role"], "is_admin_user": m_adm, "is_online": (now - ts) <= 120 if ts > 0 else False} | rk)
 
     conn.close()
     muted_until = float(mem.get("muted_until") or 0)
     return jsonify({
         "server": srv,
         "my_role": "owner" if is_adm else mem["role"],
-        "is_muted": muted_until > now,
+        "is_muted": (not is_adm) and (muted_until > now),
         "muted_until": muted_until,
         "channels": chans,
         "active_channel": active_ch,
@@ -2663,7 +2667,7 @@ def add_server_channel(sid):
         conn.close()
         return jsonify({"error": "Yalnız server sahibi və moderator kanal aça bilər."}), 403
     cnt = conn.execute("SELECT COUNT(*) AS cnt FROM server_channels WHERE server_id=?", (sid,)).fetchone()["cnt"]
-    if cnt >= 15:
+    if cnt >= 15 and not is_adm:
         conn.close()
         return jsonify({"error": "Maksimum 15 kanal ola bilər."}), 400
     slug = re.sub(r"[^a-z0-9-]+", "-", name.lower()).strip("-") or f"ch-{secrets.token_hex(2)}"
@@ -2740,6 +2744,24 @@ def moderate_server(sid):
         conn.close()
         return jsonify({"message": "Mesaj silindi."})
 
+    if action == "add_member":
+        t_name = target.lstrip("@")
+        if not t_name:
+            conn.close()
+            return jsonify({"error": "İstifadəçi adı yazın."}), 400
+        tu = conn.execute("SELECT username FROM users WHERE LOWER(username)=LOWER(?)", (t_name,)).fetchone()
+        if not tu:
+            conn.close()
+            return jsonify({"error": "İstifadəçi tapılmadı."}), 404
+        if not is_adm and conn.execute("SELECT COUNT(*) AS cnt FROM server_members WHERE server_id=?", (sid,)).fetchone()["cnt"] >= srv["max_members"]:
+            conn.close()
+            return jsonify({"error": "Server doludur."}), 403
+        role_add = "owner" if tu["username"].lower() == ADMIN_USERNAME.lower() else "member"
+        conn.execute("INSERT INTO server_members (server_id, username, role) VALUES (?, ?, ?) ON CONFLICT (server_id, username) DO NOTHING", (sid, tu["username"], role_add))
+        conn.commit()
+        conn.close()
+        return jsonify({"message": f"{tu['username']} serverə əlavə edildi!"})
+
     if not target or target.lower() == ADMIN_USERNAME.lower():
         conn.close()
         return jsonify({"error": "Bu istifadəçi üzərində əməliyyat olmaz."}), 400
@@ -2771,7 +2793,7 @@ def moderate_server(sid):
         conn.close()
         return jsonify({"message": f"{target} serverdən çıxarıldı."})
     if action == "set_role":
-        if c_role != "owner":
+        if c_role != "owner" and not is_adm:
             conn.close()
             return jsonify({"error": "Yalnız server sahibi rol verə bilər."}), 403
         new_role = "mod" if d.get("role") == "mod" else "member"
@@ -2797,7 +2819,60 @@ def leave_server(sid):
     return jsonify({"ok": True, "message": "Serverdən ayrıldınız."})
 
 
-# ═══════════════ QRUPLAR (16 rəqəmli otaqlar) ═══════════════
+@app.route("/api/servers/<int:sid>/profile", methods=["POST"])
+@require_user
+def update_server_profile(sid):
+    d = request.get_json(silent=True) or {}
+    conn = get_db()
+    srv = conn.execute("SELECT * FROM servers WHERE id=?", (sid,)).fetchone()
+    if not srv:
+        conn.close()
+        return jsonify({"error": "Server tapılmadı."}), 404
+    mem = conn.execute("SELECT role FROM server_members WHERE server_id=? AND LOWER(username)=LOWER(?)", (sid, request._u)).fetchone()
+    if not request._adm and (not mem or mem["role"] != "owner"):
+        conn.close()
+        return jsonify({"error": "Yalnız server sahibi və ya Admin dəyişə bilər."}), 403
+    name = str(d.get("name") or srv["name"]).strip()[:60] or srv["name"]
+    desc = str(d.get("description") if "description" in d else srv["description"]).strip()[:220]
+    icon = str(d.get("icon_emoji") or srv["icon_emoji"]).strip()[:4] or srv["icon_emoji"]
+    color = str(d.get("avatar_color") or srv["avatar_color"]).strip()
+    if not re.match(r"^#[0-9a-fA-F]{6}$", color):
+        color = srv["avatar_color"]
+    raw_av = str(d.get("avatar_url") if "avatar_url" in d else (srv.get("avatar_url") or "")).strip()
+    if raw_av.startswith("data:image/"):
+        av_url = raw_av[:800000]
+    else:
+        av_url = raw_av[:400]
+        if av_url and not (av_url.startswith("https://") or av_url.startswith("http://")):
+            conn.close()
+            return jsonify({"error": "Şəkil linki düzgün deyil."}), 400
+    conn.execute("UPDATE servers SET name=?, description=?, icon_emoji=?, avatar_color=?, avatar_url=? WHERE id=?",
+                 (name, desc, icon, color, av_url, sid))
+    conn.commit()
+    conn.close()
+    return jsonify({"message": "Server profili yeniləndi!"})
+
+
+@app.route("/api/servers/<int:sid>/avatar", methods=["POST"])
+@require_user
+def upload_server_avatar(sid):
+    conn = get_db()
+    srv = conn.execute("SELECT id FROM servers WHERE id=?", (sid,)).fetchone()
+    mem = conn.execute("SELECT role FROM server_members WHERE server_id=? AND LOWER(username)=LOWER(?)", (sid, request._u)).fetchone()
+    if not srv or (not request._adm and (not mem or mem["role"] != "owner")):
+        conn.close()
+        return jsonify({"error": "İcazə yoxdur."}), 403
+    url, err = _save_image_upload(request.files.get("avatar"), "azforces_servers")
+    if err:
+        conn.close()
+        return jsonify({"error": err}), 400
+    conn.execute("UPDATE servers SET avatar_url=? WHERE id=?", (url, sid))
+    conn.commit()
+    conn.close()
+    return jsonify({"avatar_url": url, "message": "Server şəkli yeniləndi!"})
+
+
+# ═══════════════ QRUPLAR (16 rəqəmli otaqlar — Admin Qurucu Səlahiyyətli) ═══════════════
 @app.route("/api/rooms/mine", methods=["GET"])
 @require_user
 def my_rooms():
@@ -2849,7 +2924,7 @@ def join_room():
         conn.close()
         return jsonify({"error": "Qrup tapılmadı."}), 404
     if not conn.execute("SELECT 1 FROM room_members WHERE room_id=? AND LOWER(username)=LOWER(?)", (rm["id"], me_u)).fetchone():
-        if conn.execute("SELECT COUNT(*) AS cnt FROM room_members WHERE room_id=?", (rm["id"],)).fetchone()["cnt"] >= rm["max_members"]:
+        if not request._adm and conn.execute("SELECT COUNT(*) AS cnt FROM room_members WHERE room_id=?", (rm["id"],)).fetchone()["cnt"] >= rm["max_members"]:
             conn.close()
             return jsonify({"error": "Qrup doludur (maks. 20 nəfər)."}), 403
         conn.execute("INSERT INTO room_members (room_id, username) VALUES (?, ?)", (rm["id"], me_u))
@@ -2864,18 +2939,22 @@ def update_room_profile(code):
     d = request.get_json(silent=True) or {}
     conn = get_db()
     rm = conn.execute("SELECT * FROM rooms WHERE room_code=?", (code,)).fetchone()
-    if not rm or rm["creator"].lower() != request._u.lower():
+    if not rm or (rm["creator"].lower() != request._u.lower() and not request._adm):
         conn.close()
-        return jsonify({"error": "Yalnız qrup yaradıcısı dəyişə bilər."}), 403
+        return jsonify({"error": "Yalnız qrup yaradıcısı və ya Admin dəyişə bilər."}), 403
     title = str(d.get("title") or rm["title"]).strip()[:70] or rm["title"]
     bio = str(d.get("bio") if "bio" in d else rm["bio"]).strip()[:220]
     color = str(d.get("avatar_color") or rm["avatar_color"]).strip()
     if not re.match(r"^#[0-9a-fA-F]{6}$", color):
         color = rm["avatar_color"]
-    av_url = str(d.get("avatar_url") if "avatar_url" in d else rm["avatar_url"]).strip()[:300]
-    if av_url and not (av_url.startswith("https://") or av_url.startswith("http://") or av_url.startswith("data:image/")):
-        conn.close()
-        return jsonify({"error": "Şəkil linki düzgün deyil."}), 400
+    raw_av = str(d.get("avatar_url") if "avatar_url" in d else rm["avatar_url"]).strip()
+    if raw_av.startswith("data:image/"):
+        av_url = raw_av[:800000]
+    else:
+        av_url = raw_av[:400]
+        if av_url and not (av_url.startswith("https://") or av_url.startswith("http://")):
+            conn.close()
+            return jsonify({"error": "Şəkil linki düzgün deyil."}), 400
     conn.execute("UPDATE rooms SET title=?, bio=?, avatar_color=?, avatar_url=? WHERE id=?", (title, bio, color, av_url, rm["id"]))
     conn.commit()
     conn.close()
@@ -2888,7 +2967,7 @@ def kick_room_member(code):
     target = str((request.get_json(silent=True) or {}).get("username") or "").strip()
     conn = get_db()
     rm = conn.execute("SELECT id, creator FROM rooms WHERE room_code=?", (code,)).fetchone()
-    if not rm or rm["creator"].lower() != request._u.lower() or target.lower() == rm["creator"].lower():
+    if not rm or (rm["creator"].lower() != request._u.lower() and not request._adm) or target.lower() == ADMIN_USERNAME.lower() or (target.lower() == rm["creator"].lower() and not request._adm):
         conn.close()
         return jsonify({"error": "İcazə yoxdur."}), 403
     conn.execute("DELETE FROM room_members WHERE room_id=? AND LOWER(username)=LOWER(?)", (rm["id"], target))
@@ -2909,15 +2988,65 @@ def leave_room(code):
     return jsonify({"ok": True})
 
 
+@app.route("/api/rooms/<code>/add", methods=["POST"])
+@require_user
+def add_room_member(code):
+    target = str((request.get_json(silent=True) or {}).get("username") or "").strip().lstrip("@")
+    if not target:
+        return jsonify({"error": "İstifadəçi adı yazın."}), 400
+    conn = get_db()
+    rm = conn.execute("SELECT id, creator, max_members FROM rooms WHERE room_code=?", (code,)).fetchone()
+    if not rm or (rm["creator"].lower() != request._u.lower() and not request._adm):
+        conn.close()
+        return jsonify({"error": "İcazə yoxdur."}), 403
+    tu = conn.execute("SELECT username FROM users WHERE LOWER(username)=LOWER(?)", (target,)).fetchone()
+    if not tu:
+        conn.close()
+        return jsonify({"error": "İstifadəçi tapılmadı."}), 404
+    if not request._adm and conn.execute("SELECT COUNT(*) AS cnt FROM room_members WHERE room_id=?", (rm["id"],)).fetchone()["cnt"] >= rm["max_members"]:
+        conn.close()
+        return jsonify({"error": "Qrup doludur (maks. 20 nəfər)."}), 403
+    conn.execute("INSERT INTO room_members (room_id, username) VALUES (?, ?) ON CONFLICT (room_id, username) DO NOTHING", (rm["id"], tu["username"]))
+    conn.commit()
+    conn.close()
+    return jsonify({"message": f"{tu['username']} qrupa əlavə edildi!"})
+
+
+@app.route("/api/rooms/<code>/avatar", methods=["POST"])
+@require_user
+def upload_room_avatar(code):
+    conn = get_db()
+    rm = conn.execute("SELECT id, creator FROM rooms WHERE room_code=?", (code,)).fetchone()
+    if not rm or (rm["creator"].lower() != request._u.lower() and not request._adm):
+        conn.close()
+        return jsonify({"error": "İcazə yoxdur."}), 403
+    url, err = _save_image_upload(request.files.get("avatar"), "azforces_rooms")
+    if err:
+        conn.close()
+        return jsonify({"error": err}), 400
+    conn.execute("UPDATE rooms SET avatar_url=? WHERE id=?", (url, rm["id"]))
+    conn.commit()
+    conn.close()
+    return jsonify({"avatar_url": url, "message": "Qrup şəkli yeniləndi!"})
+
+
 @app.route("/api/rooms/<code>/state", methods=["GET"])
 @require_user
 def room_state(code):
     me_u, after_id = request._u, safe_int(request.args.get("after_id"), 0, 0)
     conn = get_db()
     rm = conn.execute("SELECT * FROM rooms WHERE room_code=?", (code,)).fetchone()
-    if not rm or not conn.execute("SELECT 1 FROM room_members WHERE room_id=? AND LOWER(username)=LOWER(?)", (rm["id"], me_u)).fetchone():
+    if not rm:
         conn.close()
-        return jsonify({"error": "İcazə yoxdur."}), 403
+        return jsonify({"error": "Qrup tapılmadı."}), 404
+    is_mem = conn.execute("SELECT 1 FROM room_members WHERE room_id=? AND LOWER(username)=LOWER(?)", (rm["id"], me_u)).fetchone()
+    if not is_mem:
+        if request._adm:
+            conn.execute("INSERT INTO room_members (room_id, username) VALUES (?, ?) ON CONFLICT (room_id, username) DO NOTHING", (rm["id"], me_u))
+            conn.commit()
+        else:
+            conn.close()
+            return jsonify({"error": "İcazə yoxdur."}), 403
     pids = json.loads(rm["problem_ids_json"] or "[]")
     probs = []
     if pids:
@@ -2939,8 +3068,8 @@ def room_state(code):
     conn.close()
     board = sorted([{"username": m["username"], "solved": ac.get(m["username"].lower(), 0), "is_admin_user": m["username"] == ADMIN_USERNAME} for m in members], key=lambda x: (-x["solved"], x["username"]))
     rem = max(0, int(rm["ends_at"] - time.time())) if rm["duration_min"] > 0 else -1
-    return jsonify({"room": rm | {"remaining_sec": rem}, "problems": probs, "shared_problems": shared_all,
-                    "members": members, "standings": board, "messages": msgs})
+    return jsonify({"room": rm | {"remaining_sec": rem}, "is_creator_power": (rm["creator"].lower() == me_u.lower() or request._adm),
+                    "problems": probs, "shared_problems": shared_all, "members": members, "standings": board, "messages": msgs})
 
 
 @app.route("/api/rooms/<code>/chat", methods=["POST"])
@@ -3341,4 +3470,4 @@ if __name__ == "__main__":
         port=int(os.environ.get("PORT", 5000)),
         debug=os.environ.get("FLASK_DEBUG", "false").lower() == "true",
         threaded=True,
-    )
+)
