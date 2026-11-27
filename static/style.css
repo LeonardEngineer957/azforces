@@ -155,7 +155,7 @@ header {
 .av-lg { width: 54px; height: 54px; font-size: 1.3rem; }
 .av-xl { width: 78px; height: 78px; font-size: 1.9rem; }
 
-/* Yeni Mağaza + SVG Çərçivələr (12.000 - 50.000) */
+/* Yeni Mağaza + SVG Çərçivələr (15.000 - 50.000) */
 .frame-none, .f-none { border-color: rgba(255, 255, 255, 0.15); }
 .frame-angry-anime { border-color: rgba(239, 68, 68, 0.75); box-shadow: 0 0 14px rgba(239, 68, 68, 0.45); }
 .frame-butterfly-dream { border-color: rgba(244, 63, 94, 0.8); box-shadow: 0 0 16px rgba(244, 63, 94, 0.55); }
@@ -180,6 +180,7 @@ header {
 .frame-phoenix-wings { border-color: rgba(251, 146, 60, 0.9); box-shadow: 0 0 26px rgba(249, 115, 22, 0.85); }
 .frame-dark-angel { border-color: rgba(226, 232, 240, 0.7); box-shadow: 0 0 26px rgba(255, 255, 255, 0.5), 0 0 18px rgba(0, 0, 0, 0.9); }
 .frame-fallen-angel, .frame-angel-wings { border-color: rgba(255, 255, 255, 0.75); box-shadow: 0 0 26px rgba(255, 255, 255, 0.65); }
+
 /* Köhnə ID uyğunluğu */
 .frame-neon-blue { border: 3px solid #38bdf8; box-shadow: 0 0 12px rgba(56, 189, 248, 0.75); }
 .frame-gold-crown { border: 3px solid #fbbf24; box-shadow: 0 0 18px rgba(251, 191, 36, 0.85); }
@@ -689,7 +690,6 @@ textarea.code-fallback { height: 320px; font-family: var(--font-code); font-size
   color: #93c5fd;
 }
 
-/* ── DISCORD-TƏRZİ SERVERLƏR UI ── */
 /* ── DISCORD MOBİL & MASAÜSTÜ SERVERLƏR UI ── */
 .dc-shell {
   display: grid;
@@ -736,6 +736,13 @@ textarea.code-fallback { height: 320px; font-family: var(--font-code); font-size
   position: absolute; bottom: -2px; right: -2px;
   background: #0b0e14; border: 1px solid var(--border-strong);
   font-size: 0.56rem; padding: 1px 4px; border-radius: 999px; color: #93c5fd;
+}
+.dc-rail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+  display: block;
 }
 
 .dc-chans {
@@ -805,6 +812,26 @@ textarea.code-fallback { height: 320px; font-family: var(--font-code); font-size
 }
 .dc-mobile-only { display: none; }
 
+.srv-muted-pill {
+  background: rgba(239, 68, 68, 0.14);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.srv-role-badge {
+  font-size: 0.66rem;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+}
+.srv-role-badge.owner { color: #fde047; border-color: rgba(250, 204, 21, 0.45); background: rgba(250, 204, 21, 0.12); }
+.srv-role-badge.mod { color: #67e8f9; border-color: rgba(6, 182, 212, 0.45); background: rgba(6, 182, 212, 0.12); }
+
 @media (max-width: 980px) {
   .dc-shell { grid-template-columns: 62px 220px 1fr; }
   .dc-members { display: none; }
@@ -820,4 +847,4 @@ textarea.code-fallback { height: 320px; font-family: var(--font-code); font-size
   .dc-shell.in-chat .dc-rail, .dc-shell.in-chat .dc-chans { display: none; }
   .dc-shell.in-chat .dc-chat { display: flex; }
   .dc-mobile-only { display: inline-flex; }
-                    }
+                              }
