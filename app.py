@@ -664,3 +664,1004 @@ def safe_add_col(conn, table, col_def):
             conn.rollback()
         except Exception:
             pass
+
+def ensure_global_server(conn):
+    row = conn.execute("SELECT id FROM servers WHERE server_code='AZ-GLOBAL'").fetchone()
+    if row:
+        return row["id"]
+    sid = conn.execute(
+        "INSERT INTO servers (server_code, name, description, icon_emoji, avatar_color, owner, server_type, university, is_public, max_members) VALUES (?, ?, ?, ?, ?, ?, 'global', '', 1, 2000)",
+        ("AZ-GLOBAL", "AzForces Ümumi DC", "Bütün Azərbaycan tələbələri üçün tanışlıq, alqoritm və komanda axtarışı serveri", "🌐", "#3b82f6", ADMIN_USERNAME)
+    ).lastrowid
+    channels = [
+        ("tanisliq", "#tanışlıq", "Özünü təqdim et: universitet, kurs, ixtisas və bildiyin dillər", "text", 1),
+        ("umumi", "#ümumi-söhbət", "Bütün universitetlərdən tələbələr üçün sərbəst söhbət", "text", 2),
+        ("alqoritm", "#alqoritm-kömək", "Kodlaşdırma, məsələ müzakirəsi və ICPC hazırlığı", "text", 3),
+        ("komanda", "#komanda-axtarışı", "Hackathon, startap və yarış komandası ortağı tap", "text", 4),
+        ("ses", "🔊 Səs Otağı", "Canlı səsli müzakirə kanalı", "voice", 5),
+    ]
+    for slug, nm, top, ctype, pos in channels:
+        conn.execute(
+            "INSERT INTO server_channels (server_id, slug, name, topic, channel_type, pos) VALUES (?, ?, ?, ?, ?, ?)",
+            (sid, slug, nm, top, ctype, pos)
+        )
+    return sid
+
+
+def ensure_uni_server(conn, uni_code):
+    uc = str(uni_code or "").strip().upper()
+    if uc not in UNI_MAP:
+        return None
+    scode = f"UNI-{uc}"
+    row = conn.execute("SELECT id FROM servers WHERE server_code=?", (scode,)).fetchone()
+    if row:
+        return row["id"]
+    sid = conn.execute(
+        "INSERT INTO servers (server_code, name, description, icon_emoji, avatar_color, owner, server_type, university, is_public, max_members) VALUES (?, ?, ?, ?, ?, ?, 'university', ?, 0, 1000)",
+        (scode, f"{uc} Tələbə Serveri", f"Yalnız {UNI_MAP[uc]} ({uc}) üzvləri üçün qapalı universitet serveri", "🏛️", "#0ea5e9", ADMIN_USERNAME, uc)
+    ).lastrowid
+    channels = [
+        ("umumi", "#ümumi", f"{uc} tələbələrinin əsas söhbət kanalı", "text", 1),
+        ("dersler", "#dərslər-imtahan", "Dərslər, kollekvium, imtahan və müəllim məsləhətləri", "text", 2),
+        ("yarishlar", "#uni-yarışları", f"{uc} daxili müsabiqələr və komanda yığımı", "text", 3),
+    ]
+    for slug, nm, top, ctype, pos in channels:
+        conn.execute(
+            "INSERT INTO server_channels (server_id, slug, name, topic, channel_type, pos) VALUES (?, ?, ?, ?, ?, ?)",
+            (sid, slug, nm, top, ctype, pos)
+        )
+    return sid
+
+
+def sync_user_default_servers(conn, username, uni_code=""):
+    gid = ensure_global_server(conn)
+    role_g = "owner" if username.lower() == ADMIN_USERNAME.lower() else "member"
+    conn.execute("INSERT INTO server_members (server_id, username, role) VALUES (?, ?, ?) ON CONFLICT (server_id, username) DO NOTHING", (gid, username, role_g))
+    uc = str(uni_code or "").strip().upper()
+    if username.lower() != ADMIN_USERNAME.lower():
+        conn.execute("DELETE FROM server_members WHERE LOWER(username)=LOWER(?) AND server_id IN (SELECT id FROM servers WHERE server_type='university' AND UPPER(university)<>UPPER(?))", (username, uc))
+    if uc in UNI_MAP:
+        uid = ensure_uni_server(conn, uc)
+        if uid:
+            conn.execute("INSERT INTO server_members (server_id, username, role) VALUES (?, ?, ?) ON CONFLICT (server_id, username) DO NOTHING", (uid, username, role_g))
+
+
+def init_db():
+    conn = get_db()
+    PK = "SERIAL PRIMARY KEY" if IS_PG else "INTEGER PRIMARY KEY AUTOINCREMENT"
+    TS = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+    DBL = "DOUBLE PRECISION" if IS_PG else "REAL"
+
+    conn.execute("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
+    conn.execute(f"""CREATE TABLE IF NOT EXISTS users (
+        id {PK}, username TEXT UNIQUE NOT NULL, email TEXT UNIQUE NOT NULL, password_hash TEXT NOT NULL,
+        bio TEXT DEFAULT '', university TEXT DEFAULT '', uni_changed_at {DBL} DEFAULT 0,
+        avatar_url TEXT DEFAULT '', avatar_color TEXT DEFAULT '#3b82f6',
+        avatar_frame TEXT DEFAULT 'none', level INTEGER DEFAULT 1, xp INTEGER DEFAULT 0,
+        total_xp INTEGER DEFAULT 0, coins INTEGER DEFAULT 0, rating INTEGER DEFAULT 800,
+        daily_streak INTEGER DEFAULT 0, last_solve_date TEXT DEFAULT '', last_seen_at {DBL} DEFAULT 0,
+        d_msg_date TEXT DEFAULT '', d_msg_cnt INTEGER DEFAULT 0,
+        d_sub_date TEXT DEFAULT '', d_sub_cnt INTEGER DEFAULT 0,
+        d_prop_date TEXT DEFAULT '', d_prop_cnt INTEGER DEFAULT 0,
+        d_game_date TEXT DEFAULT '', d_game_cnt INTEGER DEFAULT 0,
+        created_at {TS})""")
+    conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_u_name_ci ON users (LOWER(username))")
+    conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_u_mail_ci ON users (LOWER(email))")
+    conn.execute("CREATE TABLE IF NOT EXISTS user_inventory (username TEXT NOT NULL, item_id TEXT NOT NULL, UNIQUE(username, item_id))")
+    conn.execute(f"CREATE TABLE IF NOT EXISTS rating_history (id {PK}, username TEXT NOT NULL, rating INTEGER NOT NULL, label TEXT DEFAULT '', created_at {TS})")
+    conn.execute(f"CREATE TABLE IF NOT EXISTS email_codes (email TEXT PRIMARY KEY, code_hash TEXT NOT NULL, attempts INTEGER DEFAULT 0, expires_at {DBL} NOT NULL)")
+    conn.execute(f"CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, username TEXT NOT NULL, kind TEXT DEFAULT 'user', expires_at {DBL} NOT NULL)")
+    conn.execute(f"CREATE TABLE IF NOT EXISTS friendships (id {PK}, user_a TEXT NOT NULL, user_b TEXT NOT NULL, status TEXT DEFAULT 'pending', action_by TEXT NOT NULL, created_at {TS}, UNIQUE(user_a, user_b))")
+    conn.execute(f"CREATE TABLE IF NOT EXISTS site_reviews (id {PK}, username TEXT UNIQUE NOT NULL, rating INTEGER NOT NULL, comment TEXT DEFAULT '', created_at {TS})")
+    conn.execute(f"CREATE TABLE IF NOT EXISTS contests (id {PK}, title TEXT NOT NULL, duration_min INTEGER DEFAULT 90, starts_at {DBL} NOT NULL, ends_at {DBL} NOT NULL, status TEXT DEFAULT 'active', created_at {TS})")
+    conn.execute(f"""CREATE TABLE IF NOT EXISTS problems (
+        id {PK}, code_label TEXT DEFAULT '', title TEXT NOT NULL, plan TEXT DEFAULT '', rating INTEGER DEFAULT 800, tags TEXT DEFAULT 'math',
+        time_limit {DBL} DEFAULT 2.0, memory_limit INTEGER DEFAULT 256, statement TEXT NOT NULL,
+        input_spec TEXT DEFAULT '', output_spec TEXT DEFAULT '', note TEXT DEFAULT '', editorial TEXT DEFAULT '',
+        starter_code TEXT DEFAULT '', author TEXT DEFAULT 'AzForces', visibility TEXT DEFAULT 'archive',
+        contest_id INTEGER DEFAULT NULL, author_check_status TEXT DEFAULT '', reject_reason TEXT DEFAULT '',
+        awarded_xp INTEGER DEFAULT 0, created_at {TS})""")
+    conn.execute(f"CREATE TABLE IF NOT EXISTS test_cases (id {PK}, problem_id INTEGER NOT NULL REFERENCES problems(id) ON DELETE CASCADE, input_data TEXT NOT NULL, expected_output TEXT NOT NULL, is_sample INTEGER DEFAULT 1)")
+    conn.execute(f"CREATE TABLE IF NOT EXISTS submissions (id {PK}, problem_id INTEGER NOT NULL, problem_title TEXT NOT NULL, username TEXT NOT NULL, language TEXT NOT NULL, code TEXT NOT NULL, verdict TEXT NOT NULL, passed_tests INTEGER DEFAULT 0, total_tests INTEGER DEFAULT 0, quality_pct INTEGER DEFAULT 0, exec_time TEXT DEFAULT '-', details TEXT DEFAULT '', room_id INTEGER DEFAULT NULL, created_at {TS})")
+    conn.execute("CREATE TABLE IF NOT EXISTS daily_challenges (day_date TEXT PRIMARY KEY, problem_id INTEGER NOT NULL)")
+    conn.execute(f"CREATE TABLE IF NOT EXISTS daily_solves (id {PK}, day_date TEXT NOT NULL, username TEXT NOT NULL, quality_pct INTEGER DEFAULT 0, solved_at {TS}, UNIQUE(day_date, username))")
+    conn.execute(f"CREATE TABLE IF NOT EXISTS rooms (id {PK}, room_code TEXT UNIQUE NOT NULL, title TEXT NOT NULL, bio TEXT DEFAULT 'Dostlarla söhbət və yarış qrupu', avatar_url TEXT DEFAULT '', avatar_color TEXT DEFAULT '#0ea5e9', creator TEXT NOT NULL, voice_link TEXT DEFAULT '', problem_ids_json TEXT DEFAULT '[]', duration_min INTEGER DEFAULT 0, max_members INTEGER DEFAULT 20, starts_at {DBL} NOT NULL, ends_at {DBL} NOT NULL, created_at {TS})")
+    conn.execute(f"CREATE TABLE IF NOT EXISTS room_members (id {PK}, room_id INTEGER NOT NULL REFERENCES rooms(id) ON DELETE CASCADE, username TEXT NOT NULL, joined_at {TS}, UNIQUE(room_id, username))")
+    conn.execute(f"CREATE TABLE IF NOT EXISTS room_messages (id {PK}, room_id INTEGER NOT NULL REFERENCES rooms(id) ON DELETE CASCADE, username TEXT NOT NULL, message TEXT NOT NULL, reply_to_id INTEGER DEFAULT NULL, shared_problem_id INTEGER DEFAULT NULL, audio_url TEXT DEFAULT '', audio_duration INTEGER DEFAULT 0, created_at {TS})")
+    conn.execute(f"CREATE TABLE IF NOT EXISTS servers (id {PK}, server_code TEXT UNIQUE NOT NULL, name TEXT NOT NULL, description TEXT DEFAULT '', icon_emoji TEXT DEFAULT '🌐', avatar_color TEXT DEFAULT '#3b82f6', owner TEXT NOT NULL, server_type TEXT DEFAULT 'custom', university TEXT DEFAULT '', is_public INTEGER DEFAULT 1, max_members INTEGER DEFAULT 500, created_at {TS})")
+    conn.execute(f"CREATE TABLE IF NOT EXISTS server_channels (id {PK}, server_id INTEGER NOT NULL REFERENCES servers(id) ON DELETE CASCADE, slug TEXT NOT NULL, name TEXT NOT NULL, topic TEXT DEFAULT '', channel_type TEXT DEFAULT 'text', voice_url TEXT DEFAULT '', pos INTEGER DEFAULT 0, created_at {TS})")
+    conn.execute(f"CREATE TABLE IF NOT EXISTS server_members (id {PK}, server_id INTEGER NOT NULL REFERENCES servers(id) ON DELETE CASCADE, username TEXT NOT NULL, role TEXT DEFAULT 'member', muted_until {DBL} DEFAULT 0, joined_at {TS}, UNIQUE(server_id, username))")
+    conn.execute(f"CREATE TABLE IF NOT EXISTS server_messages (id {PK}, server_id INTEGER NOT NULL REFERENCES servers(id) ON DELETE CASCADE, channel_id INTEGER NOT NULL REFERENCES server_channels(id) ON DELETE CASCADE, username TEXT NOT NULL, message TEXT NOT NULL, reply_to_id INTEGER DEFAULT NULL, shared_problem_id INTEGER DEFAULT NULL, audio_url TEXT DEFAULT '', audio_duration INTEGER DEFAULT 0, is_pinned INTEGER DEFAULT 0, created_at {TS})")
+    conn.execute(f"CREATE TABLE IF NOT EXISTS direct_messages (id {PK}, sender TEXT NOT NULL, receiver TEXT NOT NULL, message TEXT NOT NULL, reply_to_id INTEGER DEFAULT NULL, shared_problem_id INTEGER DEFAULT NULL, audio_url TEXT DEFAULT '', audio_duration INTEGER DEFAULT 0, created_at {TS})")
+    conn.execute(f"CREATE TABLE IF NOT EXISTS posts (id {PK}, author TEXT NOT NULL, title TEXT NOT NULL, body TEXT NOT NULL, post_type TEXT DEFAULT 'announcement', is_pinned INTEGER DEFAULT 0, poll_options_json TEXT DEFAULT '[]', created_at {TS})")
+    conn.execute(f"CREATE TABLE IF NOT EXISTS poll_votes (id {PK}, post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE, username TEXT NOT NULL, option_index INTEGER NOT NULL, UNIQUE(post_id, username))")
+    conn.execute(f"CREATE TABLE IF NOT EXISTS post_reactions (id {PK}, post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE, username TEXT NOT NULL, emoji TEXT NOT NULL, UNIQUE(post_id, username, emoji))")
+    conn.execute(f"CREATE TABLE IF NOT EXISTS post_comments (id {PK}, post_id INTEGER NOT NULL REFERENCES posts(id) ON DELETE CASCADE, parent_id INTEGER DEFAULT NULL, author TEXT NOT NULL, body TEXT NOT NULL, created_at {TS})")
+    conn.execute(f"CREATE TABLE IF NOT EXISTS creative_codes (id {PK}, title TEXT NOT NULL, description TEXT DEFAULT '', language TEXT NOT NULL, code TEXT NOT NULL, sample_input TEXT DEFAULT '', author TEXT DEFAULT 'AzForces', created_at {TS})")
+    conn.execute(f"CREATE TABLE IF NOT EXISTS custom_frames (id TEXT PRIMARY KEY, name TEXT NOT NULL, tier TEXT DEFAULT 'fantasy', price INTEGER DEFAULT 15000, description TEXT DEFAULT '', image_url TEXT NOT NULL, anim_class TEXT DEFAULT 'fx-float', created_at {TS})")
+    conn.commit()
+
+    for tbl, cdef in [
+        ("users", f"last_seen_at {DBL} DEFAULT 0"),
+        ("users", "university TEXT DEFAULT ''"),
+        ("users", f"uni_changed_at {DBL} DEFAULT 0"),
+        ("problems", "plan TEXT DEFAULT ''"),
+        ("submissions", "quality_pct INTEGER DEFAULT 0"),
+        ("room_messages", "audio_url TEXT DEFAULT ''"),
+        ("room_messages", "audio_duration INTEGER DEFAULT 0"),
+        ("direct_messages", "audio_url TEXT DEFAULT ''"),
+        ("direct_messages", "audio_duration INTEGER DEFAULT 0"),
+    ]:
+        safe_add_col(conn, tbl, cdef)
+
+    for k, v in {"provider": os.environ.get("JUDGE_PROVIDER", "judge0"),
+                 "base_url": os.environ.get("JUDGE_BASE_URL", "https://ce.judge0.com"),
+                 "api_key": os.environ.get("JUDGE_API_KEY", "")}.items():
+        conn.execute("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO NOTHING", (k, v))
+
+    if not _ENV_ADMIN_HASH:
+        row = conn.execute("SELECT value FROM settings WHERE key = 'admin_password_hash'").fetchone()
+        if not row or not row["value"]:
+            gen = secrets.token_urlsafe(12)
+            conn.execute("INSERT INTO settings (key, value) VALUES ('admin_password_hash', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value", (generate_password_hash(gen),))
+            if os.environ.get("SHOW_INIT_ADMIN_PASSWORD", "false").lower() == "true":
+                print(f"\n[AzForces] İlk Admin parolu: {gen} | Gizli panel: /p/{ADMIN_SECRET_PATH}\n", flush=True)
+            else:
+                print("\n[AzForces] İlkin Admin parolu yaradıldı. ADMIN_PASSWORD env təyin etmək tövsiyə olunur.\n", flush=True)
+
+    if conn.execute("SELECT COUNT(*) AS cnt FROM problems").fetchone()["cnt"] == 0:
+        try:
+            from problems_seed import SEED_PROBLEMS
+            seed = SEED_PROBLEMS
+        except ImportError:
+            seed = [
+                ("1A", "A + B Cəmi", 650, "math, başlanğıc", 1.0, 256, "İki tam ədəd $a$ və $b$ verilir. Onların cəmini tapın.", "Tək sətirdə $a$ və $b$.", "$a+b$ cəmi.", "", "`print(sum(map(int, input().split())))`", [("3 5", "8", 1), ("-10 25", "15", 1), ("1000000000 1000000000", "2000000000", 0)]),
+                ("1B", "Tək yoxsa Cüt", 700, "math, başlanğıc", 1.0, 256, "Verilmiş $n$ ədədinin tək və ya cüt olduğunu tapın.", "Bir tam ədəd $n$.", "Cütdürsə `EVEN`, təkdirsə `ODD`.", "", "`n % 2 == 0` yoxlayın.", [("4", "EVEN", 1), ("7", "ODD", 1), ("999999999", "ODD", 0)]),
+                ("1C", "Sadə Ədəd", 1000, "number theory", 2.0, 256, "$n$ natural ədədinin sadə olub-olmadığını yoxlayın.", "Bir tam ədəd $n$.", "Sadədirsə `YES`, əks halda `NO`.", "$1$ sadə deyil.", "Kökə qədər bölənləri yoxlayın.", [("7", "YES", 1), ("1", "NO", 1), ("1000000007", "YES", 0)]),
+                ("1D", "Hədəf Cəm (Two Sum)", 1200, "hashing, arrays", 2.0, 256, "Massivdə cəmi $k$-ya bərabər iki element varmı?", "1-ci sətirdə $n, k$; 2-ci sətirdə $n$ ədəd.", "`YES` və ya `NO`.", "", "Ədədləri `set`-də saxlayın.", [("4 9\n2 7 11 15", "YES", 1), ("3 10\n1 2 3", "NO", 0)]),
+                ("1E", "Ən Uzun Artan Alt-ardıcıllıq", 1800, "dp, binary search", 2.0, 256, "Ən uzun ciddi artan alt-ardıcıllığın uzunluğunu tapın.", "1-ci sətirdə $n$; 2-ci sətirdə massiv.", "Maksimum uzunluq.", "", "Binary search + tails.", [("6\n10 9 2 5 3 7", "3", 1), ("5\n5 4 3 2 1", "1", 0)]),
+            ]
+        for lbl, t, rt, tg, tl, ml, st, ins, outs, nt, ed, tests in seed:
+            pid = conn.execute("INSERT INTO problems (code_label,title,plan,rating,tags,time_limit,memory_limit,statement,input_spec,output_spec,note,editorial,author,visibility) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,'AzForces','archive')",
+                               (lbl, t, tg, rt, tg, tl, ml, st, ins, outs, nt, ed)).lastrowid
+            for i_d, o_d, smp in tests:
+                conn.execute("INSERT INTO test_cases (problem_id, input_data, expected_output, is_sample) VALUES (?, ?, ?, ?)", (pid, i_d, o_d, smp))
+
+    if conn.execute("SELECT COUNT(*) AS cnt FROM posts").fetchone()["cnt"] == 0:
+        conn.execute("INSERT INTO posts (author, title, body, post_type, is_pinned) VALUES (?, ?, ?, 'announcement', 1)",
+                     (ADMIN_USERNAME, "AzForces Platformasına Xoş Gəldiniz!", "Rəsmi yarışlar, elanlar və anketlər burada paylaşılır. Hər gün Günün Məsələsini həll edib seriyanızı artırın!"))
+
+    if conn.execute("SELECT COUNT(*) AS cnt FROM site_reviews").fetchone()["cnt"] == 0:
+        conn.execute("INSERT INTO site_reviews (username, rating, comment) VALUES (?, 5, ?) ON CONFLICT (username) DO NOTHING",
+                     (ADMIN_USERNAME, "Azərbaycan dilində müasir alqoritmik məsələ və icma platforması."))
+
+    if conn.execute("SELECT COUNT(*) AS cnt FROM creative_codes").fetchone()["cnt"] == 0:
+        conn.execute("INSERT INTO creative_codes (title, description, language, code, sample_input, author) VALUES ('Almaz ASCII', 'Simmetrik almaz fiquru.', 'python', ?, '5', ?)",
+                     ("n = int(input() or 5)\nfor i in range(n): print(' '*(n-i-1)+'*'*(2*i+1))\nfor i in range(n-2,-1,-1): print(' '*(n-i-1)+'*'*(2*i+1))", ADMIN_USERNAME))
+
+    ensure_global_server(conn)
+    conn.commit()
+    conn.close()
+
+
+@app.before_request
+def _boot():
+    global _db_ready
+    if request.path == "/health":
+        return
+    if not _db_ready:
+        with _db_lock:
+            if not _db_ready:
+                init_db()
+                _db_ready = True
+
+
+@app.after_request
+def _sec(resp):
+    resp.headers["X-Content-Type-Options"] = "nosniff"
+    resp.headers["X-Frame-Options"] = "SAMEORIGIN"
+    return resp
+
+
+def sync_contests(conn):
+    now = time.time()
+    for r in conn.execute("SELECT id FROM contests WHERE status='active' AND ends_at<=?", (now,)).fetchall():
+        conn.execute("UPDATE contests SET status='finished' WHERE id=?", (r["id"],))
+        conn.execute("UPDATE problems SET visibility='gym' WHERE contest_id=? AND visibility='contest'", (r["id"],))
+    conn.commit()
+
+
+def check_daily(conn, username, kind, limit):
+    if username.lower() == ADMIN_USERNAME.lower():
+        return True
+    u = conn.execute("SELECT * FROM users WHERE LOWER(username)=LOWER(?)", (username,)).fetchone()
+    if not u:
+        return True
+    today = az_today()
+    dc, cc = f"d_{kind}_date", f"d_{kind}_cnt"
+    cnt = u[cc] if u[dc] == today else 0
+    if cnt >= limit:
+        return False
+    conn.execute(f"UPDATE users SET {dc}=?, {cc}=? WHERE LOWER(username)=LOWER(?)", (today, cnt + 1, username))
+    return True
+
+
+def norm_out(txt):
+    return "\n".join(l.rstrip() for l in (txt or "").replace("\r\n", "\n").strip().splitlines())
+
+
+def get_or_create_daily_pid(conn):
+    today = az_today()
+    row = conn.execute("SELECT problem_id FROM daily_challenges WHERE day_date=?", (today,)).fetchone()
+    if row:
+        if conn.execute("SELECT 1 FROM problems WHERE id=? AND visibility IN ('archive','gym')", (row["problem_id"],)).fetchone():
+            return row["problem_id"]
+    pool = conn.execute("SELECT id FROM problems WHERE visibility IN ('archive','gym') ORDER BY id ASC").fetchall()
+    if not pool:
+        return None
+    chosen = pool[int(az_now().strftime("%Y%m%d")) % len(pool)]["id"]
+    conn.execute("INSERT INTO daily_challenges (day_date, problem_id) VALUES (?, ?) ON CONFLICT (day_date) DO UPDATE SET problem_id=excluded.problem_id", (today, chosen))
+    conn.commit()
+    return chosen
+
+
+def get_all_shop_items(conn):
+    custom = conn.execute("SELECT * FROM custom_frames ORDER BY created_at DESC").fetchall()
+    items = [dict(it) | {"fx_type": "svg" if it["id"] != "none" else "none", "image_url": "", "anim_class": ""} for it in SHOP_ITEMS]
+    for cf in custom:
+        items.append({
+            "id": cf["id"], "name": cf["name"], "tier": cf["tier"] or "fantasy",
+            "price": cf["price"], "desc": cf["description"] or "Xüsusi animasiyalı çərçivə",
+            "fx_type": "img", "image_url": cf["image_url"], "anim_class": cf["anim_class"] or "fx-float",
+        })
+    return items
+
+
+def calc_quality_score(passed, total, time_str, time_limit, code):
+    if total <= 0:
+        return 0, {"tests_pct": 0, "speed_pct": 0, "style_pct": 0}
+    test_pts = round(60 * passed / total)
+    try:
+        exec_s = float(str(time_str or "").replace("s", "").strip())
+    except ValueError:
+        exec_s = 0.25 if passed == total else time_limit
+    speed_ratio = max(0.0, min(1.0, 1.0 - (exec_s / max(0.5, time_limit)) * 0.6))
+    speed_pts = round(25 * speed_ratio * (passed / total))
+    lc = len([l for l in code.splitlines() if l.strip()])
+    style_pts = 15 if (1 <= lc <= 90) else (12 if lc <= 180 else 9)
+    if passed < total:
+        style_pts = max(3, round(style_pts * (passed / total)))
+    return min(100, max(0, test_pts + speed_pts + style_pts)), {
+        "tests_pct": round(100 * passed / total),
+        "speed_pct": round(100 * speed_ratio) if passed > 0 else 0,
+        "style_pct": round(100 * style_pts / 15),
+    }
+
+
+def upload_voice_storage(raw_bytes, ext="webm"):
+    if VOICE_UPLOAD_WEBHOOK:
+        try:
+            r = requests.post(VOICE_UPLOAD_WEBHOOK, files={"file": (f"voice.{ext}", raw_bytes, f"audio/{ext}")}, timeout=20)
+            if r.status_code < 400:
+                j = r.json() or {}
+                url = j.get("url") or j.get("secure_url")
+                if url:
+                    return url, None
+        except Exception:
+            pass
+        return None, "Xarici səs servisi cavab vermədi."
+    if CLOUD_NAME and CLOUD_KEY and CLOUD_SECRET:
+        ts = int(time.time())
+        sig = hashlib.sha1(f"folder=azforces_voice&timestamp={ts}{CLOUD_SECRET}".encode("utf-8")).hexdigest()
+        try:
+            r = requests.post(
+                f"https://api.cloudinary.com/v1_1/{CLOUD_NAME}/video/upload",
+                data={"api_key": CLOUD_KEY, "timestamp": ts, "folder": "azforces_voice", "signature": sig},
+                files={"file": (f"voice.{ext}", raw_bytes)}, timeout=25,
+            )
+            if r.status_code < 400:
+                return r.json().get("secure_url", ""), None
+        except Exception:
+            pass
+        return None, "Cloudinary səs yükləməsi alınmadı."
+    return None, "Səs saxlama servisi qoşulmayıb (Cloudinary və ya VOICE_UPLOAD_WEBHOOK təyin edin)."
+
+
+def _get_wandbox_compilers():
+    now = time.time()
+    if now - _wandbox_cache["ts"] < 3600 and _wandbox_cache["compilers"]:
+        return _wandbox_cache["compilers"]
+    try:
+        r = requests.get("https://wandbox.org/api/list.json", timeout=10)
+        if r.status_code == 200:
+            found = {}
+            for it in r.json():
+                lg, nm = it.get("language", "").lower(), it.get("name", "")
+                if lg == "python" and "cpython" in nm and "python" not in found:
+                    found["python"] = nm
+                elif lg == "c++" and "gcc" in nm and "head" not in nm and "cpp" not in found:
+                    found["cpp"] = nm
+                elif lg == "c" and "gcc" in nm and "head" not in nm and "c" not in found:
+                    found["c"] = nm
+                elif lg == "javascript" and "nodejs" in nm and "javascript" not in found:
+                    found["javascript"] = nm
+                elif lg == "java" and "openjdk" in nm and "java" not in found:
+                    found["java"] = nm
+            if found:
+                _wandbox_cache["compilers"], _wandbox_cache["ts"] = found, now
+    except Exception:
+        pass
+    return _wandbox_cache["compilers"] or {"python": "cpython-3.12.7", "cpp": "gcc-13.2.0", "c": "gcc-13.2.0-c", "javascript": "nodejs-20.17.0", "java": "openjdk-jdk-22+36"}
+
+
+def _run_wandbox(lang, code, stdin_data):
+    comp = _get_wandbox_compilers().get(lang)
+    if not comp:
+        return {"ok": False, "status": "API Error", "stderr": f"Wandbox-da {lang} tapılmadı."}
+    try:
+        t0 = time.perf_counter()
+        r = requests.post("https://wandbox.org/api/compile.json", json={"compiler": comp, "code": code, "stdin": stdin_data}, timeout=25)
+        el = f"{time.perf_counter() - t0:.2f}s"
+        if r.status_code >= 400:
+            return {"ok": False, "status": "API Error", "stderr": f"Wandbox HTTP {r.status_code}"}
+        d = r.json()
+        if d.get("compiler_error"):
+            return {"ok": True, "status": "Compilation Error", "stdout": "", "stderr": d["compiler_error"], "time": "0.00s"}
+        st = str(d.get("status", "0"))
+        if st != "0":
+            return {"ok": True, "status": "Runtime Error", "stdout": d.get("program_output", ""), "stderr": d.get("program_error") or f"Exit {st}", "time": el}
+        return {"ok": True, "status": "OK", "stdout": d.get("program_output", ""), "stderr": d.get("program_error", ""), "time": el}
+    except requests.RequestException as e:
+        return {"ok": False, "status": "Connection Error", "stderr": f"Wandbox xətası: {e}"}
+
+
+def _run_piston(base_url, lang, code, stdin_data):
+    piston_langs = {"python": "python", "cpp": "c++", "c": "c", "java": "java", "javascript": "javascript"}
+    ep = (base_url or "").strip().rstrip("/")
+    if not ep or "judge0" in ep:
+        ep = "https://emkc.org/api/v2/piston"
+    if not ep.endswith("/execute"):
+        ep = f"{ep}/execute"
+    try:
+        t0 = time.perf_counter()
+        r = requests.post(ep, json={"language": piston_langs.get(lang, lang), "version": "*",
+                                    "files": [{"content": code}], "stdin": stdin_data}, timeout=22)
+        el = f"{time.perf_counter() - t0:.2f}s"
+        if r.status_code >= 400:
+            return {"ok": False, "status": "API Error", "stderr": f"Piston HTTP {r.status_code}"}
+        d = r.json()
+        comp = d.get("compile") or {}
+        if comp.get("code", 0) not in (0, None):
+            return {"ok": True, "status": "Compilation Error", "stdout": "", "stderr": comp.get("stderr") or comp.get("output") or "Kompilyasiya xətası", "time": el}
+        run = d.get("run") or {}
+        if run.get("signal") == "SIGKILL":
+            return {"ok": True, "status": "Time Limit Exceeded", "stdout": run.get("stdout", ""), "stderr": "Vaxt limiti aşıldı", "time": el}
+        if run.get("code", 0) not in (0, None):
+            return {"ok": True, "status": "Runtime Error", "stdout": run.get("stdout", ""), "stderr": run.get("stderr") or run.get("output") or f"Exit {run.get('code')}", "time": el}
+        return {"ok": True, "status": "OK", "stdout": run.get("stdout", ""), "stderr": run.get("stderr", ""), "time": el}
+    except requests.RequestException as e:
+        return {"ok": False, "status": "Connection Error", "stderr": f"Piston xətası: {e}"}
+
+
+def _run_judge0(base_url, api_key, lang, code, stdin_data, t_limit):
+    lids = {"python": 71, "cpp": 54, "c": 50, "java": 62, "javascript": 63}
+    hdrs = {"Content-Type": "application/json"}
+    if api_key:
+        if "rapidapi.com" in base_url:
+            hdrs["X-RapidAPI-Key"], hdrs["X-RapidAPI-Host"] = api_key, base_url.split("//")[-1].split("/")[0]
+        else:
+            hdrs["X-Auth-Token"] = api_key
+
+    def b64(s):
+        return base64.b64encode((s or "").encode("utf-8")).decode("ascii")
+
+    def deb64(s):
+        return base64.b64decode(s).decode("utf-8", errors="replace") if s else ""
+
+    try:
+        r = requests.post(f"{base_url}/submissions?base64_encoded=true&wait=true",
+                          json={"language_id": lids[lang], "source_code": b64(code), "stdin": b64(stdin_data), "cpu_time_limit": t_limit},
+                          headers=hdrs, timeout=22)
+        if r.status_code >= 400:
+            return {"ok": False, "status": "API Error", "stderr": f"HTTP {r.status_code}"}
+        d = r.json()
+        if d.get("token") and d.get("status", {}).get("id") in (1, 2, None):
+            for _ in range(10):
+                time.sleep(0.6)
+                pr = requests.get(f"{base_url}/submissions/{d['token']}?base64_encoded=true", headers=hdrs, timeout=12)
+                if pr.status_code == 200:
+                    d = pr.json()
+                    if d.get("status", {}).get("id", 0) not in (1, 2):
+                        break
+        sid = d.get("status", {}).get("id", 0)
+        et = f"{d.get('time')}s" if d.get("time") else "-"
+        out, err, comp = deb64(d.get("stdout")), deb64(d.get("stderr")), deb64(d.get("compile_output"))
+        if sid == 6:
+            return {"ok": True, "status": "Compilation Error", "stdout": "", "stderr": comp or "Kompilyasiya xətası", "time": et}
+        if sid == 5:
+            return {"ok": True, "status": "Time Limit Exceeded", "stdout": out, "stderr": "Vaxt limiti aşıldı", "time": et}
+        if sid >= 7:
+            return {"ok": True, "status": "Runtime Error", "stdout": out, "stderr": err or d.get("status", {}).get("description", "Runtime Error"), "time": et}
+        return {"ok": True, "status": "OK", "stdout": out, "stderr": err, "time": et}
+    except requests.RequestException as e:
+        return {"ok": False, "status": "Connection Error", "stderr": str(e)}
+
+
+def run_code_sandbox(lang, code, stdin_data="", time_limit=2.0):
+    if lang not in ALLOWED_LANGS or len(code) > 65536 or len(stdin_data) > 65536:
+        return {"ok": False, "status": "Validation Error", "stderr": "Dil yanlışdır və ya kod 64 KB-dan böyükdür."}
+    t_limit = safe_float(time_limit, 2.0, 0.5, 10.0)
+    conn = get_db()
+    cfg = {r["key"]: r["value"] for r in conn.execute("SELECT key, value FROM settings WHERE key IN ('provider','base_url','api_key')").fetchall()}
+    conn.close()
+    prov = cfg.get("provider", "judge0")
+    url = cfg.get("base_url", "https://ce.judge0.com").strip().rstrip("/")
+    key = cfg.get("api_key", "").strip()
+
+    if prov == "local" and ALLOW_LOCAL_RUNNER and lang == "python":
+        with tempfile.TemporaryDirectory() as td:
+            src = os.path.join(td, "m.py")
+            with open(src, "w", encoding="utf-8") as fh:
+                fh.write(code)
+            try:
+                t0 = time.perf_counter()
+                p = subprocess.run([sys.executable, "-I", src], input=stdin_data, capture_output=True, text=True, timeout=t_limit, cwd=td)
+                return {"ok": True, "status": "OK" if p.returncode == 0 else "Runtime Error", "stdout": p.stdout[:65536], "stderr": p.stderr[:65536], "time": f"{time.perf_counter()-t0:.2f}s"}
+            except subprocess.TimeoutExpired:
+                return {"ok": True, "status": "Time Limit Exceeded", "stdout": "", "stderr": "Vaxt limiti aşıldı", "time": f"{t_limit:.2f}s"}
+
+    if prov == "wandbox":
+        return _run_wandbox(lang, code, stdin_data)
+
+    if prov == "piston":
+        res = _run_piston(url, lang, code, stdin_data)
+        if not res.get("ok"):
+            wb = _run_wandbox(lang, code, stdin_data)
+            if wb.get("ok"):
+                return wb
+        return res
+
+    res = _run_judge0(url or "https://ce.judge0.com", key, lang, code, stdin_data, t_limit)
+    if not res.get("ok"):
+        wb = _run_wandbox(lang, code, stdin_data)
+        if wb.get("ok"):
+            return wb
+    return res
+
+
+# ═══════════════ SƏHİFƏLƏR & HEALTH ═══════════════
+@app.route("/health")
+def health():
+    return "OK", 200
+
+
+@app.route("/")
+def index():
+    return render_template("index.html", admin_portal=False)
+
+
+@app.route("/p/<slug>")
+def secret_admin_portal(slug):
+    _, adm, _, _ = get_session()
+    if not adm or slug != ADMIN_SECRET_PATH:
+        abort(404)
+    return render_template("index.html", admin_portal=True)
+
+
+# ═══════════════ İNSAN / QONAQ / HEARTBEAT / RƏYLƏR ═══════════════
+@app.route("/api/human-challenge", methods=["GET"])
+def human_challenge():
+    tok = secrets.token_urlsafe(20)
+    with _human_lock:
+        now = time.time()
+        for k in [k for k, v in _human_challenges.items() if now - v > 300]:
+            _human_challenges.pop(k, None)
+        _human_challenges[tok] = now
+    return jsonify({"challenge_token": tok})
+
+
+@app.route("/api/human-verify", methods=["POST"])
+def human_verify():
+    tok = str((request.get_json(silent=True) or {}).get("challenge_token") or "")
+    with _human_lock:
+        ts = _human_challenges.pop(tok, None)
+    if not ts or (time.time() - ts) < 0.35:
+        return jsonify({"error": "Doğrulama alınmadı, yenidən klikləyin."}), 400
+    st = create_session("human", kind="human", ttl=86400)
+    resp = make_response(jsonify({"ok": True}))
+    set_cookie(resp, "az_human", st, 86400)
+    return resp
+
+
+@app.route("/api/guest/start", methods=["POST"])
+def guest_start():
+    u, _, _, rem = get_session()
+    if u:
+        return jsonify({"ok": True, "guest_remaining_sec": None})
+    if rem is not None:
+        return jsonify({"ok": True, "guest_remaining_sec": rem})
+    gt = create_session("guest", kind="guest", ttl=GUEST_TTL)
+    resp = make_response(jsonify({"ok": True, "guest_remaining_sec": GUEST_TTL}))
+    set_cookie(resp, "az_guest", gt, GUEST_TTL)
+    return resp
+
+
+@app.route("/api/ping", methods=["POST"])
+def ping_online():
+    get_session()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/site-reviews", methods=["GET", "POST"])
+def site_reviews():
+    conn = get_db()
+    if request.method == "GET":
+        raw_revs = conn.execute("SELECT r.*, u.rating AS user_rating, u.university FROM site_reviews r LEFT JOIN users u ON LOWER(u.username)=LOWER(r.username) ORDER BY r.id DESC LIMIT 12").fetchall()
+        revs = []
+        for r in raw_revs:
+            is_adm = (r["username"] == ADMIN_USERNAME)
+            rk = get_user_rank(r.get("user_rating") or 800, is_adm)
+            revs.append(r | {"is_admin_user": is_adm, "university_name": get_uni_name(r.get("university"))} | rk)
+        avg = conn.execute("SELECT ROUND(AVG(rating), 1) AS avg_r, COUNT(*) AS cnt FROM site_reviews").fetchone()
+        stats = {
+            "users": conn.execute("SELECT COUNT(*) AS cnt FROM users").fetchone()["cnt"],
+            "problems": conn.execute("SELECT COUNT(*) AS cnt FROM problems WHERE visibility IN ('archive','gym')").fetchone()["cnt"],
+            "submissions": conn.execute("SELECT COUNT(*) AS cnt FROM submissions").fetchone()["cnt"],
+            "avg_rating": float(avg["avg_r"]) if avg["avg_r"] is not None else 5.0,
+            "total_reviews": avg["cnt"],
+        }
+        conn.close()
+        return jsonify({"stats": stats, "reviews": revs})
+    u, _, _, _ = get_session()
+    if not u:
+        conn.close()
+        return jsonify({"error": "Rəy yazmaq üçün daxil olun."}), 401
+    d = request.get_json(silent=True) or {}
+    rt, cmt = safe_int(d.get("rating"), 5, 1, 5), str(d.get("comment") or "").strip()[:300]
+    conn.execute("INSERT INTO site_reviews (username, rating, comment) VALUES (?, ?, ?) ON CONFLICT (username) DO UPDATE SET rating = excluded.rating, comment = excluded.comment", (u, rt, cmt))
+    conn.commit()
+    conn.close()
+    return jsonify({"message": "Dəyərləndirməniz qeyd edildi!"})
+
+
+# ═══════════════ AUTH (parol 2 dəfə + universitet + rank + admin) ═══════════════
+@app.route("/api/auth/me", methods=["GET"])
+def auth_me():
+    u, adm, hum, guest_rem = get_session()
+    info = {"authenticated": bool(u), "username": u, "is_admin": adm, "infinite_coins": adm,
+            "human_verified": hum, "guest_remaining_sec": guest_rem, "level": 1, "xp": 0,
+            "needed_xp": 100, "coins": 0, "rating": 800, "university": "", "university_name": "Seçilməyib",
+            "avatar_url": "", "avatar_frame": "none", "avatar_color": "#3b82f6", "pending_proposals_count": 0} | get_user_rank(800, adm)
+    conn = get_db()
+    if u:
+        row = conn.execute("SELECT level, xp, total_xp, coins, rating, daily_streak, university, uni_changed_at, avatar_url, avatar_color, avatar_frame FROM users WHERE LOWER(username)=LOWER(?)", (u,)).fetchone()
+        if row:
+            rk = get_user_rank(row["rating"], adm)
+            uni = row.get("university") or ""
+            info.update({"level": row["level"], "xp": row["xp"], "needed_xp": needed_xp(row["level"]),
+                         "total_xp": row["total_xp"], "coins": ADMIN_INFINITE_COINS if adm else row["coins"],
+                         "rating": row["rating"], "streak": row["daily_streak"],
+                         "university": uni, "university_name": get_uni_name(uni),
+                         "uni_changed_at": row.get("uni_changed_at") or 0,
+                         "avatar_url": row["avatar_url"], "avatar_color": row["avatar_color"],
+                         "avatar_frame": row["avatar_frame"]} | rk)
+    if adm:
+        info["pending_proposals_count"] = conn.execute("SELECT COUNT(*) AS cnt FROM problems WHERE visibility='pending'").fetchone()["cnt"]
+    custom_frames = conn.execute("SELECT id, name, tier, price, image_url, anim_class FROM custom_frames").fetchall()
+    conn.close()
+    info["custom_frames"] = custom_frames
+    info["universities"] = UNIVERSITIES
+    return jsonify(info)
+
+
+@app.route("/api/auth/send-code", methods=["POST"])
+@rate_limit(5, 60)
+def send_reg_code():
+    d = request.get_json(silent=True) or {}
+    email = str(d.get("email") or "").strip().lower()
+    uname = str(d.get("username") or "").strip()
+    pw = str(d.get("password") or "")
+    pw2 = str(d.get("password_confirm") or "")
+    if not re.match(r"^[a-z0-9._%+-]+@gmail\.com$", email):
+        return jsonify({"error": "Yalnız etibarlı @gmail.com ünvanı yazın."}), 400
+    if ADMIN_EMAIL and email == ADMIN_EMAIL:
+        return jsonify({"error": "Bu Gmail qeydiyyata bağlıdır."}), 400
+    if not (3 <= len(uname) <= 22) or not re.match(r"^[a-zA-Z0-9_-]+$", uname) or uname.lower() == ADMIN_USERNAME.lower():
+        return jsonify({"error": "İstifadəçi adı 3-22 simvol (hərf, rəqəm, _ -) olmalıdır."}), 400
+    if len(pw) < 6:
+        return jsonify({"error": "Parol ən azı 6 simvol olmalıdır."}), 400
+    if pw != pw2:
+        return jsonify({"error": "Şifrələr eyni deyil — parolu 2 dəfə eyni yazın."}), 400
+    conn = get_db()
+    if conn.execute("SELECT 1 FROM users WHERE LOWER(username)=LOWER(?) OR LOWER(email)=LOWER(?)", (uname, email)).fetchone():
+        conn.close()
+        return jsonify({"error": "Bu ad və ya Gmail artıq mövcuddur."}), 400
+    code = f"{secrets.randbelow(1000000):06d}"
+    conn.execute("INSERT INTO email_codes (email, code_hash, attempts, expires_at) VALUES (?, ?, 0, ?) ON CONFLICT (email) DO UPDATE SET code_hash=excluded.code_hash, attempts=0, expires_at=excluded.expires_at",
+                 (email, generate_password_hash(code), time.time() + 300))
+    conn.commit()
+    conn.close()
+    ok, mode = send_gmail_code(email, code)
+    if not ok:
+        return jsonify({"error": mode}), 500
+    res = {"ok": True, "message": "6 rəqəmli təsdiq kodu Gmail-inizə göndərildi."}
+    if mode == "console" and DEV_EMAIL_PREVIEW:
+        res["dev_code"] = code
+    return jsonify(res)
+
+
+@app.route("/api/auth/register", methods=["POST"])
+@rate_limit(10, 60)
+def auth_register():
+    d = request.get_json(silent=True) or {}
+    email = str(d.get("email") or "").strip().lower()
+    uname = str(d.get("username") or "").strip()
+    pw = str(d.get("password") or "")
+    pw2 = str(d.get("password_confirm") or "")
+    code = str(d.get("code") or "").strip()
+    uni = str(d.get("university") or "").strip().upper()
+    if uni not in UNI_MAP:
+        uni = ""
+    if uname.lower() == ADMIN_USERNAME.lower():
+        return jsonify({"error": "Bu ad qorunur."}), 400
+    if len(pw) < 6:
+        return jsonify({"error": "Parol ən azı 6 simvol olmalıdır."}), 400
+    if pw != pw2:
+        return jsonify({"error": "Şifrələr uyğun gəlmir — iki dəfə düzgün yazın."}), 400
+    conn = get_db()
+    ec = conn.execute("SELECT * FROM email_codes WHERE LOWER(email)=LOWER(?)", (email,)).fetchone()
+    if not ec or ec["expires_at"] < time.time():
+        conn.close()
+        return jsonify({"error": "Kodun müddəti bitib."}), 400
+    if ec["attempts"] >= 5 or not check_password_hash(ec["code_hash"], code):
+        conn.execute("UPDATE email_codes SET attempts=attempts+1 WHERE LOWER(email)=LOWER(?)", (email,))
+        conn.commit()
+        conn.close()
+        return jsonify({"error": "Təsdiq kodu yanlışdır."}), 400
+    if conn.execute("SELECT 1 FROM users WHERE LOWER(username)=LOWER(?) OR LOWER(email)=LOWER(?)", (uname, email)).fetchone():
+        conn.close()
+        return jsonify({"error": "Ad və ya Gmail artıq tutulub."}), 400
+    now = time.time()
+    conn.execute("INSERT INTO users (username, email, password_hash, coins, university, uni_changed_at, last_seen_at) VALUES (?, ?, ?, 50, ?, ?, ?)",
+                 (uname, email, generate_password_hash(pw), uni, now if uni else 0, now))
+    conn.execute("INSERT INTO user_inventory (username, item_id) VALUES (?, 'none') ON CONFLICT (username, item_id) DO NOTHING", (uname,))
+    conn.execute("INSERT INTO rating_history (username, rating, label) VALUES (?, 800, 'Başlanğıc')", (uname,))
+    conn.execute("DELETE FROM email_codes WHERE LOWER(email)=LOWER(?)", (email,))
+    sync_user_default_servers(conn, uname, uni)
+    conn.commit()
+    conn.close()
+    tok = create_session(uname, "user", SESSION_TTL)
+    resp = make_response(jsonify({"ok": True, "username": uname, "message": "Xoş gəldiniz! +50 AzCoin hədiyyə."}))
+    set_cookie(resp, "az_session", tok, SESSION_TTL)
+    return resp
+
+
+@app.route("/api/auth/login", methods=["POST"])
+@rate_limit(15, 60)
+def auth_login():
+    d = request.get_json(silent=True) or {}
+    ident, pw = str(d.get("identifier") or "").strip(), str(d.get("password") or "")
+    conn = get_db()
+    adm_hash = _ENV_ADMIN_HASH or (conn.execute("SELECT value FROM settings WHERE key='admin_password_hash'").fetchone() or {"value": ""})["value"]
+    is_adm_id = (ADMIN_EMAIL and ident.lower() == ADMIN_EMAIL) or (ident.lower() == ADMIN_USERNAME.lower())
+
+    if is_adm_id:
+        now = time.time()
+        with _fail_lock:
+            if _admin_fails["until"] > now:
+                conn.close()
+                return jsonify({"error": f"Təhlükəsizlik kilidi ({int(_admin_fails['until']-now)}s)."}), 429
+        if adm_hash and check_password_hash(adm_hash, pw):
+            with _fail_lock:
+                _admin_fails["count"] = 0
+            if not conn.execute("SELECT 1 FROM users WHERE LOWER(username)=LOWER(?)", (ADMIN_USERNAME,)).fetchone():
+                conn.execute("INSERT INTO users (username, email, password_hash, coins, last_seen_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT (username) DO NOTHING",
+                             (ADMIN_USERNAME, ADMIN_EMAIL or "admin@azforces.local", adm_hash, ADMIN_INFINITE_COINS, now))
+                conn.execute("INSERT INTO user_inventory (username, item_id) VALUES (?, 'none') ON CONFLICT (username, item_id) DO NOTHING", (ADMIN_USERNAME,))
+                conn.execute("INSERT INTO rating_history (username, rating, label) VALUES (?, 800, 'Başlanğıc')", (ADMIN_USERNAME,))
+            adm_row = conn.execute("SELECT university FROM users WHERE LOWER(username)=LOWER(?)", (ADMIN_USERNAME,)).fetchone()
+            conn.execute("UPDATE users SET last_seen_at=?, coins=? WHERE LOWER(username)=LOWER(?)", (now, ADMIN_INFINITE_COINS, ADMIN_USERNAME))
+            for it in SHOP_ITEMS:
+                conn.execute("INSERT INTO user_inventory (username, item_id) VALUES (?, ?) ON CONFLICT (username, item_id) DO NOTHING", (ADMIN_USERNAME, it["id"]))
+            sync_user_default_servers(conn, ADMIN_USERNAME, (adm_row or {}).get("university") or "")
+            conn.commit()
+            conn.close()
+            _seen_cache[ADMIN_USERNAME.lower()] = now
+            ut = create_session(ADMIN_USERNAME, "user", SESSION_TTL)
+            at = create_session(ADMIN_USERNAME, "admin", ADMIN_TTL)
+            resp = make_response(jsonify({"ok": True, "username": ADMIN_USERNAME, "is_admin": True, "infinite_coins": True, "message": "Xoş gəldiniz, Yaradıcı!"}))
+            set_cookie(resp, "az_session", ut, SESSION_TTL)
+            set_cookie(resp, "az_admin_session", at, ADMIN_TTL)
+            return resp
+        with _fail_lock:
+            _admin_fails["count"] += 1
+            if _admin_fails["count"] >= 5:
+                _admin_fails["until"], _admin_fails["count"] = now + 900, 0
+        conn.close()
+        return jsonify({"error": "Məlumatlar yanlışdır."}), 401
+
+    u = conn.execute("SELECT * FROM users WHERE LOWER(email)=LOWER(?) OR LOWER(username)=LOWER(?)", (ident, ident)).fetchone()
+    if not u or not check_password_hash(u["password_hash"], pw):
+        conn.close()
+        return jsonify({"error": "Məlumatlar yanlışdır."}), 401
+    now = time.time()
+    _seen_cache[u["username"].lower()] = now
+    conn.execute("UPDATE users SET last_seen_at=? WHERE LOWER(username)=LOWER(?)", (now, u["username"]))
+    sync_user_default_servers(conn, u["username"], u.get("university") or "")
+    conn.commit()
+    conn.close()
+    tok = create_session(u["username"], "user", SESSION_TTL)
+    resp = make_response(jsonify({"ok": True, "username": u["username"], "is_admin": False, "message": "Xoş gəldiniz!"}))
+    set_cookie(resp, "az_session", tok, SESSION_TTL)
+    return resp
+
+
+@app.route("/api/auth/logout", methods=["POST"])
+def auth_logout():
+    conn = get_db()
+    for cn in ("az_session", "az_admin_session"):
+        t = request.cookies.get(cn, "").strip()
+        if t:
+            conn.execute("DELETE FROM sessions WHERE token=?", (t,))
+    conn.commit()
+    conn.close()
+    resp = make_response(jsonify({"ok": True}))
+    resp.delete_cookie("az_session")
+    resp.delete_cookie("az_admin_session")
+    return resp
+
+
+# ═══════════════ UNİVERSİTETLƏR & PROFİL + QEYDİYYATLAR ═══════════════
+@app.route("/api/universities", methods=["GET"])
+def list_universities():
+    conn = get_db()
+    cnt_rows = conn.execute("SELECT UPPER(university) AS uni, COUNT(*) AS cnt FROM users WHERE university <> '' GROUP BY UPPER(university)").fetchall()
+    conn.close()
+    cnt_map = {r["uni"]: r["cnt"] for r in cnt_rows}
+    return jsonify([u | {"members": cnt_map.get(u["code"], 0)} for u in UNIVERSITIES])
+
+
+@app.route("/api/profile/university", methods=["POST"])
+@require_user
+def set_my_university():
+    d = request.get_json(silent=True) or {}
+    uni = str(d.get("university") or "").strip().upper()
+    if uni not in UNI_MAP:
+        return jsonify({"error": "Siyahıdan düzgün universitet seçin."}), 400
+    conn = get_db()
+    u = conn.execute("SELECT university, uni_changed_at FROM users WHERE LOWER(username)=LOWER(?)", (request._u,)).fetchone()
+    now = time.time()
+    cur_uni = (u.get("university") or "").strip().upper() if u else ""
+    last_ch = float((u.get("uni_changed_at") or 0) if u else 0)
+    if cur_uni == uni:
+        conn.close()
+        return jsonify({"message": f"Artıq {UNI_MAP[uni]} ({uni}) seçilib."})
+    if cur_uni and not request._adm and (now - last_ch) < UNI_CHANGE_COOLDOWN:
+        days_left = max(1, int((UNI_CHANGE_COOLDOWN - (now - last_ch)) // 86400) + 1)
+        conn.close()
+        return jsonify({"error": f"Universiteti 30 gündə 1 dəfə dəyişmək olar ({days_left} gün qalıb)."}), 429
+    conn.execute("UPDATE users SET university=?, uni_changed_at=? WHERE LOWER(username)=LOWER(?)", (uni, now, request._u))
+    sync_user_default_servers(conn, request._u, uni)
+    conn.commit()
+    conn.close()
+    return jsonify({"university": uni, "university_name": UNI_MAP[uni], "message": f"Universitet '{UNI_MAP[uni]}' olaraq seçildi və serveriniz açıldı!"})
+
+
+def _build_profile_payload(conn, target, include_private=False, viewer_is_admin=False):
+    u = conn.execute("SELECT * FROM users WHERE LOWER(username)=LOWER(?)", (target,)).fetchone()
+    if not u:
+        return None
+    uname = u["username"]
+    solved = conn.execute("SELECT COUNT(DISTINCT problem_id) AS cnt FROM submissions WHERE LOWER(username)=LOWER(?) AND verdict='Accepted'", (uname,)).fetchone()["cnt"]
+    recent = conn.execute("SELECT p.id, p.code_label, p.title, p.rating, MAX(s.created_at) AS solved_at FROM submissions s JOIN problems p ON p.id=s.problem_id WHERE LOWER(s.username)=LOWER(?) AND s.verdict='Accepted' GROUP BY p.id, p.code_label, p.title, p.rating ORDER BY solved_at DESC LIMIT 8", (uname,)).fetchall()
+    heat = defaultdict(int)
+    for row in conn.execute("SELECT created_at FROM submissions WHERE LOWER(username)=LOWER(?) ORDER BY id DESC LIMIT 1000", (uname,)).fetchall():
+        d_str = str(row["created_at"] or "")[:10]
+        if len(d_str) == 10:
+            heat[d_str] += 1
+    r_hist = conn.execute("SELECT rating, label, created_at FROM rating_history WHERE LOWER(username)=LOWER(?) ORDER BY id ASC LIMIT 30", (uname,)).fetchall()
+    need = needed_xp(u["level"])
+    target_is_adm = (uname == ADMIN_USERNAME)
+    rk = get_user_rank(u["rating"], target_is_adm)
+    uni = u.get("university") or ""
+    data = {
+        "username": uname, "bio": u["bio"], "university": uni, "university_name": get_uni_name(uni),
+        "avatar_url": u["avatar_url"], "avatar_color": u["avatar_color"],
+        "avatar_frame": u["avatar_frame"], "level": u["level"], "xp": u["xp"], "needed_xp": need,
+        "progress_pct": min(100, int(u["xp"] * 100 / need)), "total_xp": u["total_xp"],
+        "coins": ADMIN_INFINITE_COINS if target_is_adm else u["coins"], "infinite_coins": target_is_adm,
+        "rating": u["rating"], "streak": u["daily_streak"], "solved_count": solved,
+        "recent_solved": recent, "heatmap": dict(heat), "rating_history": r_hist, "is_admin_user": target_is_adm,
+        "created_at": u["created_at"],
+    } | rk
+    if viewer_is_admin:
+        last_ts = float(u["last_seen_at"] or 0)
+        data["admin_meta"] = {
+            "is_online": (time.time() - last_ts) <= 120 if last_ts > 0 else False,
+            "last_seen": datetime.datetime.fromtimestamp(last_ts, AZ_TZ).strftime("%Y-%m-%d %H:%M") if last_ts > 0 else "Məlumat yoxdur",
+            "joined_at": u["created_at"],
+            "email": u["email"],
+        }
+    if include_private:
+        fr_rows = conn.execute("SELECT * FROM friendships WHERE LOWER(user_a)=LOWER(?) OR LOWER(user_b)=LOWER(?)", (uname, uname)).fetchall()
+        friends, inc = [], []
+        for f in fr_rows:
+            other = f["user_b"] if f["user_a"].lower() == uname.lower() else f["user_a"]
+            if f["status"] == "accepted":
+                fu = conn.execute("SELECT level, rating, university, daily_streak, avatar_url, avatar_color, avatar_frame FROM users WHERE LOWER(username)=LOWER(?)", (other,)).fetchone()
+                other_adm = (other == ADMIN_USERNAME)
+                frk = get_user_rank(fu["rating"] if fu else 800, other_adm)
+                friends.append({"username": other, "level": fu["level"] if fu else 1, "streak": fu["daily_streak"] if fu else 0,
+                                "university": (fu.get("university") or "") if fu else "",
+                                "avatar_url": fu["avatar_url"] if fu else "", "avatar_color": fu["avatar_color"] if fu else "#3b82f6",
+                                "avatar_frame": fu["avatar_frame"] if fu else "none", "is_admin_user": other_adm} | frk)
+            elif f["status"] == "pending" and f["action_by"].lower() != uname.lower():
+                inc.append(other)
+        data["email"] = u["email"]
+        data["friends"] = friends
+        data["incoming_requests"] = inc
+    return data
+
+
+@app.route("/api/users/registrations", methods=["GET"])
+def list_registrations():
+    """Günlük və həftəlik qeydiyyat siyahısı (Bakı vaxtı UTC+4; onlayn/oflayn YALNIZ admin üçün)."""
+    _, adm, _, _ = get_session()
+    period = (request.args.get("period") or "weekly").strip().lower()
+    today_str = az_today()
+    week_ago_str = az_today(-7)
+
+    conn = get_db()
+    rows = conn.execute("SELECT username, email, university, level, rating, avatar_url, avatar_color, avatar_frame, last_seen_at, created_at FROM users ORDER BY id DESC LIMIT 200").fetchall()
+    conn.close()
+
+    now_ts = time.time()
+    today_cnt, week_cnt, online_cnt = 0, 0, 0
+    items = []
+
+    for r in rows:
+        reg_day = str(r["created_at"] or "")[:10]
+        is_adm_u = (r["username"] == ADMIN_USERNAME)
+        ts = float(r["last_seen_at"] or 0)
+        is_on = (now_ts - ts) <= 120 if ts > 0 else False
+
+        if reg_day == today_str:
+            today_cnt += 1
+        if reg_day >= week_ago_str:
+            week_cnt += 1
+        if is_on:
+            online_cnt += 1
+
+        if period == "daily" and reg_day != today_str:
+            continue
+        if period == "weekly" and reg_day < week_ago_str:
+            continue
+
+        rk = get_user_rank(r["rating"], is_adm_u)
+        uni = r.get("university") or ""
+        item = {
+            "username": r["username"],
+            "university": uni,
+            "university_name": get_uni_name(uni),
+            "level": r["level"],
+            "rating": r["rating"],
+            "avatar_url": r["avatar_url"],
+            "avatar_color": r["avatar_color"],
+            "avatar_frame": r["avatar_frame"],
+            "created_at": r["created_at"],
+            "is_admin_user": is_adm_u,
+        } | rk
+        if adm:
+            item["is_online"] = is_on
+            item["last_seen"] = datetime.datetime.fromtimestamp(ts, AZ_TZ).strftime("%Y-%m-%d %H:%M") if ts > 0 else "—"
+            item["email"] = r["email"]
+        items.append(item)
+
+    res = {
+        "period": period,
+        "today_count": today_cnt,
+        "week_count": week_cnt,
+        "total_count": len(rows),
+        "users": items,
+        "viewer_is_admin": adm,
+    }
+    if adm:
+        res["online_count"] = online_cnt
+    return jsonify(res)
+
+
+@app.route("/api/profile", methods=["GET"])
+@require_user
+def my_profile():
+    conn = get_db()
+    payload = _build_profile_payload(conn, request._u, include_private=True, viewer_is_admin=request._adm)
+    conn.close()
+    return jsonify(payload)
+
+
+@app.route("/api/users/<uname>", methods=["GET"])
+@require_user
+def public_profile(uname):
+    conn = get_db()
+    payload = _build_profile_payload(conn, uname, include_private=(uname.lower() == request._u.lower()), viewer_is_admin=request._adm)
+    conn.close()
+    return jsonify(payload) if payload else (jsonify({"error": "Tapılmadı."}), 404)
+
+
+@app.route("/api/profile/update", methods=["POST"])
+@require_user
+def update_profile():
+    d = request.get_json(silent=True) or {}
+    bio, color = str(d.get("bio") or "").strip()[:200], str(d.get("avatar_color") or "#3b82f6").strip()
+    if not re.match(r"^#[0-9a-fA-F]{6}$", color):
+        color = "#3b82f6"
+    conn = get_db()
+    conn.execute("UPDATE users SET bio=?, avatar_color=? WHERE LOWER(username)=LOWER(?)", (bio, color, request._u))
+    conn.commit()
+    conn.close()
+    return jsonify({"message": "Profil yeniləndi!"})
+
+
+@app.route("/api/profile/avatar", methods=["POST"])
+@require_user
+def upload_avatar():
+    f = request.files.get("avatar")
+    if not f:
+        return jsonify({"error": "Şəkil seçin."}), 400
+    raw = f.read(2 * 1024 * 1024 + 1)
+    if len(raw) > 2 * 1024 * 1024:
+        return jsonify({"error": "Şəkil maksimum 2 MB ola bilər."}), 400
+    if raw.startswith(b"\xff\xd8\xff"):
+        mime = "image/jpeg"
+    elif raw.startswith(b"\x89PNG"):
+        mime = "image/png"
+    elif raw.startswith(b"GIF8"):
+        mime = "image/gif"
+    elif raw[:4] == b"RIFF" and raw[8:12] == b"WEBP":
+        mime = "image/webp"
+    else:
+        return jsonify({"error": "Yalnız JPG, PNG, WEBP və ya GIF şəkli yükləyin."}), 400
+
+    url = ""
+    if CLOUD_NAME and CLOUD_KEY and CLOUD_SECRET:
+        ts = int(time.time())
+        sig = hashlib.sha1(f"folder=azforces_avatars&timestamp={ts}{CLOUD_SECRET}".encode("utf-8")).hexdigest()
+        try:
+            r = requests.post(
+                f"https://api.cloudinary.com/v1_1/{CLOUD_NAME}/image/upload",
+                data={"api_key": CLOUD_KEY, "timestamp": ts, "folder": "azforces_avatars", "signature": sig},
+                files={"file": (f.filename or "avatar.jpg", raw)}, timeout=20,
+            )
+            if r.status_code < 400:
+                url = r.json().get("secure_url", "").replace("/upload/", "/upload/c_fill,w_256,h_256,q_auto/")
+        except Exception:
+            pass
+    if not url:
+        if len(raw) > 512 * 1024:
+            return jsonify({"error": "Cloudinary qoşulmadığı üçün şəkli 512 KB-dan kiçik seçin."}), 400
+        url = f"data:{mime};base64,{base64.b64encode(raw).decode('ascii')}"
+
+    conn = get_db()
+    conn.execute("UPDATE users SET avatar_url=? WHERE LOWER(username)=LOWER(?)", (url, request._u))
+    conn.commit()
+    conn.close()
+    return jsonify({"avatar_url": url, "message": "Profil şəkli yeniləndi!"})
+
+
+@app.route("/api/media/upload-voice", methods=["POST"])
+@require_user
+@rate_limit(15, 60, by_user=True)
+def upload_voice():
+    f = request.files.get("audio")
+    if not f:
+        return jsonify({"error": "Səs faylı tapılmadı."}), 400
+    raw = f.read(3 * 1024 * 1024 + 1)
+    if len(raw) > 3 * 1024 * 1024 or len(raw) < 200:
+        return jsonify({"error": "Səs faylı boşdur və ya 3 MB-dan böyükdür."}), 400
+    ext = (f.filename or "voice.webm").rsplit(".", 1)[-1].lower()
+    if ext not in ("webm", "ogg", "mp3", "m4a", "wav"):
+        ext = "webm"
+    url, err = upload_voice_storage(raw, ext)
+    if err:
+        return jsonify({"error": err}), 400
+    return jsonify({"audio_url": url})
