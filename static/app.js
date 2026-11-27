@@ -1343,38 +1343,70 @@ function switchChatMode(mode) {
   if (m === "dm") loadDmChats();
 }
 
+let serversCache = [];
+
+function dcUpdateUserBar() {
+  if (!me.authenticated) return;
+  setAvatar("dcUserAvatarWrap", "dcUserAvatarImg", "dcUserAvatarTxt", "", me);
+  if (el("dcUserName")) el("dcUserName").innerHTML = me.is_admin ? `<span class="admin-chromatic">${esc(me.username)}</span>` : esc(me.username);
+  if (el("dcUserStatus")) el("dcUserStatus").innerHTML = `<span class="online-dot on"></span>Onlayn${me.university ? ` · ${esc(me.university)}` : ""}`;
+}
+
+function openServerActionModal() {
+  if (!me.authenticated) return openAuthModal();
+  if (el("srvUniDesc")) {
+    el("srvUniDesc").textContent = me.university
+      ? `Seçili universitet: ${me.university} — ${me.university_name}`
+      : "Öz universitetinizi seçərək qapalı universitet serverinizə daxil olun.";
+  }
+  el("serverActionModal").classList.add("open");
+}
+
+function dcBackToChannels() {
+  el("dcShell")?.classList.remove("in-chat");
+  el("dcMembersCol")?.classList.remove("mobile-open");
+}
+
+function toggleDcMembersMobile(force) {
+  const m = el("dcMembersCol"); if (!m) return;
+  m.classList.toggle("mobile-open", force !== undefined ? force : !m.classList.contains("mobile-open"));
+}
+
+function filterDcChannels() {
+  const qy = (el("dcChanSearch")?.value || "").toLowerCase().trim();
+  document.querySelectorAll("#dcChanList .dc-chan-btn").forEach(b => {
+    b.style.display = (!qy || b.textContent.toLowerCase().includes(qy)) ? "flex" : "none";
+  });
+}
+
+function renderDcRail() {
+  const rail = el("dcRailList"); if (!rail) return;
+  const dmBtn = `<button class="dc-rail-btn" onclick="switchChatMode('dm')" title="Şəxsi Söhbətlər (DM)">💬</button><div class="dc-rail-sep"></div>`;
+  const srvBtns = serversCache.map(s => {
+    const tag = s.server_type === "university" ? `<span class="dc-rail-uni">${esc(s.university)}</span>` : "";
+    return `<button class="dc-rail-btn ${s.id === activeServerId ? 'active' : ''}" style="background:${esc(s.avatar_color || '#1a2233')};" onclick="enterServer(${s.id}, true)" title="${esc(s.name)}">
+      <span>${esc(s.icon_emoji || '🌐')}</span>${tag}
+    </button>`;
+  }).join("");
+  const addBtn = `<div class="dc-rail-sep"></div><button class="dc-rail-btn dc-rail-add" onclick="openServerActionModal()" title="Server yarat / qoşul">+</button>`;
+  rail.innerHTML = dmBtn + srvBtns + addBtn;
+}
+
 async function loadServers() {
+  dcUpdateUserBar();
   if (!me.authenticated) {
-    if (el("serversGrid")) el("serversGrid").innerHTML = `<div class="card">Serverlərə qoşulmaq üçün daxil olun.</div>`;
+    if (el("dcChanList")) el("dcChanList").innerHTML = `<div class="muted" style="padding:12px;font-size:.84rem;">Serverlərə baxmaq üçün daxil olun.</div>`;
     return;
   }
   const r = await fetch("/api/servers"); if (!r.ok) return;
   const d = await r.json();
-  if (el("srvUniTitle") && el("srvUniDesc")) {
-    if (d.my_university) {
-      el("srvUniTitle").textContent = `🏛️ ${d.my_university} — ${d.my_university_name}`;
-      el("srvUniDesc").textContent = "Öz universitetinizin qapalı serveri aktivdir.";
-    } else {
-      el("srvUniTitle").textContent = "🏛️ Universitet Seçilməyib";
-      el("srvUniDesc").textContent = "Öz universitetinizi seçərək qapalı universitet serverinizə daxil olun.";
-    }
+  serversCache = d.servers || [];
+  renderDcRail();
+  if (serversCache.length && (!activeServerId || !serversCache.some(s => s.id === activeServerId))) {
+    enterServer(serversCache[0].id, true);
+  } else if (activeServerId) {
+    pollServer();
   }
-  el("serversGrid").innerHTML = (d.servers || []).length ? d.servers.map(s => {
-    const typeLbl = s.server_type === "global" ? "🌐 Rəsmi Ümumi DC"
-      : s.server_type === "university" ? `🏛️ Qapalı (${esc(s.university)})`
-      : (s.is_public ? "🔓 İctimai" : "🔒 Özəl");
-    return `<div class="card srv-card" onclick="enterServer(${s.id})">
-      <div class="row">
-        <div class="srv-icon" style="background:${esc(s.avatar_color || '#3b82f6')};">${esc(s.icon_emoji || '🌐')}</div>
-        <div style="min-width:0;flex:1;">
-          <strong>${esc(s.name)}</strong>
-          <div class="muted" style="font-size:.75rem;">${typeLbl} · 👥 ${s.member_count} üzv</div>
-        </div>
-      </div>
-      <div class="muted" style="font-size:.82rem;">${esc(s.description || '')}</div>
-      <div class="row" style="gap:4px;">${(s.channels || []).slice(0, 4).map(c => `<span class="tag-pill">${esc(c.name)}</span>`).join("")}</div>
-    </div>`;
-  }).join("") : `<div class="card muted">Server tapılmadı.</div>`;
 }
 
 async function createServer() {
@@ -1388,37 +1420,46 @@ async function createServer() {
     })
   });
   const d = await r.json(); toast(d.message || d.error, !r.ok);
-  if (r.ok) { el("crSrvName").value = ""; el("crSrvDesc").value = ""; el("crSrvVoice").value = ""; enterServer(d.id); }
+  if (r.ok) {
+    el("crSrvName").value = ""; el("crSrvDesc").value = ""; el("crSrvVoice").value = "";
+    closeModal("serverActionModal");
+    await loadServers();
+    enterServer(d.id, false);
+  }
 }
 
 async function joinServer() {
   if (!me.authenticated) return openAuthModal();
   const r = await fetch("/api/servers/join", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ server_code: el("joinServerCode").value }) });
   const d = await r.json(); toast(d.message || d.error, !r.ok);
-  if (r.ok) { el("joinServerCode").value = ""; enterServer(d.id); }
+  if (r.ok) {
+    el("joinServerCode").value = "";
+    closeModal("serverActionModal");
+    await loadServers();
+    enterServer(d.id, false);
+  }
 }
 
-function enterServer(sid) {
+function enterServer(sid, stayOnChannels) {
   activeServerId = sid; activeChannelId = 0; lastServerMsgId = 0; serverReplyId = null; serverPolling = false;
   el("srvChatBox").innerHTML = ""; cancelServerReply();
-  el("serverLobbyView").style.display = "none"; el("serverActiveView").style.display = "block";
+  renderDcRail();
+  if (stayOnChannels) el("dcShell")?.classList.remove("in-chat");
+  else el("dcShell")?.classList.add("in-chat");
   pollServer(); clearInterval(serverPollTimer);
   serverPollTimer = setInterval(() => {
     if (!document.hidden && activeServerId && el("tab-chat")?.classList.contains("active")) pollServer();
   }, 3000);
 }
 
-function exitServerView() {
-  activeServerId = 0; activeChannelId = 0; clearInterval(serverPollTimer);
-  el("serverActiveView").style.display = "none"; el("serverLobbyView").style.display = "block";
-  loadServers();
-}
+function exitServerView() { dcBackToChannels(); }
 
 function copyServerCode() {
   if (activeServerData?.server?.server_code) copyText(activeServerData.server.server_code, "Server dəvət kodu kopyalandı!");
 }
 
 function selectServerChannel(cid) {
+  el("dcShell")?.classList.add("in-chat");
   if (activeChannelId === cid) return;
   activeChannelId = cid; lastServerMsgId = 0; serverReplyId = null;
   el("srvChatBox").innerHTML = ""; cancelServerReply();
@@ -1458,20 +1499,23 @@ async function pollServer() {
     if (reqSid !== activeServerId || (reqCid && reqCid !== activeChannelId)) return;
     activeServerData = d;
     const srv = d.server;
-    el("srvActiveIcon").textContent = srv.icon_emoji || "🌐";
-    el("srvActiveIcon").style.background = srv.avatar_color || "#3b82f6";
-    el("srvActiveName").textContent = srv.name;
-    el("srvActiveDesc").textContent = `${srv.description || ''} · Kod: ${srv.server_code}`;
-    el("srvLeaveBtn").style.display = srv.server_type === "custom" ? "inline-flex" : "none";
+    if (el("dcSrvTitle")) el("dcSrvTitle").textContent = `${srv.name} ›`;
+    if (el("srvLeaveBtn")) el("srvLeaveBtn").style.display = srv.server_type === "custom" ? "inline-flex" : "none";
 
     const isMod = (d.my_role === "owner" || d.my_role === "mod" || me.is_admin);
-    el("srvAddChanBtn").style.display = isMod ? "inline-flex" : "none";
+    if (el("dcChanAddBtn")) el("dcChanAddBtn").style.display = isMod ? "inline-flex" : "none";
 
     if (d.active_channel) activeChannelId = d.active_channel.id;
-    el("srvChannelsList").innerHTML = (d.channels || []).map(c => `
-      <button class="srv-chan-btn ${c.id === activeChannelId ? 'active' : ''}" onclick="selectServerChannel(${c.id})">
-        <span>${esc(c.name)}</span>
-      </button>`).join("");
+    const textChs = (d.channels || []).filter(c => c.channel_type !== "voice");
+    const voiceChs = (d.channels || []).filter(c => c.channel_type === "voice");
+    const chanBtn = c => `<button class="dc-chan-btn ${c.id === activeChannelId ? 'active' : ''}" onclick="selectServerChannel(${c.id})">
+      <span class="dc-chan-hash">${c.channel_type === 'voice' ? '🔊' : '#'}</span>
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.name.replace(/^[#🔊]\s*/, ''))}</span>
+    </button>`;
+    el("dcChanList").innerHTML =
+      `<div class="dc-cat-lbl"><span>Söhbət Kanalları ⌄</span></div>` + textChs.map(chanBtn).join("") +
+      (voiceChs.length ? `<div class="dc-cat-lbl" style="margin-top:8px;"><span>Səs Kanalları ⌄</span></div>` + voiceChs.map(chanBtn).join("") : "");
+    filterDcChannels();
 
     if (d.active_channel) {
       el("srvChanTitle").textContent = d.active_channel.name;
@@ -1556,6 +1600,13 @@ async function moderateServer(action, username, role, msgId) {
     if (action === "delete_msg" && msgId) el(`srv-msg-${msgId}`)?.remove();
     pollServer();
   }
+}
+
+async function leaveActiveServer() {
+  if (!activeServerId || !confirm("Bu serverdən ayrılmaq istəyirsiniz?")) return;
+  const r = await fetch(`/api/servers/${activeServerId}/leave`, { method: "POST" });
+  const d = await r.json(); toast(d.message || d.error, !r.ok);
+  if (r.ok) { activeServerId = 0; loadServers(); }
 }
 
 async function leaveActiveServer() {
