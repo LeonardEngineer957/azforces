@@ -364,81 +364,63 @@
     <button class="cf-tab-btn" data-cmode="dm" onclick="switchChatMode('dm')">✈️ Şəxsi Söhbətlər (DM)</button>
   </div>
 
-  <!-- Serverlər (Discord üslubu) -->
+  
+<!-- Serverlər (Discord Mobil & Masaüstü üslubu) -->
   <div id="chatServersPane">
-    <div id="serverLobbyView">
-      <div id="myUniServerBanner" class="hero-banner">
-        <div>
-          <strong id="srvUniTitle">🏛️ Universitet Serveri</strong>
-          <div id="srvUniDesc" class="muted" style="font-size:.82rem;">Öz universitetinizi seçərək qapalı universitet serverinizə daxil olun.</div>
-        </div>
-        <button class="btn btn-sm btn-primary" onclick="openMyProfileTab('settings')">🎓 Universiteti Seç / Dəyiş</button>
-      </div>
+    <div id="dcShell" class="dc-shell">
+      <!-- 1. Sol Şaquli Server Zolağı -->
+      <div id="dcRailList" class="dc-rail"></div>
 
-      <div id="serversGrid" class="srv-grid" style="margin-bottom:14px;"></div>
-
-      <div class="grid-2">
-        <div class="card">
-          <h3>Kod ilə Serverə Qoşul</h3>
-          <div class="row" style="margin-top:8px;">
-            <input id="joinServerCode" placeholder="Məs: AZ-9F2A1C" style="flex:1;">
-            <button class="btn btn-primary btn-sm" onclick="joinServer()">Qoşul</button>
-          </div>
-        </div>
-        <div class="card">
-          <h3>Yeni Özəl Server Yarat</h3>
-          <div class="row" style="margin-bottom:6px;">
-            <input id="crSrvEmoji" value="🚀" style="width:52px;text-align:center;" title="İkon">
-            <input id="crSrvName" placeholder="Server adı *" style="flex:1;">
-            <input id="crSrvColor" type="color" value="#6366f1" style="width:46px;height:34px;padding:2px;">
-          </div>
-          <input id="crSrvDesc" placeholder="Qısa təsvir..." style="margin-bottom:6px;">
-          <div class="row" style="margin-bottom:8px;">
-            <input id="crSrvVoice" placeholder="Səs kanalı linki (Discord...)" style="flex:1;">
-            <label style="font-size:.82rem;white-space:nowrap;"><input type="checkbox" id="crSrvPublic" checked style="width:auto;"> İctimai</label>
-          </div>
-          <button class="btn btn-success btn-sm" onclick="createServer()">Server Yarat</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="serverActiveView" class="card" style="display:none;">
-      <div class="row" style="justify-content:space-between;padding-bottom:10px;margin-bottom:10px;border-bottom:1px solid var(--border);">
-        <div class="row">
-          <div id="srvActiveIcon" class="srv-icon" style="background:var(--primary);">🌐</div>
-          <div>
-            <strong id="srvActiveName">—</strong>
-            <div id="srvActiveDesc" class="muted" style="font-size:.78rem;"></div>
-          </div>
-        </div>
-        <div class="row">
-          <button class="btn btn-sm" onclick="copyServerCode()">📋 Dəvət Kodu</button>
-          <button id="srvLeaveBtn" class="btn btn-sm btn-danger" style="display:none;" onclick="leaveActiveServer()">Ayrıl</button>
-          <button class="btn btn-sm" onclick="exitServerView()">← Serverlər</button>
-        </div>
-      </div>
-
-      <div class="srv-layout">
-        <!-- Sol: Kanallar -->
-        <div class="srv-side-panel">
-          <div class="row" style="justify-content:space-between;margin-bottom:8px;">
-            <strong style="font-size:.8rem;text-transform:uppercase;" class="muted">Kanallar</strong>
-            <button id="srvAddChanBtn" class="btn btn-sm" style="display:none;padding:2px 7px;" onclick="openServerChannelModal()">+ Kanal</button>
-          </div>
-          <div id="srvChannelsList"></div>
-        </div>
-
-        <!-- Mərkəz: Çat -->
-        <div style="min-width:0;">
-          <div class="row" style="justify-content:space-between;margin-bottom:8px;">
-            <div>
-              <strong id="srvChanTitle">#ümumi</strong>
-              <div id="srvChanTopic" class="muted" style="font-size:.76rem;"></div>
+      <!-- 2. Kanallar Siyahısı + Aşağıda İstifadəçi Paneli -->
+      <div class="dc-chans">
+        <div class="dc-chans-head">
+          <div class="dc-chans-title">
+            <span id="dcSrvTitle" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Server seçin</span>
+            <div class="row" style="gap:4px;flex-shrink:0;">
+              <button id="dcChanAddBtn" class="btn btn-sm" style="display:none;padding:3px 7px;" onclick="openServerChannelModal()" title="Kanal əlavə et">+</button>
+              <button class="btn btn-sm" style="padding:3px 7px;" onclick="copyServerCode()" title="Dəvət kodu">👥+</button>
             </div>
-            <a id="srvVoiceLink" href="#" target="_blank" rel="noopener" class="btn btn-sm btn-success" style="display:none;">🔊 Səsə Qoşul</a>
           </div>
+          <div class="dc-search-row">
+            <input id="dcChanSearch" placeholder="🔍 Axtar..." oninput="filterDcChannels()">
+          </div>
+        </div>
+
+        <div id="dcChanList" class="dc-chans-scroll"></div>
+
+        <div class="dc-userbar" onclick="openFullProfile(me.username)">
+          <div class="row" style="min-width:0;flex-wrap:nowrap;">
+            <span id="dcUserAvatarWrap" class="av-wrap"><img id="dcUserAvatarImg" src="" alt="" style="display:none;"><span id="dcUserAvatarTxt">A</span></span>
+            <div style="min-width:0;line-height:1.2;">
+              <div id="dcUserName" style="font-weight:700;font-size:.86rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">—</div>
+              <div id="dcUserStatus" style="font-size:.72rem;color:#4ade80;"><span class="online-dot on"></span>Onlayn</div>
+            </div>
+          </div>
+          <span class="muted" style="font-size:.9rem;">⚙️</span>
+        </div>
+      </div>
+
+      <!-- 3. Aktiv Kanal Söhbəti -->
+      <div class="dc-chat">
+        <div class="dc-chat-head">
+          <div class="row" style="min-width:0;flex-wrap:nowrap;">
+            <button class="btn btn-sm dc-mobile-only" onclick="dcBackToChannels()">← Kanallar</button>
+            <div style="min-width:0;">
+              <strong id="srvChanTitle">#ümumi</strong>
+              <div id="srvChanTopic" class="muted" style="font-size:.74rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
+            </div>
+          </div>
+          <div class="row" style="flex-shrink:0;">
+            <a id="srvVoiceLink" href="#" target="_blank" rel="noopener" class="btn btn-sm btn-success" style="display:none;">🔊 Səs</a>
+            <button class="btn btn-sm" onclick="toggleDcMembersMobile()">👥 <span id="srvMemCount">0</span></button>
+            <button id="srvLeaveBtn" class="btn btn-sm btn-danger" style="display:none;" onclick="leaveActiveServer()">Ayrıl</button>
+          </div>
+        </div>
+
+        <div id="srvChatBox" class="tg-chat-box"></div>
+
+        <div class="dc-chat-foot">
           <div id="srvMutedBanner" class="srv-muted-pill" style="display:none;"></div>
-          <div id="srvChatBox" class="tg-chat-box"></div>
           <div id="srvReplyBanner" class="reply-banner" style="display:none;"><span id="srvReplyText"></span><button class="btn btn-sm" onclick="cancelServerReply()">✕</button></div>
           <div class="row">
             <input id="srvChatInput" placeholder="Kanala mesaj yaz..." style="flex:1;" onkeydown="if(event.key==='Enter')sendServerChat()">
@@ -450,12 +432,15 @@
             <div class="row" style="margin-left:auto;"><button class="btn btn-sm btn-danger" onclick="cancelVoiceRecord('server')">Ləğv et</button><button class="btn btn-sm btn-success" onclick="sendVoiceRecord('server')">✔ Göndər</button></div>
           </div>
         </div>
+      </div>
 
-        <!-- Sağ: Üzvlər -->
-        <div class="srv-side-panel">
-          <div style="margin-bottom:8px;"><strong style="font-size:.8rem;text-transform:uppercase;" class="muted">Üzvlər (<span id="srvMemCount">0</span>)</strong></div>
-          <div id="srvMembersList"></div>
+      <!-- 4. Sağ Üzvlər Paneli -->
+      <div id="dcMembersCol" class="dc-members">
+        <div class="row" style="justify-content:space-between;margin-bottom:8px;">
+          <strong style="font-size:.76rem;text-transform:uppercase;" class="muted">Üzvlər</strong>
+          <button class="btn btn-sm dc-mobile-only" onclick="toggleDcMembersMobile(false)">✕</button>
         </div>
+        <div id="srvMembersList"></div>
       </div>
     </div>
   </div>
