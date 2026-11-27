@@ -364,8 +364,7 @@
     <button class="cf-tab-btn" data-cmode="dm" onclick="switchChatMode('dm')">✈️ Şəxsi Söhbətlər (DM)</button>
   </div>
 
-  
-<!-- Serverlər (Discord Mobil & Masaüstü üslubu) -->
+  <!-- Serverlər (Discord Mobil & Masaüstü üslubu) -->
   <div id="chatServersPane">
     <div id="dcShell" class="dc-shell">
       <!-- 1. Sol Şaquli Server Zolağı -->
@@ -377,6 +376,7 @@
           <div class="dc-chans-title">
             <span id="dcSrvTitle" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Server seçin</span>
             <div class="row" style="gap:4px;flex-shrink:0;">
+              <button id="dcSrvSettingsBtn" class="btn btn-sm" style="display:none;padding:3px 7px;" onclick="openServerProfile()" title="Server Profili & Üzvlər">⚙</button>
               <button id="dcChanAddBtn" class="btn btn-sm" style="display:none;padding:3px 7px;" onclick="openServerChannelModal()" title="Kanal əlavə et">+</button>
               <button class="btn btn-sm" style="padding:3px 7px;" onclick="copyServerCode()" title="Dəvət kodu">👥+</button>
             </div>
@@ -656,7 +656,7 @@
     <!-- PROFİL: ÇƏRÇİVƏ MAĞAZASI -->
     <div id="profPaneShop" style="display:none;">
       <div class="hero-banner">
-        <div><h3 style="margin:0;">Avatar Çərçivə Mağazası</h3><span class="muted" style="font-size:.82rem;">Hərəkətli SVG fantastik obrazlar (12.000 – 50.000 AzCoin)</span></div>
+        <div><h3 style="margin:0;">Avatar Çərçivə Mağazası</h3><span class="muted" style="font-size:.82rem;">Hərəkətli SVG fantastik obrazlar (15.000 – 50.000 AzCoin)</span></div>
         <span class="badge" style="font-size:.85rem;">🪙 <b id="shopCoins">0</b> AzCoin</span>
       </div>
       <div class="row" style="margin-bottom:12px;">
@@ -875,7 +875,13 @@
   </div>
 </div>
 
-  
+<div id="serverProfileModal" class="modal-backdrop">
+  <div class="modal-card" style="max-width:560px;">
+    <div class="modal-head"><strong>⚙️ Server Profili & İdarəetmə</strong><button class="btn btn-sm" onclick="closeModal('serverProfileModal')">✕</button></div>
+    <div id="serverProfileBody" class="modal-body"></div>
+  </div>
+</div>
+
 <div id="serverChannelModal" class="modal-backdrop">
   <div class="modal-card">
     <div class="modal-head"><strong>Yeni Kanal Yarat</strong><button class="btn btn-sm" onclick="closeModal('serverChannelModal')">✕</button></div>
@@ -934,4 +940,4 @@
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
 <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
-                                            </html>
+      </html>
