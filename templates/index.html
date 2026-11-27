@@ -841,6 +841,41 @@
   </div>
 </div>
 
+<div id="serverActionModal" class="modal-backdrop">
+  <div class="modal-card">
+    <div class="modal-head"><strong>🌐 Server Yarat və ya Qoşul</strong><button class="btn btn-sm" onclick="closeModal('serverActionModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="prof-box" style="margin-bottom:12px;">
+        <strong style="font-size:.86rem;">🎓 Universitet Serveri</strong>
+        <div id="srvUniDesc" class="muted" style="font-size:.78rem;margin:4px 0 8px;">Öz universitetinizi seçin.</div>
+        <button class="btn btn-sm btn-primary" onclick="closeModal('serverActionModal');openMyProfileTab('settings')">Universiteti Seç / Dəyiş</button>
+      </div>
+      <div class="prof-box" style="margin-bottom:12px;">
+        <strong style="font-size:.86rem;">Kod ilə Serverə Qoşul</strong>
+        <div class="row" style="margin-top:6px;">
+          <input id="joinServerCode" placeholder="Məs: AZ-9F2A1C" style="flex:1;">
+          <button class="btn btn-primary btn-sm" onclick="joinServer()">Qoşul</button>
+        </div>
+      </div>
+      <div class="prof-box">
+        <strong style="font-size:.86rem;">Yeni Özəl Server Yarat</strong>
+        <div class="row" style="margin:6px 0;">
+          <input id="crSrvEmoji" value="🚀" style="width:52px;text-align:center;">
+          <input id="crSrvName" placeholder="Server adı *" style="flex:1;">
+          <input id="crSrvColor" type="color" value="#6366f1" style="width:46px;height:34px;padding:2px;">
+        </div>
+        <input id="crSrvDesc" placeholder="Qısa təsvir..." style="margin-bottom:6px;">
+        <div class="row" style="margin-bottom:8px;">
+          <input id="crSrvVoice" placeholder="Səs kanalı linki (Discord...)" style="flex:1;">
+          <label style="font-size:.82rem;white-space:nowrap;"><input type="checkbox" id="crSrvPublic" checked style="width:auto;"> İctimai</label>
+        </div>
+        <button class="btn btn-success btn-sm" style="width:100%;justify-content:center;" onclick="createServer()">Server Yarat</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+  
 <div id="serverChannelModal" class="modal-backdrop">
   <div class="modal-card">
     <div class="modal-head"><strong>Yeni Kanal Yarat</strong><button class="btn btn-sm" onclick="closeModal('serverChannelModal')">✕</button></div>
