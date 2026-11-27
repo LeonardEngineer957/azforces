@@ -698,7 +698,7 @@ function switchTab(tab, sub) {
   if (tab === "leaderboard") switchLeaderScope(sub || currentLbScope || "world");
   if (tab === "playground") switchLabSub(sub || "pg");
   if (tab === "admin" && me.is_admin) loadAdminData();
-    }
+}
 
 /* ── AUTH & UNİVERSİTET SEÇİMİ ── */
 function populateUniSelects() {
@@ -1329,7 +1329,7 @@ async function postDaily(payload) {
   const d = await r.json(); toast(d.message || d.error, !r.ok);
   if (r.ok) { loadDailyChallenge(); return true; }
   return false;
-    }
+  }
 
 /* ── DISCORD SERVERLƏR + QRUP + DM + SƏS ── */
 function switchChatMode(mode) {
@@ -1384,8 +1384,9 @@ function renderDcRail() {
   const dmBtn = `<button class="dc-rail-btn" onclick="switchChatMode('dm')" title="Şəxsi Söhbətlər (DM)">💬</button><div class="dc-rail-sep"></div>`;
   const srvBtns = serversCache.map(s => {
     const tag = s.server_type === "university" ? `<span class="dc-rail-uni">${esc(s.university)}</span>` : "";
+    const media = s.avatar_url ? `<img class="dc-rail-img" src="${esc(s.avatar_url)}" alt="">` : `<span>${esc(s.icon_emoji || '🌐')}</span>`;
     return `<button class="dc-rail-btn ${s.id === activeServerId ? 'active' : ''}" style="background:${esc(s.avatar_color || '#1a2233')};" onclick="enterServer(${s.id}, true)" title="${esc(s.name)}">
-      <span>${esc(s.icon_emoji || '🌐')}</span>${tag}
+      ${media}${tag}
     </button>`;
   }).join("");
   const addBtn = `<div class="dc-rail-sep"></div><button class="dc-rail-btn dc-rail-add" onclick="openServerActionModal()" title="Server yarat / qoşul">+</button>`;
@@ -1504,6 +1505,7 @@ async function pollServer() {
 
     const isMod = (d.my_role === "owner" || d.my_role === "mod" || me.is_admin);
     if (el("dcChanAddBtn")) el("dcChanAddBtn").style.display = isMod ? "inline-flex" : "none";
+    if (el("dcSrvSettingsBtn")) el("dcSrvSettingsBtn").style.display = (d.my_role === "owner" || me.is_admin) ? "inline-flex" : "none";
 
     if (d.active_channel) activeChannelId = d.active_channel.id;
     const textChs = (d.channels || []).filter(c => c.channel_type !== "voice");
@@ -1534,7 +1536,7 @@ async function pollServer() {
     el("srvMembersList").innerHTML = (d.members || []).map(m => {
       const rBadge = m.role === "owner" ? `<span class="srv-role-badge owner">Sahib</span>`
         : m.role === "mod" ? `<span class="srv-role-badge mod">Mod</span>` : "";
-      const modBtns = (isMod && m.username !== me.username && m.role !== "owner" && !m.is_admin_user) ? `
+      const modBtns = (isMod && m.username !== me.username && !m.is_admin_user && (m.role !== "owner" || me.is_admin)) ? `
         <div class="row" style="gap:3px;margin-top:3px;">
           <button class="btn btn-sm" style="padding:1px 5px;font-size:.66rem;" onclick="moderateServer('mute',${q(m.username)})" title="15 dəq susdur">🔇</button>
           <button class="btn btn-sm" style="padding:1px 5px;font-size:.66rem;" onclick="moderateServer('unmute',${q(m.username)})" title="Səsi aç">🔊</button>
@@ -1606,14 +1608,63 @@ async function leaveActiveServer() {
   if (!activeServerId || !confirm("Bu serverdən ayrılmaq istəyirsiniz?")) return;
   const r = await fetch(`/api/servers/${activeServerId}/leave`, { method: "POST" });
   const d = await r.json(); toast(d.message || d.error, !r.ok);
-  if (r.ok) { activeServerId = 0; loadServers(); }
+  if (r.ok) { activeServerId = 0; exitServerView(); await loadServers(); }
 }
 
-async function leaveActiveServer() {
-  if (!activeServerId || !confirm("Bu serverdən ayrılmaq istəyirsiniz?")) return;
-  const r = await fetch(`/api/servers/${activeServerId}/leave`, { method: "POST" });
+function openServerProfile() {
+  if (!activeServerData) return;
+  const d = activeServerData, srv = d.server, canEdit = (d.my_role === "owner" || me.is_admin);
+  el("serverProfileBody").innerHTML = `
+    <div class="prof-top" style="margin-bottom:12px;">
+      <div class="av-wrap av-lg" style="background:${esc(srv.avatar_color || '#3b82f6')};">${srv.avatar_url ? `<img src="${esc(srv.avatar_url)}">` : esc(srv.icon_emoji || '🌐')}</div>
+      <div><h3 style="margin:0;">${esc(srv.name)}</h3><div class="muted" style="font-size:.8rem;">Kod: ${esc(srv.server_code)} · ${d.members.length} üzv</div></div>
+    </div>
+    ${canEdit ? `<div class="prof-box" style="margin-bottom:10px;">
+      <strong style="font-size:.84rem;">Server Profili & Şəkil</strong>
+      <div class="row" style="margin-top:6px;">
+        <input id="spEmoji" value="${esc(srv.icon_emoji || '🌐')}" style="width:48px;text-align:center;">
+        <input id="spName" value="${esc(srv.name)}" style="flex:1;">
+        <input id="spColor" type="color" value="${esc(srv.avatar_color || '#3b82f6')}" style="width:46px;height:34px;padding:2px;">
+      </div>
+      <textarea id="spDesc" rows="2" style="margin-top:6px;">${esc(srv.description || '')}</textarea>
+      <input id="spAvUrl" value="${esc(srv.avatar_url || '')}" placeholder="Şəkil linki (istəyə bağlı)" style="margin-top:6px;">
+      <div class="row" style="margin-top:6px;">
+        <input id="spAvFile" type="file" accept="image/*" style="flex:1;font-size:.78rem;">
+        <button class="btn btn-sm" onclick="uploadServerAvatar()">📷 Şəkli Yüklə</button>
+        <button class="btn btn-primary btn-sm" onclick="saveServerProfile()">Yadda saxla</button>
+      </div>
+    </div>
+    <div class="prof-box" style="margin-bottom:10px;">
+      <strong style="font-size:.84rem;">➕ Serverə Üzv Əlavə Et</strong>
+      <div class="row" style="margin-top:6px;">
+        <input id="spAddUser" placeholder="İstifadəçi adı" style="flex:1;">
+        <button class="btn btn-success btn-sm" onclick="addServerMember()">Əlavə et</button>
+      </div>
+    </div>` : ""}`;
+  el("serverProfileModal").classList.add("open");
+}
+
+async function saveServerProfile() {
+  const r = await fetch(`/api/servers/${activeServerId}/profile`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: el("spName").value, description: el("spDesc").value, icon_emoji: el("spEmoji").value, avatar_color: el("spColor").value, avatar_url: el("spAvUrl").value })
+  });
   const d = await r.json(); toast(d.message || d.error, !r.ok);
-  if (r.ok) exitServerView();
+  if (r.ok) { closeModal("serverProfileModal"); await loadServers(); pollServer(); }
+}
+
+async function uploadServerAvatar() {
+  const f = el("spAvFile")?.files[0]; if (!f) return toast("Şəkil seçin", true);
+  const fd = new FormData(); fd.append("avatar", f);
+  const r = await fetch(`/api/servers/${activeServerId}/avatar`, { method: "POST", body: fd });
+  const d = await r.json(); toast(d.message || d.error, !r.ok);
+  if (r.ok) { closeModal("serverProfileModal"); await loadServers(); pollServer(); }
+}
+
+async function addServerMember() {
+  const u = el("spAddUser")?.value.trim(); if (!u) return toast("İstifadəçi adı yazın", true);
+  await moderateServer("add_member", u);
+  el("spAddUser").value = "";
 }
 
 /* ── QRUPLAR (16-LIQ KOD) ── */
@@ -1708,9 +1759,10 @@ async function sendRoomChat() {
     sendingRoom = false;
   }
 }
+
 function openGroupProfile() {
   if (!activeRoomData) return;
-  const d = activeRoomData, rm = d.room, isCr = rm.creator === me.username;
+  const d = activeRoomData, rm = d.room, isCr = (rm.creator === me.username) || d.is_creator_power || me.is_admin;
   el("groupProfileBody").innerHTML = `
     <div class="prof-top" style="margin-bottom:12px;"><div class="av-wrap av-lg" style="background:${esc(rm.avatar_color)};">${rm.avatar_url ? `<img src="${esc(rm.avatar_url)}">` : esc(rm.title[0])}</div>
       <div><h3 style="margin:0;">${esc(rm.title)}</h3><div class="muted" style="font-size:.82rem;">Yaradıcı: ${userLinkHtml(rm.creator, esc(rm.creator))} · Kod: ${rm.room_code.replace(/(.{4})/g, "$1-").slice(0, -1)}</div></div></div>
@@ -1718,15 +1770,33 @@ function openGroupProfile() {
     ${isCr ? `<div class="prof-box" style="margin-bottom:10px;"><strong style="font-size:.84rem;">Qrup Profilini Düzəlt</strong>
       <input id="gpTitle" value="${esc(rm.title)}" style="margin-top:6px;"><textarea id="gpBio" rows="2" style="margin-top:6px;">${esc(rm.bio)}</textarea>
       <div class="row" style="margin-top:6px;"><input id="gpAvUrl" value="${esc(rm.avatar_url || '')}" placeholder="Şəkil linki" style="flex:1;"><input id="gpColor" type="color" value="${esc(rm.avatar_color)}" style="width:46px;height:34px;padding:2px;"></div>
-      <button class="btn btn-primary btn-sm" style="margin-top:6px;" onclick="saveGroupProfile()">Yenilə</button></div>` : ""}
+      <div class="row" style="margin-top:6px;"><input id="gpAvFile" type="file" accept="image/*" style="flex:1;font-size:.78rem;"><button class="btn btn-sm" onclick="uploadGroupAvatar()">📷 Şəkli Yüklə</button><button class="btn btn-primary btn-sm" onclick="saveGroupProfile()">Yenilə</button></div></div>
+      <div class="prof-box" style="margin-bottom:10px;"><strong style="font-size:.84rem;">➕ Qrupa Üzv Əlavə Et</strong>
+        <div class="row" style="margin-top:6px;"><input id="gpAddUser" placeholder="İstifadəçi adı" style="flex:1;"><button class="btn btn-success btn-sm" onclick="addRoomMember()">Əlavə et</button></div></div>` : ""}
     ${(d.shared_problems || []).length ? `<div class="prof-box" style="margin-bottom:10px;"><strong style="font-size:.84rem;">Paylaşılan Suallar</strong><div style="margin-top:6px;">${d.shared_problems.map(p => `<button class="btn btn-sm" style="margin:2px;" onclick="closeModal('groupProfileModal');openProblem(${q(p.code_label || p.id)})">${esc(p.code_label)}. ${esc(p.title)}</button>`).join("")}</div></div>` : ""}
     <div class="prof-box"><strong style="font-size:.84rem;">Üzvlər (${d.members.length}/20)</strong>
       ${d.members.map(m => `<div class="row" style="justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:.84rem;">
-        <span class="user-link" onclick="closeModal('groupProfileModal');openFullProfile(${q(m.username)})">${renderName(m.username, m.is_admin_user)} <span class="muted">Lv.${m.level}</span> ${m.username === rm.creator ? '<span class="badge">Admin</span>' : ''}</span>
-        ${isCr && m.username !== rm.creator ? `<button class="btn btn-danger btn-sm" onclick="kickMember(${q(m.username)})">Çıxar</button>` : ""}</div>`).join("")}</div>
+        <span class="user-link" onclick="closeModal('groupProfileModal');openFullProfile(${q(m.username)})">${renderName(m.username, m.is_admin_user)} <span class="muted">Lv.${m.level}</span> ${m.username === rm.creator ? '<span class="badge">Qurucu</span>' : ''}</span>
+        ${isCr && m.username !== me.username && !m.is_admin_user && (m.username !== rm.creator || me.is_admin) ? `<button class="btn btn-danger btn-sm" onclick="kickMember(${q(m.username)})">Çıxar</button>` : ""}</div>`).join("")}</div>
     <button class="btn btn-danger" style="width:100%;justify-content:center;margin-top:12px;" onclick="exitGroupPermanent()">Qrupdan Ayrıl</button>`;
   el("groupProfileModal").classList.add("open");
 }
+
+async function uploadGroupAvatar() {
+  const f = el("gpAvFile")?.files[0]; if (!f) return toast("Şəkil seçin", true);
+  const fd = new FormData(); fd.append("avatar", f);
+  const r = await fetch(`/api/rooms/${activeRoomCode}/avatar`, { method: "POST", body: fd });
+  const d = await r.json(); toast(d.message || d.error, !r.ok);
+  if (r.ok) { closeModal("groupProfileModal"); pollRoom(); }
+}
+
+async function addRoomMember() {
+  const u = el("gpAddUser")?.value.trim(); if (!u) return toast("İstifadəçi adı yazın", true);
+  const r = await fetch(`/api/rooms/${activeRoomCode}/add`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: u }) });
+  const d = await r.json(); toast(d.message || d.error, !r.ok);
+  if (r.ok) { closeModal("groupProfileModal"); pollRoom(); }
+}
+
 async function saveGroupProfile() {
   const r = await fetch(`/api/rooms/${activeRoomCode}/profile`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: el("gpTitle").value, bio: el("gpBio").value, avatar_url: el("gpAvUrl").value, avatar_color: el("gpColor").value }) });
   toast((await r.json()).message || "Xəta", !r.ok); closeModal("groupProfileModal"); pollRoom();
