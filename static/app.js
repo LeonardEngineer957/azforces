@@ -2439,6 +2439,8 @@ window.addEventListener("DOMContentLoaded", async () => {
   if (el("rgPassConfirm")) el("rgPassConfirm").addEventListener("input", validatePasswordConfirm);
 
   await syncMe();
+    upgradeUiIcons(document.body);
+  new MutationObserver(() => upgradeUiIcons(document.body)).observe(document.body, { childList: true, subtree: true });
   checkHumanGate();
 
   const pid = new URLSearchParams(location.search).get("problem");
