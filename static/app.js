@@ -1669,7 +1669,10 @@ async function addServerMember() {
 
 /* ── QRUPLAR (16-LIQ KOD) ── */
 async function loadMyRooms() {
-  if (!me.authenticated) { el("myRoomsList").textContent = "Daxil olun."; return; }
+  if (!me.authenticated) {
+    el("myRoomsList").innerHTML = `<div class="muted" style="font-size:.84rem;">Qruplara qoşulmaq üçün <a href="#" onclick="event.preventDefault();openAuthModal()" style="color:var(--accent);">daxil olun</a>.</div>`;
+    return;
+  }
   const list = await (await fetch("/api/rooms/mine")).json();
   el("myRoomsList").innerHTML = list.length
     ? list.map(r => `<div class="row" style="justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="enterRoom('${r.room_code}')">
@@ -1840,6 +1843,7 @@ function closeDm() {
   el("dmShell")?.classList.remove("in-dm");
   el("dmChatBox").innerHTML = ""; el("dmPartnerTitle").textContent = "Söhbət seçilməyib";
 }
+
 function replyDmMsg(id, author, text) { dmReplyId = id; el("dmReplyText").textContent = `↩ ${author}: ${String(text).slice(0, 45)}`; el("dmReplyBanner").style.display = "flex"; el("dmChatInput").focus(); }
 function cancelDmReply() { dmReplyId = null; el("dmReplyBanner").style.display = "none"; }
 async function pollDm() {
