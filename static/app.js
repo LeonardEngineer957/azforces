@@ -1393,12 +1393,32 @@ function renderDcRail() {
   rail.innerHTML = dmBtn + srvBtns + addBtn;
 }
 
+function guestChatPreviewHtml(title, desc) {
+  return `<div class="card guest-preview-card">
+    <h3 style="margin-bottom:6px;">${azIcon("chat")} ${esc(title)}</h3>
+    <p class="muted" style="font-size:.86rem;max-width:460px;margin:0 auto;">${esc(desc)}</p>
+    <div class="guest-preview-grid">
+      <div class="prof-box"><strong>${azIcon("globe")} AzForces Ümumi DC</strong><div class="muted" style="font-size:.76rem;margin-top:4px;">#tanışlıq · #ümumi-söhbət · #alqoritm-kömək · #komanda-axtarışı</div></div>
+      <div class="prof-box"><strong>${azIcon("building")} Universitet Serverləri</strong><div class="muted" style="font-size:.76rem;margin-top:4px;">BDU, ADA, BANM, ADNSU, AzMİU, UNEC və digərləri</div></div>
+      <div class="prof-box"><strong>${azIcon("users")} 16-lıq Qruplar & DM</strong><div class="muted" style="font-size:.76rem;margin-top:4px;">20 nəfərlik otaqlar, səsli mesaj və şəxsi söhbət</div></div>
+    </div>
+    <button class="btn btn-primary" onclick="openAuthModal()">Daxil Ol və ya Pulsuz Hesab Aç</button>
+  </div>`;
+}
+
 async function loadServers() {
   dcUpdateUserBar();
+  const shell = el("dcShell");
   if (!me.authenticated) {
-    if (el("dcChanList")) el("dcChanList").innerHTML = `<div class="muted" style="padding:12px;font-size:.84rem;">Serverlərə baxmaq üçün daxil olun.</div>`;
+    if (shell) shell.style.display = "none";
+    if (!el("srvGuestBox") && el("chatServersPane")) {
+      el("chatServersPane").insertAdjacentHTML("beforeend", `<div id="srvGuestBox">${guestChatPreviewHtml("Serverlər & İcma Çatı", "Çoxnəfərli kanallara, universitet serverlərinə və səs otaqlarına qoşulmaq üçün daxil olun.")}</div>`);
+    } else if (el("srvGuestBox")) el("srvGuestBox").style.display = "block";
     return;
   }
+  if (el("srvGuestBox")) el("srvGuestBox").style.display = "none";
+  if (shell) shell.style.display = "grid";
+
   const r = await fetch("/api/servers"); if (!r.ok) return;
   const d = await r.json();
   serversCache = d.servers || [];
@@ -1409,6 +1429,7 @@ async function loadServers() {
     pollServer();
   }
 }
+
 
 async function createServer() {
   if (!me.authenticated) return openAuthModal();
