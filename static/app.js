@@ -1806,24 +1806,40 @@ async function exitGroupPermanent() { await fetch(`/api/rooms/${activeRoomCode}/
 
 /* ── DM ── */
 async function loadDmChats() {
-  if (!me.authenticated) { el("dmChatsList").textContent = "Daxil olun."; return; }
+  const shell = el("dmShell");
+  if (!me.authenticated) {
+    if (shell) shell.style.display = "none";
+    if (!el("dmGuestBox") && el("chatDmPane")) {
+      el("chatDmPane").insertAdjacentHTML("beforeend", `<div id="dmGuestBox">${guestChatPreviewHtml("Şəxsi Mesajlar (Messenger)", "Dostlarınızla birbaşa yazışmaq, səsli mesaj və məsələ göndərmək üçün daxil olun.")}</div>`);
+    } else if (el("dmGuestBox")) el("dmGuestBox").style.display = "block";
+    return;
+  }
+  if (el("dmGuestBox")) el("dmGuestBox").style.display = "none";
+  if (shell) shell.style.display = "grid";
+
   const list = await (await fetch("/api/dm/chats")).json();
   el("dmChatsList").innerHTML = list.length
-    ? list.map(c => `<div style="padding:8px;border-bottom:1px solid var(--border);cursor:pointer;" onclick="openDmWith(${q(c.username)})">
-        <div class="row"><div class="av-wrap frame-${c.avatar_frame || 'none'}" style="background:${esc(c.avatar_color || '#3b82f6')};width:28px;height:28px;font-size:.75rem;">${c.avatar_url ? `<img src="${esc(c.avatar_url)}">` : esc(c.username[0])}</div>
-          <div>${renderName(c.username, c.is_admin_user)}<div class="muted" style="font-size:.76rem;">${esc(c.last_message)}</div></div></div></div>`).join("")
-    : `<div class="muted" style="font-size:.82rem;">Söhbət yoxdur.</div>`;
+    ? list.map(c => `<div class="dm-list-item ${activeDmPartner.toLowerCase() === c.username.toLowerCase() ? 'active' : ''}" onclick="openDmWith(${q(c.username)})">
+        <div class="row"><div class="av-wrap frame-${c.avatar_frame || 'none'}" style="background:${esc(c.avatar_color || '#3b82f6')};width:34px;height:34px;font-size:.82rem;">${c.avatar_url ? `<img src="${esc(c.avatar_url)}">` : esc(c.username[0])}</div>
+          <div style="min-width:0;flex:1;">${renderName(c.username, c.is_admin_user)}<div class="muted" style="font-size:.76rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.last_message)}</div></div></div></div>`).join("")
+    : `<div class="muted" style="font-size:.82rem;">Hələ söhbət yoxdur. Yuxarıdan istifadəçi adı yazıb başlayın.</div>`;
 }
 function openDmWith(user) {
+  if (!me.authenticated) return openAuthModal();
   const u = String(user || "").trim(); if (!u) return;
   activeDmPartner = u; lastDmMsgId = 0; dmReplyId = null; dmPolling = false; el("dmChatBox").innerHTML = "";
-  el("dmPartnerTitle").innerHTML = userLinkHtml(u, `✈️ @${esc(u)}`);
+  el("dmShell")?.classList.add("in-dm");
+  el("dmPartnerTitle").innerHTML = userLinkHtml(u, `@${esc(u)}`);
   pollDm(); clearInterval(dmPollTimer);
   dmPollTimer = setInterval(() => {
     if (!document.hidden && activeDmPartner && el("tab-chat")?.classList.contains("active")) pollDm();
   }, 3000);
 }
-function closeDm() { activeDmPartner = ""; clearInterval(dmPollTimer); el("dmChatBox").innerHTML = ""; el("dmPartnerTitle").textContent = "✈️ —"; }
+function closeDm() {
+  activeDmPartner = ""; clearInterval(dmPollTimer);
+  el("dmShell")?.classList.remove("in-dm");
+  el("dmChatBox").innerHTML = ""; el("dmPartnerTitle").textContent = "Söhbət seçilməyib";
+}
 function replyDmMsg(id, author, text) { dmReplyId = id; el("dmReplyText").textContent = `↩ ${author}: ${String(text).slice(0, 45)}`; el("dmReplyBanner").style.display = "flex"; el("dmChatInput").focus(); }
 function cancelDmReply() { dmReplyId = null; el("dmReplyBanner").style.display = "none"; }
 async function pollDm() {
