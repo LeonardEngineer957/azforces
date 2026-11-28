@@ -483,7 +483,6 @@ function renderMath(node) {
     });
   }
 }
-
 function cmMode(lang) { return lang === "python" ? "python" : lang === "javascript" ? "javascript" : lang === "cpp" ? "text/x-c++src" : lang === "c" ? "text/x-csrc" : "text/x-java"; }
 function closeModal(id) { const n = el(id); if (n) n.classList.remove("open"); }
 function copyText(txt, msg) {
@@ -671,7 +670,7 @@ function setAvatar(wrapId, imgId, txtId, sizeCls, u) {
     else { im.style.display = "none"; tx.style.display = "inline"; tx.textContent = (u.username || "A")[0]; }
   }
   injectSvgFrame(w, u.avatar_frame);
-}
+  }
 
 /* ── İNSAN DOĞRULAMASI & QONAQ ── */
 function checkHumanGate() { const g = el("humanGate"); if (g) g.style.display = me.human_verified ? "none" : "flex"; }
