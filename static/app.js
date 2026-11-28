@@ -462,8 +462,27 @@ SVG_FRAMES["angel-wings"] = SVG_FRAMES["fallen-angel"];
 function el(id) { return document.getElementById(id); }
 function esc(s) { return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
 function q(s) { return "'" + String(s ?? "").replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/"/g, '\\"') + "'"; }
-function fmtStmt(t) { return esc(t).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/`([^`]+)`/g, "<code>$1</code>"); }
+function fmtStmt(t) {
+  const clean = String(t ?? "")
+    .replace(/\$\$\$([\s\S]+?)\$\$\$/g, (_, x) => `$${x}$`)
+    .replace(/\$\s*\\\(([\s\S]+?)\\\)\s*\$/g, (_, x) => `$${x}$`);
+  return esc(clean)
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/`([^`]+)`/g, "<code>$1</code>");
+}
 function renderMath(node) {
+  if (node && typeof renderMathInElement === "function") {
+    renderMathInElement(node, {
+      delimiters: [
+        { left: "$$", right: "$$", display: true },
+        { left: "\\[", right: "\\]", display: true },
+        { left: "$", right: "$", display: false },
+        { left: "\\(", right: "\\)", display: false }
+      ],
+      throwOnError: false
+    });
+  }
+}
   if (node && typeof renderMathInElement === "function") {
     renderMathInElement(node, { delimiters: [{ left: "$$", right: "$$", display: true }, { left: "$", right: "$", display: false }], throwOnError: false });
   }
