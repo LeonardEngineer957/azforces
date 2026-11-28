@@ -11,6 +11,7 @@ let allProblems = [], currentProblem = null, solveCM = null, pgCM = null;
 let submissionsCache = [], adminUsersCache = [], forwardPid = null, guestTimer = null;
 let activeRoomCode = "", activeRoomData = null, roomPollTimer = null, lastRoomMsgId = 0, roomReplyId = null;
 let activeServerId = 0, activeChannelId = 0, activeServerData = null, serverPollTimer = null, lastServerMsgId = 0, serverReplyId = null;
+let serversCache = [], probSubsCache = [];
 let activeDmPartner = "", dmPollTimer = null, lastDmMsgId = 0, dmReplyId = null;
 let bullsGameId = "", calcGameId = "", calcTimerInt = null, lastCalcQid = "";
 let dailyTimerInterval = null, dailyProblemKey = null;
@@ -483,8 +484,9 @@ function toast(msg, err) {
   t.textContent = msg; t.style.borderColor = err ? "var(--danger)" : "var(--primary)"; t.style.display = "block";
   clearTimeout(window._tt); window._tt = setTimeout(() => { t.style.display = "none"; }, 3400);
 }
-function togglePw(id, btn) {
-  const AZ_ICON_PATHS = {
+
+/* ── LUCIDE-TƏRZİ SVG İKON SİSTEMİ (currentColor) ── */
+const AZ_ICON_PATHS = {
   home: `<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>`,
   megaphone: `<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>`,
   book: `<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>`,
@@ -586,10 +588,12 @@ function upgradeUiIcons(root) {
     _iconUpgrading = false;
   }
 }
+
+function togglePw(id, btn) {
   const inp = el(id); if (!inp) return;
   const show = inp.type === "password";
   inp.type = show ? "text" : "password";
-  if (btn) btn.textContent = show ? "🙈" : "👁️";
+  if (btn) btn.innerHTML = azIcon(show ? "eye-off" : "eye");
 }
 
 function getRankInfo(rating, isAdm) {
@@ -808,7 +812,7 @@ function populateUniSelects() {
   const regSel = el("rgUni");
   if (regSel) {
     const prev = regSel.value;
-    regSel.innerHTML = `<option value="">🎓 Universitet / Təhsil seçin (istəyə bağlı)</option>` +
+    regSel.innerHTML = `<option value="">Universitet / Təhsil seçin (istəyə bağlı)</option>` +
       unis.map(u => `<option value="${esc(u.code)}">${esc(u.code)} — ${esc(u.name)}</option>`).join("");
     if (prev) regSel.value = prev;
   }
@@ -838,7 +842,7 @@ async function syncMe() {
     pb.style.display = "inline-flex"; ab.style.display = "none";
     el("hdrUserName").innerHTML = me.is_admin ? `<span class="admin-chromatic">${esc(me.username)}</span>` : esc(me.username);
     applyRankEl(el("hdrUserRank"), me.rating, me.is_admin);
-    el("hdrUserLvl").textContent = `Lv.${me.level} · 🪙${coinTxt(me.coins)}${me.university ? ` · ${me.university}` : ""}`;
+    el("hdrUserLvl").innerHTML = `Lv.${me.level} · ${azIcon("coin")} ${coinTxt(me.coins)}${me.university ? ` · ${esc(me.university)}` : ""}`;
     setAvatar("hdrAvatarWrap", "hdrAvatarImg", "hdrAvatarTxt", "", me);
     el("hdrGuestPill").style.display = "none";
     if (!pingStarted) {
@@ -1017,16 +1021,16 @@ async function openFullProfile(uname, subTab) {
   applyRankEl(el("fpRank"), p.rating, p.is_admin_user);
   const ub = el("fpUniBadge");
   if (ub) {
-    if (p.university) { ub.style.display = "inline-flex"; ub.textContent = `🎓 ${p.university}`; ub.title = p.university_name || p.university; }
+    if (p.university) { ub.style.display = "inline-flex"; ub.innerHTML = `${azIcon("grad")} ${esc(p.university)}`; ub.title = p.university_name || p.university; }
     else ub.style.display = "none";
   }
   el("fpBio").textContent = p.bio || "Bio yazılmayıb.";
   el("fpLvlBadge").textContent = `Səviyyə ${p.level}`;
-  el("fpCoinsBadge").style.display = isMe ? "inline-block" : "none";
-  el("fpCoinsBadge").textContent = `🪙 ${p.infinite_coins ? "∞" : p.coins}`;
+  el("fpCoinsBadge").style.display = isMe ? "inline-flex" : "none";
+  el("fpCoinsBadge").innerHTML = `${azIcon("coin")} ${p.infinite_coins ? "∞" : p.coins}`;
   el("fpRatingBadge").textContent = `Reytinq: ${p.rating}`;
-  el("fpStreakBadge").textContent = `🔥 ${p.streak} gün`;
-  el("fpSolvedBadge").textContent = `✔ ${p.solved_count} həll`;
+  el("fpStreakBadge").innerHTML = `${azIcon("flame")} ${p.streak} gün`;
+  el("fpSolvedBadge").innerHTML = `${azIcon("check")} ${p.solved_count} həll`;
   el("fpXpNums").textContent = `${p.xp} / ${p.needed_xp} XP`;
   el("fpXpFill").style.width = `${p.progress_pct}%`;
   applyAdminMeta("fp", p);
@@ -1036,9 +1040,9 @@ async function openFullProfile(uname, subTab) {
   });
 
   el("fpActions").innerHTML = isMe
-    ? `<button class="btn btn-sm btn-danger" onclick="logoutAll()">🚪 Hesabdan Çıx</button>`
-    : `<button class="btn btn-primary btn-sm" onclick="switchTab('chat','dm');openDmWith(${q(p.username)})">💬 Mesaj Yaz</button>
-       <button class="btn btn-success btn-sm" onclick="quickSendCoins(${q(p.username)})">🪙 Coin Göndər</button>
+    ? `<button class="btn btn-sm btn-danger" onclick="logoutAll()">${azIcon("logout")} Hesabdan Çıx</button>`
+    : `<button class="btn btn-primary btn-sm" onclick="switchTab('chat','dm');openDmWith(${q(p.username)})">${azIcon("chat")} Mesaj Yaz</button>
+       <button class="btn btn-success btn-sm" onclick="quickSendCoins(${q(p.username)})">${azIcon("coin")} Coin Göndər</button>
        <button class="btn btn-sm" onclick="sendFriendRequestTo(${q(p.username)})">+ Dost Ol</button>`;
 
   if (isMe) {
@@ -1054,13 +1058,13 @@ async function openFullProfile(uname, subTab) {
       ? p.friends.map(f => `
         <div class="row" style="justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:.84rem;">
           <span class="user-link" onclick="openFullProfile(${q(f.username)})">${renderName(f.username, f.is_admin_user)} ${uniBadgeHtml(f.university)} <span class="muted">Lv.${f.level}</span></span>
-          <button class="btn btn-sm btn-primary" onclick="switchTab('chat','dm');openDmWith(${q(f.username)})">💬</button>
+          <button class="btn btn-sm btn-primary" onclick="switchTab('chat','dm');openDmWith(${q(f.username)})">${azIcon("chat")}</button>
         </div>`).join("")
       : `<div class="muted" style="font-size:.82rem;">Dost yoxdur.</div>`;
   }
 
   el("fpRecentSolved").innerHTML = (p.recent_solved || []).length
-    ? p.recent_solved.map(s => `<div style="padding:5px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="openProblem(${q(s.code_label || s.id)})">✔ <strong>${esc(s.code_label)}. ${esc(s.title)}</strong> <span class="muted">(${s.rating})</span></div>`).join("")
+    ? p.recent_solved.map(s => `<div style="padding:5px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="openProblem(${q(s.code_label || s.id)})">${azIcon("check")} <strong>${esc(s.code_label)}. ${esc(s.title)}</strong> <span class="muted">(${s.rating})</span></div>`).join("")
     : `<span class="muted">Hələ yoxdur.</span>`;
   renderHeatmap(p.heatmap || {});
   drawRatingChart((p.rating_history && p.rating_history.length) ? p.rating_history : [{ rating: p.rating }]);
@@ -1113,7 +1117,7 @@ async function loadRegistrations(period) {
       <tr class="clickable" onclick="openFullProfile(${q(u.username)})">
         <td><div class="row" style="gap:6px;">${renderNameWithRank(u.username, u.is_admin_user, u.rating)}${uniBadgeHtml(u.university)}</div></td>
         <td><span class="badge">Lv.${u.level}</span> · ${u.rating}</td>
-        <td class="muted" style="font-size:.82rem;">📅 ${esc(String(u.created_at || "").slice(0, 16))}</td>
+        <td class="muted" style="font-size:.82rem;">${esc(String(u.created_at || "").slice(0, 16))}</td>
         ${isAdm ? `<td>${u.is_online ? '<span style="color:#4ade80;font-weight:700;"><span class="online-dot on"></span>Onlayn</span>' : `<span class="muted"><span class="online-dot off"></span>Oflayn (${esc(u.last_seen || "—")})</span>`}</td>` : ""}
       </tr>`).join("")
     : `<tr><td colspan="${isAdm ? 4 : 3}" class="muted">Bu aralıqda qeydiyyat tapılmadı.</td></tr>`;
@@ -1140,7 +1144,7 @@ async function loadPosts() {
     const reactHtml = (p.reactions || []).map(rx => `<button class="react-btn ${rx.mine ? 'mine' : ''}" onclick="reactPost(${p.id},'${rx.emoji}')">${rx.emoji} ${rx.count}</button>`).join("");
     const cmtHtml = (p.comments || []).map(c => `<div class="comment-item ${c.parent_id ? 'comment-reply' : ''}">${userLinkHtml(c.author, renderName(c.author, c.is_admin_user))}: ${esc(c.body)} <button class="btn btn-sm" style="padding:1px 6px;font-size:.7rem;" onclick="replyComment(${p.id},${c.id},${q(c.author)})">Cavabla</button></div>`).join("");
     return `<div class="card post-card ${p.is_pinned ? 'pinned' : ''}">
-      <div class="row" style="justify-content:space-between;"><strong>${p.is_pinned ? '📌 ' : ''}${esc(p.title)}</strong>
+      <div class="row" style="justify-content:space-between;"><strong>${p.is_pinned ? azIcon("pin") + ' ' : ''}${esc(p.title)}</strong>
         <span class="muted" style="font-size:.8rem;">${userLinkHtml(p.author, renderName(p.author, p.is_admin_user))} · ${esc(p.created_at)} ${me.is_admin ? `<button class="btn btn-sm btn-danger" onclick="deletePost(${p.id})">Sil</button>` : ''}</span>
       </div>
       ${p.body ? `<p style="margin:8px 0;white-space:pre-wrap;">${esc(p.body)}</p>` : ""}
@@ -1180,8 +1184,8 @@ function renderProblemsTable() {
     ? rows.map(p => `<tr class="clickable ${p.solved ? 'solved-row' : ''}" onclick="openProblem(${q(p.code_label || p.id)})">
         <td><strong>${esc(p.code_label || p.id)}</strong></td><td><strong>${esc(p.title)}</strong></td>
         <td>${hide ? '<span class="muted">gizli</span>' : (p.tags || "").split(",").map(t => `<span class="tag-pill">${esc(t.trim())}</span>`).join("")}</td>
-        <td><span class="badge">${p.rating}</span></td><td class="muted">👤 x${p.solved_count || 0}</td>
-        <td><button class="btn btn-sm" onclick="event.stopPropagation();shareProblemLink(${p.id},${q(p.title)})">🔗</button></td></tr>`).join("")
+        <td><span class="badge">${p.rating}</span></td><td class="muted">${azIcon("user")} x${p.solved_count || 0}</td>
+        <td><button class="btn btn-sm" onclick="event.stopPropagation();shareProblemLink(${p.id},${q(p.title)})">${azIcon("link")}</button></td></tr>`).join("")
     : `<tr><td colspan="6" class="muted">Yoxdur.</td></tr>`;
 }
 async function loadGym() {
@@ -1189,8 +1193,8 @@ async function loadGym() {
   el("gymTableBody").innerHTML = list.length
     ? list.map(p => `<tr class="clickable ${p.solved ? 'solved-row' : ''}" onclick="openProblem(${q(p.code_label || p.id)})">
         <td><strong>${esc(p.code_label || p.id)}</strong></td><td><strong>${esc(p.title)}</strong></td><td>${esc(p.tags)}</td>
-        <td><span class="badge">${p.rating}</span></td><td class="muted">👤 x${p.solved_count || 0}</td>
-        <td><button class="btn btn-sm" onclick="event.stopPropagation();shareProblemLink(${p.id},${q(p.title)})">🔗</button></td></tr>`).join("")
+        <td><span class="badge">${p.rating}</span></td><td class="muted">${azIcon("user")} x${p.solved_count || 0}</td>
+        <td><button class="btn btn-sm" onclick="event.stopPropagation();shareProblemLink(${p.id},${q(p.title)})">${azIcon("link")}</button></td></tr>`).join("")
     : `<tr><td colspan="6" class="muted">Hələ bitmiş yarış məsələsi yoxdur.</td></tr>`;
 }
 async function openProblem(key) {
@@ -1221,7 +1225,6 @@ async function openProblem(key) {
   switchReadSub("statement");
 }
 
-let probSubsCache = [];
 async function loadProblemSubmissions() {
   if (!currentProblem) return;
   const scope = el("probSubScope") ? el("probSubScope").value : "mine";
@@ -1275,11 +1278,11 @@ async function openForwardModal(pid) {
   const rooms = rmRes.ok ? await rmRes.json() : [];
   const srvBtns = (srData.servers || []).filter(s => s.channels && s.channels.length).map(s => {
     const ch = s.channels.find(c => c.channel_type === "text") || s.channels[0];
-    return `<button class="btn btn-sm" style="margin:4px 4px 0 0;" onclick="forwardProblemToServer(${s.id},${ch.id})">${esc(s.icon_emoji || "🌐")} ${esc(s.name)}</button>`;
+    return `<button class="btn btn-sm" style="margin:4px 4px 0 0;" onclick="forwardProblemToServer(${s.id},${ch.id})">${azIcon("globe")} ${esc(s.name)}</button>`;
   }).join("");
   el("fwdServersBox").innerHTML = srvBtns ? `<label class="muted" style="font-size:.82rem;">Serverə at:</label><div>${srvBtns}</div>` : "";
   el("fwdGroupsBox").innerHTML = rooms.length
-    ? `<label class="muted" style="font-size:.82rem;">Qrupa at:</label><div>` + rooms.map(g => `<button class="btn btn-sm" style="margin:4px 4px 0 0;" onclick="forwardProblemToRoom('${g.room_code}')">👥 ${esc(g.title)}</button>`).join("") + `</div>`
+    ? `<label class="muted" style="font-size:.82rem;">Qrupa at:</label><div>` + rooms.map(g => `<button class="btn btn-sm" style="margin:4px 4px 0 0;" onclick="forwardProblemToRoom('${g.room_code}')">${azIcon("users")} ${esc(g.title)}</button>`).join("") + `</div>`
     : `<span class="muted">Qrupunuz yoxdur.</span>`;
 }
 async function forwardProblemToServer(sid, cid) {
@@ -1371,8 +1374,8 @@ async function loadDailyChallenge() {
     if (d.problem) {
       dailyProblemKey = d.problem.code_label || d.problem.id;
       titleEl.textContent = `${d.problem.code_label}. ${d.problem.title}`;
-      metaEl.textContent = `Reytinq: ${d.problem.rating} · Mükafat: +${d.reward_xp} XP, +${d.reward_coins} AzCoin · Hər 7 gündə +${d.chest_7day_coins} 🪙 sandıq!`;
-      solveBtn.style.display = "inline-flex"; solveBtn.textContent = d.solved_today ? "✔ Yenidən Bax" : "📘 Sualı Aç & Həll Et";
+      metaEl.textContent = `Reytinq: ${d.problem.rating} · Mükafat: +${d.reward_xp} XP, +${d.reward_coins} AzCoin · Hər 7 gündə +${d.chest_7day_coins} AzCoin sandıq!`;
+      solveBtn.style.display = "inline-flex"; solveBtn.innerHTML = d.solved_today ? `${azIcon("check")} Yenidən Bax` : `${azIcon("book")} Sualı Aç & Həll Et`;
       banner.style.display = d.solved_today ? "block" : "none";
     } else {
       dailyProblemKey = null; titleEl.textContent = "Hələ məsələ yoxdur"; metaEl.textContent = "Admin tezliklə günün sualını əlavə edəcək.";
@@ -1399,8 +1402,8 @@ function renderDailyBoard(streakBoard, topSolvers) {
   body.innerHTML = streakBoard.length
     ? streakBoard.map((u, i) => `<tr class="clickable" onclick="openFullProfile(${q(u.username)})">
         <td><strong>#${i + 1}</strong></td><td><div class="row" style="gap:6px;">${renderNameWithRank(u.username, u.is_admin_user, u.rating)}${uniBadgeHtml(u.university)}</div></td>
-        <td>🔥 ${u.daily_streak} gün</td>
-        <td>${solvedSet.has(u.username.toLowerCase()) ? '<span style="color:var(--success);font-weight:700;">✔ Bəli</span>' : '<span class="muted">— Xeyr</span>'}</td></tr>`).join("")
+        <td>${azIcon("flame")} ${u.daily_streak} gün</td>
+        <td>${solvedSet.has(u.username.toLowerCase()) ? `<span style="color:var(--success);font-weight:700;">${azIcon("check")} Bəli</span>` : '<span class="muted">— Xeyr</span>'}</td></tr>`).join("")
     : `<tr><td colspan="4" class="muted">Hələ seriya yoxdur — birinci olun!</td></tr>`;
 }
 function startDailyTimer(secondsLeft) {
@@ -1431,9 +1434,9 @@ async function postDaily(payload) {
   const d = await r.json(); toast(d.message || d.error, !r.ok);
   if (r.ok) { loadDailyChallenge(); return true; }
   return false;
-  }
+    }
 
-/* ── DISCORD SERVERLƏR + QRUP + DM + SƏS ── */
+/* ── DISCORD SERVERLƏR + QRUP + MESSENGER DM + SƏS ── */
 function switchChatMode(mode) {
   const m = mode || "servers";
   document.querySelectorAll("#tab-chat .cf-tab-btn[data-cmode]").forEach(b => b.classList.toggle("active", b.dataset.cmode === m));
@@ -1445,7 +1448,18 @@ function switchChatMode(mode) {
   if (m === "dm") loadDmChats();
 }
 
-let serversCache = [];
+function guestChatPreviewHtml(title, desc) {
+  return `<div class="card guest-preview-card">
+    <h3 style="margin-bottom:6px;">${azIcon("chat")} ${esc(title)}</h3>
+    <p class="muted" style="font-size:.86rem;max-width:460px;margin:0 auto;">${esc(desc)}</p>
+    <div class="guest-preview-grid">
+      <div class="prof-box"><strong>${azIcon("globe")} AzForces Ümumi DC</strong><div class="muted" style="font-size:.76rem;margin-top:4px;">#tanışlıq · #ümumi-söhbət · #alqoritm-kömək · #komanda-axtarışı</div></div>
+      <div class="prof-box"><strong>${azIcon("building")} Universitet Serverləri</strong><div class="muted" style="font-size:.76rem;margin-top:4px;">BDU, ADA, BANM, ADNSU, AzMİU, UNEC və digərləri</div></div>
+      <div class="prof-box"><strong>${azIcon("users")} 16-lıq Qruplar & DM</strong><div class="muted" style="font-size:.76rem;margin-top:4px;">20 nəfərlik otaqlar, səsli mesaj və şəxsi söhbət</div></div>
+    </div>
+    <button class="btn btn-primary" onclick="openAuthModal()">Daxil Ol və ya Pulsuz Hesab Aç</button>
+  </div>`;
+}
 
 function dcUpdateUserBar() {
   if (!me.authenticated) return;
@@ -1483,29 +1497,18 @@ function filterDcChannels() {
 
 function renderDcRail() {
   const rail = el("dcRailList"); if (!rail) return;
-  const dmBtn = `<button class="dc-rail-btn" onclick="switchChatMode('dm')" title="Şəxsi Söhbətlər (DM)">💬</button><div class="dc-rail-sep"></div>`;
+  const dmBtn = `<button class="dc-rail-btn" onclick="switchChatMode('dm')" title="Şəxsi Söhbətlər (DM)">${azIcon("chat")}</button><div class="dc-rail-sep"></div>`;
   const srvBtns = serversCache.map(s => {
     const tag = s.server_type === "university" ? `<span class="dc-rail-uni">${esc(s.university)}</span>` : "";
-    const media = s.avatar_url ? `<img class="dc-rail-img" src="${esc(s.avatar_url)}" alt="">` : `<span>${esc(s.icon_emoji || '🌐')}</span>`;
+    const media = s.avatar_url
+      ? `<img class="dc-rail-img" src="${esc(s.avatar_url)}" alt="">`
+      : `<span>${esc(s.icon_emoji || '🌐')}</span>`;
     return `<button class="dc-rail-btn ${s.id === activeServerId ? 'active' : ''}" style="background:${esc(s.avatar_color || '#1a2233')};" onclick="enterServer(${s.id}, true)" title="${esc(s.name)}">
       ${media}${tag}
     </button>`;
   }).join("");
   const addBtn = `<div class="dc-rail-sep"></div><button class="dc-rail-btn dc-rail-add" onclick="openServerActionModal()" title="Server yarat / qoşul">+</button>`;
   rail.innerHTML = dmBtn + srvBtns + addBtn;
-}
-
-function guestChatPreviewHtml(title, desc) {
-  return `<div class="card guest-preview-card">
-    <h3 style="margin-bottom:6px;">${azIcon("chat")} ${esc(title)}</h3>
-    <p class="muted" style="font-size:.86rem;max-width:460px;margin:0 auto;">${esc(desc)}</p>
-    <div class="guest-preview-grid">
-      <div class="prof-box"><strong>${azIcon("globe")} AzForces Ümumi DC</strong><div class="muted" style="font-size:.76rem;margin-top:4px;">#tanışlıq · #ümumi-söhbət · #alqoritm-kömək · #komanda-axtarışı</div></div>
-      <div class="prof-box"><strong>${azIcon("building")} Universitet Serverləri</strong><div class="muted" style="font-size:.76rem;margin-top:4px;">BDU, ADA, BANM, ADNSU, AzMİU, UNEC və digərləri</div></div>
-      <div class="prof-box"><strong>${azIcon("users")} 16-lıq Qruplar & DM</strong><div class="muted" style="font-size:.76rem;margin-top:4px;">20 nəfərlik otaqlar, səsli mesaj və şəxsi söhbət</div></div>
-    </div>
-    <button class="btn btn-primary" onclick="openAuthModal()">Daxil Ol və ya Pulsuz Hesab Aç</button>
-  </div>`;
 }
 
 async function loadServers() {
@@ -1531,7 +1534,6 @@ async function loadServers() {
     pollServer();
   }
 }
-
 
 async function createServer() {
   if (!me.authenticated) return openAuthModal();
@@ -1634,7 +1636,7 @@ async function pollServer() {
     const textChs = (d.channels || []).filter(c => c.channel_type !== "voice");
     const voiceChs = (d.channels || []).filter(c => c.channel_type === "voice");
     const chanBtn = c => `<button class="dc-chan-btn ${c.id === activeChannelId ? 'active' : ''}" onclick="selectServerChannel(${c.id})">
-      <span class="dc-chan-hash">${c.channel_type === 'voice' ? '🔊' : '#'}</span>
+      <span class="dc-chan-hash">${c.channel_type === 'voice' ? azIcon("vol") : '#'}</span>
       <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(c.name.replace(/^[#🔊]\s*/, ''))}</span>
     </button>`;
     el("dcChanList").innerHTML =
@@ -1652,7 +1654,7 @@ async function pollServer() {
     }
 
     const mb = el("srvMutedBanner");
-    if (d.is_muted) { mb.style.display = "block"; mb.textContent = "🔇 Bu serverdə müvəqqəti susdurulmusunuz."; }
+    if (d.is_muted) { mb.style.display = "block"; mb.textContent = "Bu serverdə müvəqqəti susdurulmusunuz."; }
     else mb.style.display = "none";
 
     el("srvMemCount").textContent = (d.members || []).length;
@@ -1661,9 +1663,9 @@ async function pollServer() {
         : m.role === "mod" ? `<span class="srv-role-badge mod">Mod</span>` : "";
       const modBtns = (isMod && m.username !== me.username && !m.is_admin_user && (m.role !== "owner" || me.is_admin)) ? `
         <div class="row" style="gap:3px;margin-top:3px;">
-          <button class="btn btn-sm" style="padding:1px 5px;font-size:.66rem;" onclick="moderateServer('mute',${q(m.username)})" title="15 dəq susdur">🔇</button>
-          <button class="btn btn-sm" style="padding:1px 5px;font-size:.66rem;" onclick="moderateServer('unmute',${q(m.username)})" title="Səsi aç">🔊</button>
-          ${(d.my_role === 'owner' || me.is_admin) ? `<button class="btn btn-sm" style="padding:1px 5px;font-size:.66rem;" onclick="moderateServer('set_role',${q(m.username)},'${m.role === 'mod' ? 'member' : 'mod'}')" title="Mod et/al">⭐</button>` : ""}
+          <button class="btn btn-sm" style="padding:1px 5px;font-size:.66rem;" onclick="moderateServer('mute',${q(m.username)})" title="15 dəq susdur">${azIcon("mute")}</button>
+          <button class="btn btn-sm" style="padding:1px 5px;font-size:.66rem;" onclick="moderateServer('unmute',${q(m.username)})" title="Səsi aç">${azIcon("vol")}</button>
+          ${(d.my_role === 'owner' || me.is_admin) ? `<button class="btn btn-sm" style="padding:1px 5px;font-size:.66rem;" onclick="moderateServer('set_role',${q(m.username)},'${m.role === 'mod' ? 'member' : 'mod'}')" title="Mod et/al">${azIcon("star")}</button>` : ""}
           ${(srv.server_type === 'custom' || me.is_admin) ? `<button class="btn btn-sm btn-danger" style="padding:1px 5px;font-size:.66rem;" onclick="moderateServer('kick',${q(m.username)})" title="Çıxar">✕</button>` : ""}
         </div>` : "";
       return `<div style="padding:5px 0;border-bottom:1px solid var(--border);font-size:.8rem;">
@@ -1686,9 +1688,9 @@ async function pollServer() {
       div.className = `chat-bubble ${m.username === me.username ? 'mine' : 'theirs'}`;
       const authorLine = `${userLinkHtml(m.username, renderName(m.username, m.is_admin_user))} ${uniBadgeHtml(m.author_university)}`;
       const bodyHtml = m.audio_url ? `<div>${authorLine}</div>${voiceBubbleHtml(m)}` : `<div>${authorLine}: ${esc(m.message)}</div>`;
-      const delBtn = isMod ? `<button class="btn btn-sm btn-danger" style="padding:1px 5px;font-size:.68rem;" onclick="moderateServer('delete_msg','',null,${m.id})">🗑️</button>` : "";
+      const delBtn = isMod ? `<button class="btn btn-sm btn-danger" style="padding:1px 5px;font-size:.68rem;" onclick="moderateServer('delete_msg','',null,${m.id})">${azIcon("trash")}</button>` : "";
       div.innerHTML = (m.reply_author ? `<div class="chat-reply-quote"><strong>${esc(m.reply_author)}:</strong> ${esc(m.reply_text || "")}</div>` : "") + bodyHtml +
-        (m.shared_problem_id ? `<button class="btn btn-sm btn-primary" style="margin-top:5px;" onclick="openProblem(${q(m.shared_code || m.shared_problem_id)})">📘 ${esc(m.shared_code ? m.shared_code + '. ' : '')}${esc(m.shared_problem_title || "Məsələni aç")}</button>` : "") +
+        (m.shared_problem_id ? `<button class="btn btn-sm btn-primary" style="margin-top:5px;" onclick="openProblem(${q(m.shared_code || m.shared_problem_id)})">${azIcon("book")} ${esc(m.shared_code ? m.shared_code + '. ' : '')}${esc(m.shared_problem_title || "Məsələni aç")}</button>` : "") +
         `<div class="chat-meta"><span>${esc((m.created_at || "").slice(11, 16))}</span><span class="row" style="gap:4px;"><button class="btn btn-sm" style="padding:1px 6px;font-size:.7rem;" onclick="replyServerMsg(${m.id},${q(m.username)},${q(m.message)})">↩ Cavabla</button>${delBtn}</span></div>`;
       box.appendChild(div); box.scrollTop = box.scrollHeight;
     });
@@ -1731,7 +1733,7 @@ async function leaveActiveServer() {
   if (!activeServerId || !confirm("Bu serverdən ayrılmaq istəyirsiniz?")) return;
   const r = await fetch(`/api/servers/${activeServerId}/leave`, { method: "POST" });
   const d = await r.json(); toast(d.message || d.error, !r.ok);
-  if (r.ok) { activeServerId = 0; exitServerView(); await loadServers(); }
+  if (r.ok) { activeServerId = 0; loadServers(); }
 }
 
 function openServerProfile() {
@@ -1753,15 +1755,15 @@ function openServerProfile() {
       <input id="spAvUrl" value="${esc(srv.avatar_url || '')}" placeholder="Şəkil linki (istəyə bağlı)" style="margin-top:6px;">
       <div class="row" style="margin-top:6px;">
         <input id="spAvFile" type="file" accept="image/*" style="flex:1;font-size:.78rem;">
-        <button class="btn btn-sm" onclick="uploadServerAvatar()">📷 Şəkli Yüklə</button>
+        <button class="btn btn-sm" onclick="uploadServerAvatar()">${azIcon("camera")} Şəkli Yüklə</button>
         <button class="btn btn-primary btn-sm" onclick="saveServerProfile()">Yadda saxla</button>
       </div>
     </div>
     <div class="prof-box" style="margin-bottom:10px;">
-      <strong style="font-size:.84rem;">➕ Serverə Üzv Əlavə Et</strong>
+      <strong style="font-size:.84rem;">Serverə Üzv Əlavə Et</strong>
       <div class="row" style="margin-top:6px;">
         <input id="spAddUser" placeholder="İstifadəçi adı" style="flex:1;">
-        <button class="btn btn-success btn-sm" onclick="addServerMember()">Əlavə et</button>
+        <button class="btn btn-success btn-sm" onclick="addServerMember()">+ Əlavə et</button>
       </div>
     </div>` : ""}`;
   el("serverProfileModal").classList.add("open");
@@ -1850,7 +1852,7 @@ async function pollRoom() {
     activeRoomData = d; window._activeRoomId = d.room.id;
     setAvatar("rmAvatarWrap", "rmAvatarImg", "rmAvatarTxt", "", { username: d.room.title, avatar_url: d.room.avatar_url, avatar_color: d.room.avatar_color, avatar_frame: "none" });
     el("rmTitle").textContent = d.room.title; el("rmBio").textContent = d.room.bio; el("rmMemCount").textContent = d.members.length;
-    el("rmTimerWrap").textContent = d.room.remaining_sec >= 0 ? `· ⏱ ${Math.floor(d.room.remaining_sec / 60)} dəq` : "";
+    el("rmTimerWrap").textContent = d.room.remaining_sec >= 0 ? `· ${Math.floor(d.room.remaining_sec / 60)} dəq` : "";
     const vb = el("rmVoiceBtn"); vb.style.display = d.room.voice_link ? "inline-flex" : "none"; if (d.room.voice_link) vb.href = d.room.voice_link;
     const pb = el("rmProblemsBar"); pb.style.display = d.problems.length ? "block" : "none";
     pb.innerHTML = d.problems.map(p => `<button class="btn btn-sm" style="margin:2px;" onclick="openProblem(${q(p.code_label || p.id)})">${esc(p.code_label)}. ${esc(p.title)}</button>`).join("");
@@ -1863,7 +1865,7 @@ async function pollRoom() {
       div.className = `chat-bubble ${m.username === me.username ? 'mine' : 'theirs'}`;
       const bodyHtml = m.audio_url ? voiceBubbleHtml(m) : `<div>${userLinkHtml(m.username, renderName(m.username, m.is_admin_user))}: ${esc(m.message)}</div>`;
       div.innerHTML = (m.reply_author ? `<div class="chat-reply-quote"><strong>${esc(m.reply_author)}:</strong> ${esc(m.reply_text || "")}</div>` : "") + bodyHtml +
-        (m.shared_problem_id ? `<button class="btn btn-sm btn-primary" style="margin-top:5px;" onclick="openProblem(${q(m.shared_code || m.shared_problem_id)})">📘 ${esc(m.shared_code ? m.shared_code + '. ' : '')}${esc(m.shared_problem_title || "Məsələni aç")}</button>` : "") +
+        (m.shared_problem_id ? `<button class="btn btn-sm btn-primary" style="margin-top:5px;" onclick="openProblem(${q(m.shared_code || m.shared_problem_id)})">${azIcon("book")} ${esc(m.shared_code ? m.shared_code + '. ' : '')}${esc(m.shared_problem_title || "Məsələni aç")}</button>` : "") +
         `<div class="chat-meta"><span>${esc((m.created_at || "").slice(11, 16))}</span><button class="btn btn-sm" style="padding:1px 6px;font-size:.7rem;" onclick="replyRoomMsg(${m.id},${q(m.username)},${q(m.message)})">↩ Cavabla</button></div>`;
       box.appendChild(div); box.scrollTop = box.scrollHeight;
     });
@@ -1896,9 +1898,9 @@ function openGroupProfile() {
     ${isCr ? `<div class="prof-box" style="margin-bottom:10px;"><strong style="font-size:.84rem;">Qrup Profilini Düzəlt</strong>
       <input id="gpTitle" value="${esc(rm.title)}" style="margin-top:6px;"><textarea id="gpBio" rows="2" style="margin-top:6px;">${esc(rm.bio)}</textarea>
       <div class="row" style="margin-top:6px;"><input id="gpAvUrl" value="${esc(rm.avatar_url || '')}" placeholder="Şəkil linki" style="flex:1;"><input id="gpColor" type="color" value="${esc(rm.avatar_color)}" style="width:46px;height:34px;padding:2px;"></div>
-      <div class="row" style="margin-top:6px;"><input id="gpAvFile" type="file" accept="image/*" style="flex:1;font-size:.78rem;"><button class="btn btn-sm" onclick="uploadGroupAvatar()">📷 Şəkli Yüklə</button><button class="btn btn-primary btn-sm" onclick="saveGroupProfile()">Yenilə</button></div></div>
-      <div class="prof-box" style="margin-bottom:10px;"><strong style="font-size:.84rem;">➕ Qrupa Üzv Əlavə Et</strong>
-        <div class="row" style="margin-top:6px;"><input id="gpAddUser" placeholder="İstifadəçi adı" style="flex:1;"><button class="btn btn-success btn-sm" onclick="addRoomMember()">Əlavə et</button></div></div>` : ""}
+      <div class="row" style="margin-top:6px;"><input id="gpAvFile" type="file" accept="image/*" style="flex:1;font-size:.78rem;"><button class="btn btn-sm" onclick="uploadGroupAvatar()">${azIcon("camera")} Şəkli Yüklə</button><button class="btn btn-primary btn-sm" onclick="saveGroupProfile()">Yenilə</button></div></div>
+      <div class="prof-box" style="margin-bottom:10px;"><strong style="font-size:.84rem;">Qrupa Üzv Əlavə Et</strong>
+        <div class="row" style="margin-top:6px;"><input id="gpAddUser" placeholder="İstifadəçi adı" style="flex:1;"><button class="btn btn-success btn-sm" onclick="addRoomMember()">+ Əlavə et</button></div></div>` : ""}
     ${(d.shared_problems || []).length ? `<div class="prof-box" style="margin-bottom:10px;"><strong style="font-size:.84rem;">Paylaşılan Suallar</strong><div style="margin-top:6px;">${d.shared_problems.map(p => `<button class="btn btn-sm" style="margin:2px;" onclick="closeModal('groupProfileModal');openProblem(${q(p.code_label || p.id)})">${esc(p.code_label)}. ${esc(p.title)}</button>`).join("")}</div></div>` : ""}
     <div class="prof-box"><strong style="font-size:.84rem;">Üzvlər (${d.members.length}/20)</strong>
       ${d.members.map(m => `<div class="row" style="justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:.84rem;">
@@ -1930,7 +1932,7 @@ async function saveGroupProfile() {
 async function kickMember(u) { await fetch(`/api/rooms/${activeRoomCode}/kick`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ username: u }) }); closeModal("groupProfileModal"); pollRoom(); }
 async function exitGroupPermanent() { await fetch(`/api/rooms/${activeRoomCode}/leave`, { method: "POST" }); closeModal("groupProfileModal"); leaveRoomView(); }
 
-/* ── DM ── */
+/* ── MESSENGER-TƏRZİ DM ── */
 async function loadDmChats() {
   const shell = el("dmShell");
   if (!me.authenticated) {
@@ -1966,7 +1968,6 @@ function closeDm() {
   el("dmShell")?.classList.remove("in-dm");
   el("dmChatBox").innerHTML = ""; el("dmPartnerTitle").textContent = "Söhbət seçilməyib";
 }
-
 function replyDmMsg(id, author, text) { dmReplyId = id; el("dmReplyText").textContent = `↩ ${author}: ${String(text).slice(0, 45)}`; el("dmReplyBanner").style.display = "flex"; el("dmChatInput").focus(); }
 function cancelDmReply() { dmReplyId = null; el("dmReplyBanner").style.display = "none"; }
 async function pollDm() {
@@ -1977,7 +1978,7 @@ async function pollDm() {
     const r = await fetch(`/api/dm/${encodeURIComponent(reqPartner)}?after_id=${lastDmMsgId}`); if (!r.ok) return;
     const d = await r.json(), box = el("dmChatBox");
     if (reqPartner !== activeDmPartner) return;
-    el("dmPartnerTitle").innerHTML = userLinkHtml(d.partner, `✈️ ${renderName(d.partner, d.partner_is_admin)}`);
+    el("dmPartnerTitle").innerHTML = userLinkHtml(d.partner, renderName(d.partner, d.partner_is_admin));
     d.messages.forEach(m => {
       lastDmMsgId = Math.max(lastDmMsgId, m.id);
       if (el(`dm-msg-${m.id}`)) return;
@@ -1986,7 +1987,7 @@ async function pollDm() {
       div.className = `chat-bubble ${m.sender === me.username ? 'mine' : 'theirs'}`;
       div.innerHTML = (m.reply_author ? `<div class="chat-reply-quote"><strong>${esc(m.reply_author)}:</strong> ${esc(m.reply_text || "")}</div>` : "") +
         (m.audio_url ? voiceBubbleHtml(m) : `<div>${esc(m.message)}</div>`) +
-        (m.shared_problem_id ? `<button class="btn btn-sm btn-primary" style="margin-top:5px;" onclick="openProblem(${q(m.shared_code || m.shared_problem_id)})">📘 ${esc(m.shared_code ? m.shared_code + '. ' : '')}${esc(m.shared_problem_title || "Məsələni aç")}</button>` : "") +
+        (m.shared_problem_id ? `<button class="btn btn-sm btn-primary" style="margin-top:5px;" onclick="openProblem(${q(m.shared_code || m.shared_problem_id)})">${azIcon("book")} ${esc(m.shared_code ? m.shared_code + '. ' : '')}${esc(m.shared_problem_title || "Məsələni aç")}</button>` : "") +
         `<div class="chat-meta"><span>${esc((m.created_at || "").slice(11, 16))}</span><button class="btn btn-sm" style="padding:1px 6px;font-size:.7rem;" onclick="replyDmMsg(${m.id},${q(m.sender)},${q(m.message)})">↩ Cavabla</button></div>`;
       box.appendChild(div); box.scrollTop = box.scrollHeight;
     });
@@ -2057,15 +2058,15 @@ async function sendVoiceRecord(mode) {
   if (mode === "server" && activeServerId && activeChannelId) {
     payload.channel_id = activeChannelId; payload.reply_to_id = serverReplyId;
     const r = await fetch(`/api/servers/${activeServerId}/chat`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-    if (r.ok) { cancelServerReply(); pollServer(); toast("Səs mesajı göndərildi 🎤"); } else toast((await r.json()).error, true);
+    if (r.ok) { cancelServerReply(); pollServer(); toast("Səs mesajı göndərildi"); } else toast((await r.json()).error, true);
   } else if (mode === "room" && activeRoomCode) {
     payload.reply_to_id = roomReplyId;
     const r = await fetch(`/api/rooms/${activeRoomCode}/chat`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-    if (r.ok) { cancelRoomReply(); pollRoom(); toast("Səs mesajı göndərildi 🎤"); } else toast((await r.json()).error, true);
+    if (r.ok) { cancelRoomReply(); pollRoom(); toast("Səs mesajı göndərildi"); } else toast((await r.json()).error, true);
   } else if (mode === "dm" && activeDmPartner) {
     payload.reply_to_id = dmReplyId;
     const r = await fetch(`/api/dm/${encodeURIComponent(activeDmPartner)}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-    if (r.ok) { cancelDmReply(); pollDm(); loadDmChats(); toast("Səs mesajı göndərildi 🎤"); } else toast((await r.json()).error, true);
+    if (r.ok) { cancelDmReply(); pollDm(); loadDmChats(); toast("Səs mesajı göndərildi"); } else toast((await r.json()).error, true);
   }
 }
 
@@ -2084,12 +2085,12 @@ function renderShopItems() {
   el("shopGrid").innerHTML = list.length ? list.map(it => {
     const tierCls = it.tier !== "classic" ? ` ${it.tier}-card` : "", canBuy = isAdmin || shopCache.coins >= it.price;
     const fxHtml = SVG_FRAMES[it.id] || (it.image_url ? fxMediaHtml(it.image_url, it.anim_class) : "");
-    const action = it.equipped ? `<span class="badge" style="color:var(--success);border-color:var(--success);">✔ Taxılıb</span>`
+    const action = it.equipped ? `<span class="badge" style="color:var(--success);border-color:var(--success);">${azIcon("check")} Taxılıb</span>`
       : (it.owned || isAdmin) ? `<button class="btn btn-sm btn-primary" onclick="equipItem('${it.id}')">Tax</button>`
-      : `<button class="btn btn-sm btn-success" onclick="buyItem('${it.id}')" ${!canBuy ? 'disabled style="opacity:.5;"' : ''}>🪙 ${it.price.toLocaleString()} — Al</button>`;
-    const tierBadge = it.tier === "fantasy" ? `<span class="badge" style="border-color:#a855f7;color:#c084fc;">🐉 Fantaziya</span>`
-      : it.tier === "nature" ? `<span class="badge" style="border-color:#22c55e;color:#4ade80;">🌿 Təbiət</span>`
-      : it.tier === "legendary" ? `<span class="badge" style="border-color:#fbbf24;color:#fde047;">👑 Əfsanəvi</span>` : "";
+      : `<button class="btn btn-sm btn-success" onclick="buyItem('${it.id}')" ${!canBuy ? 'disabled style="opacity:.5;"' : ''}>${azIcon("coin")} ${it.price.toLocaleString()} — Al</button>`;
+    const tierBadge = it.tier === "fantasy" ? `<span class="badge" style="border-color:#a855f7;color:#c084fc;">Fantaziya</span>`
+      : it.tier === "nature" ? `<span class="badge" style="border-color:#22c55e;color:#4ade80;">Təbiət</span>`
+      : it.tier === "legendary" ? `<span class="badge" style="border-color:#fbbf24;color:#fde047;">Əfsanəvi</span>` : "";
     const delBtn = (isAdmin && it.fx_type === "img") ? `<button class="btn btn-danger btn-sm" onclick="adminDeleteCustomFrame('${it.id}')">Sil</button>` : "";
     return `<div class="card shop-card${tierCls}">
       <div class="av-wrap av-lg frame-${it.id}" style="background:var(--primary);">A${fxHtml}</div>
@@ -2108,7 +2109,7 @@ async function buyItem(id) {
   toast(d.message || d.error, !r.ok); await syncMe(); await loadShop();
   if (el("tab-profile")?.classList.contains("active") && currentProfileUser.toLowerCase() === (me.username || "").toLowerCase()) {
     setAvatar("fpAvatarWrap", "fpAvatarImg", "fpAvatarTxt", "av-xl", me);
-    if (el("fpCoinsBadge")) el("fpCoinsBadge").textContent = `🪙 ${me.infinite_coins ? "∞" : me.coins}`;
+    if (el("fpCoinsBadge")) el("fpCoinsBadge").innerHTML = `${azIcon("coin")} ${me.infinite_coins ? "∞" : me.coins}`;
   }
 }
 async function equipItem(id) {
@@ -2154,7 +2155,7 @@ async function startCalculusGame() {
   el("calculusArea").innerHTML = `
     <div class="row" style="justify-content:space-between;margin-top:6px;">
       <span class="badge" style="border-color:var(--accent);color:var(--accent);">${esc(d.category)} · ${esc(d.title)}</span>
-      <span id="calcTimerPill" class="calc-timer-pill">⏱ 05:00</span>
+      <span id="calcTimerPill" class="calc-timer-pill">${azIcon("clock")} 05:00</span>
     </div>
     <div id="calcPromptBox" class="calc-prompt-box">${esc(d.prompt)}</div>
     <div class="row">
@@ -2168,7 +2169,7 @@ async function startCalculusGame() {
     left--;
     const tp = el("calcTimerPill");
     if (tp) {
-      tp.textContent = `⏱ ${String(Math.floor(left / 60)).padStart(2, "0")}:${String(left % 60).padStart(2, "0")}`;
+      tp.innerHTML = `${azIcon("clock")} ${String(Math.floor(left / 60)).padStart(2, "0")}:${String(left % 60).padStart(2, "0")}`;
       if (left <= 30) tp.classList.add("danger");
     }
     if (left <= 0) { clearInterval(calcTimerInt); submitCalculusAnswer(true); }
@@ -2206,8 +2207,8 @@ async function guessBulls() {
   const r = await fetch("/api/games/bulls/guess", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ game_id: bullsGameId, guess: inp.value }) });
   const d = await r.json(); if (!r.ok) return toast(d.error, true);
   if (d.tries === 1) log.textContent = "";
-  log.textContent += `#${d.tries}: ${inp.value} → 🐂 ${d.bulls} Bull, 🐄 ${d.cows} Cow\n`; inp.value = "";
-  if (d.won) { log.textContent += `\n🎉 Tapdınız! +${d.xp_gained} XP, +${d.coins_gained} AzCoin!`; await syncMe(); }
+  log.textContent += `#${d.tries}: ${inp.value} → ${d.bulls} Bull, ${d.cows} Cow\n`; inp.value = "";
+  if (d.won) { log.textContent += `\nTapdınız! +${d.xp_gained} XP, +${d.coins_gained} AzCoin!`; await syncMe(); }
   else if (d.lost) log.textContent += `\nBitdi! Gizli ədəd: ${d.answer}`;
 }
 
@@ -2237,8 +2238,8 @@ function renderPendingPropCard(p, prefix) {
   return `<div class="pending-slim-item" onclick="togglePendingDetail('${prefix}',${p.id})">
     <span class="psi-code">${esc(p.code_label || "U" + p.id)}</span>
     <span class="psi-title">${esc(p.title)}</span>
-    <span class="psi-plan">📋 ${esc(p.plan || p.tags || "Standart")}</span>
-    <span class="psi-rating">⭐ ${p.rating}</span>
+    <span class="psi-plan">${esc(p.plan || p.tags || "Standart")}</span>
+    <span class="psi-rating">${azIcon("star")} ${p.rating}</span>
   </div>
   <div id="${prefix}Detail-${p.id}" class="pending-detail-expand" style="display:none;">
     <p style="margin:0 0 6px;"><strong>Müəllif:</strong> ${userLinkHtml(p.author, esc(p.author))} · <strong>Kod yoxlaması:</strong> ${esc(p.author_check_status || "—")} · <strong>Teqlər:</strong> ${esc(p.tags)}</p>
@@ -2325,7 +2326,7 @@ async function loadLeaderboard(scope, uniOverride) {
       <tr class="clickable" onclick="if(el('lbUniFilter'))el('lbUniFilter').value='${esc(u.code)}';switchLeaderScope('continent')">
         <td><strong>#${i + 1}</strong></td>
         <td><span class="uni-badge uni-official">${esc(u.code)}</span> <strong>${esc(u.name)}</strong></td>
-        <td>👥 ${u.members}</td><td>⭐ ${u.avg_rating}</td><td>${u.total_xp}</td><td>✔ ${u.total_solved}</td>
+        <td>${azIcon("users")} ${u.members}</td><td>${azIcon("star")} ${u.avg_rating}</td><td>${u.total_xp}</td><td>${azIcon("check")} ${u.total_solved}</td>
       </tr>`).join("") : `<tr><td colspan="6" class="muted">Hələ universitet seçən yoxdur.</td></tr>`;
     return;
   }
@@ -2348,7 +2349,7 @@ async function loadLeaderboard(scope, uniOverride) {
     <td><strong>#${i + 1}</strong></td>
     <td><div class="row" style="gap:6px;">${renderNameWithRank(u.username, u.is_admin_user, u.rating)}${uniBadgeHtml(u.university)}</div></td>
     <td><span class="badge">Lv.${u.level}</span></td><td>${u.xp}/${u.needed_xp} (${u.total_xp})</td>
-    <td>${u.rating}</td><td>🔥 ${u.daily_streak}</td><td>${u.solved_count}</td></tr>`).join("")
+    <td>${u.rating}</td><td>${azIcon("flame")} ${u.daily_streak}</td><td>${u.solved_count}</td></tr>`).join("")
     : `<tr><td colspan="7" class="muted">Bu bölmədə hələ istifadəçi yoxdur.</td></tr>`;
 }
 
@@ -2357,7 +2358,7 @@ async function loadCreative() {
   el("creativeGrid").innerHTML = list.map((c, i) => `<div class="card"><strong>${esc(c.title)}</strong> <span class="badge">${esc(c.language)}</span>
     <div class="muted" style="font-size:.78rem;">${userLinkHtml(c.author, renderName(c.author, c.is_admin_user))}</div><p class="muted" style="font-size:.84rem;">${esc(c.description)}</p>
     <pre class="console-out" style="max-height:110px;">${esc(c.code)}</pre>
-    <button class="btn btn-sm btn-primary" style="margin-top:8px;" onclick="runCr(${i})">▶ Playground</button></div>`).join("");
+    <button class="btn btn-sm btn-primary" style="margin-top:8px;" onclick="runCr(${i})">${azIcon("play")} Playground</button></div>`).join("");
 }
 function runCr(i) {
   const c = creativeCache[i]; switchTab("playground", "pg"); el("pgLang").value = c.language; onPgLangChange();
@@ -2384,8 +2385,8 @@ async function loadAdminUsers() {
   el("adminUsersBody").innerHTML = adminUsersCache.length ? adminUsersCache.map((u, i) => `
     <tr><td><div class="row" style="gap:6px;">${userLinkHtml(u.username, renderNameWithRank(u.username, u.is_admin_user, u.rating))}${uniBadgeHtml(u.university)}</div>
         <div style="font-size:.7rem;" class="${u.is_online ? '' : 'muted'}">${u.is_online ? '<span class="online-dot on"></span>Onlayn' : `<span class="online-dot off"></span>Oflayn (${esc(u.last_seen || "—")})`}</div></td>
-      <td class="muted">${esc(u.email)}<div style="font-size:.7rem;">📅 ${esc(String(u.created_at || "").slice(0, 16))}</div></td>
-      <td>Lv.${u.level} (${u.xp})</td><td>🪙 ${u.infinite_coins ? "∞" : u.coins}</td><td>${u.solved_count}</td>
+      <td class="muted">${esc(u.email)}<div style="font-size:.7rem;">${esc(String(u.created_at || "").slice(0, 16))}</div></td>
+      <td>Lv.${u.level} (${u.xp})</td><td>${azIcon("coin")} ${u.infinite_coins ? "∞" : u.coins}</td><td>${u.solved_count}</td>
       <td><div class="row" style="flex-wrap:nowrap;"><input id="adGiftC-${i}" type="number" value="100" style="width:72px;padding:4px;"><input id="adGiftX-${i}" type="number" value="0" style="width:65px;padding:4px;"><button class="btn btn-success btn-sm" onclick="adminGiftUser(${i})">Ver</button></div></td>
       <td>${u.is_admin_user ? "" : `<button class="btn btn-danger btn-sm" onclick="adminDeleteUser(${i})">Sil</button>`}</td></tr>`).join("") : `<tr><td colspan="7" class="muted">Tapılmadı.</td></tr>`;
 }
@@ -2439,7 +2440,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   if (el("rgPassConfirm")) el("rgPassConfirm").addEventListener("input", validatePasswordConfirm);
 
   await syncMe();
-    upgradeUiIcons(document.body);
+  upgradeUiIcons(document.body);
   new MutationObserver(() => upgradeUiIcons(document.body)).observe(document.body, { childList: true, subtree: true });
   checkHumanGate();
 
