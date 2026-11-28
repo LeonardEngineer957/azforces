@@ -2465,3 +2465,6 @@ window.addEventListener("DOMContentLoaded", async () => {
   else if (!me.authenticated && (me.guest_remaining_sec === null || me.guest_remaining_sec === undefined)) switchTab("home", "welcome");
   else switchTab("home", "announcements");
 });
+
+window.addEventListener("error", e => toast("JS Xəta: " + e.message + " (Sətir " + e.lineno + ")", true));
+window.addEventListener("unhandledrejection", e => toast("Xəta: " + (e.reason?.message || e.reason), true));
