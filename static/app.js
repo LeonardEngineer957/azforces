@@ -483,10 +483,7 @@ function renderMath(node) {
     });
   }
 }
-  if (node && typeof renderMathInElement === "function") {
-    renderMathInElement(node, { delimiters: [{ left: "$$", right: "$$", display: true }, { left: "$", right: "$", display: false }], throwOnError: false });
-  }
-}
+
 function cmMode(lang) { return lang === "python" ? "python" : lang === "javascript" ? "javascript" : lang === "cpp" ? "text/x-c++src" : lang === "c" ? "text/x-csrc" : "text/x-java"; }
 function closeModal(id) { const n = el(id); if (n) n.classList.remove("open"); }
 function copyText(txt, msg) {
